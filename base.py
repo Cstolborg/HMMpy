@@ -17,14 +17,13 @@ Something is wrong wit the scaling of alphas and betas. They keep getting smalle
 
 class BaseHMM:
 
-    def __init__(self, n_states, m_observables, max_iter=10, random_state=42):
+    def __init__(self, n_states, max_iter=10, random_state=42):
         self.n_states = n_states
-        self.m_observables = m_observables
 
-        self.delta = np.ones(n_states) * (1 / n_states)  # 1,N vector
+        self.delta = np.ones(n_states) * (1 / n_states)  # 1 X N vector
         self.T = np.ones((n_states, n_states)) * (1 / n_states)  # N X N transmission matrix
-        # self.B = np.ones((n_states, m_observables)) * (1/m_observables) # N X M Emission matrix
 
+        # Random init of state distributions
         np.random.seed(random_state)
         self.mu = np.random.rand(n_states)
         self.std = np.random.rand(n_states)
@@ -40,10 +39,11 @@ class BaseHMM:
         diag_probs = np.diag(diag_probs)
         return diag_probs
 
-    def _log_forward_probs(self, observations, likelihood=False):
-        ''' Compute forward probabilities in scaled form. Follows the method by Zucchini A.1.8 p 334. '''
+    def _log_forward_probs(self, observations):
+        ''' Compute log forward probabilities in scaled form. P(M=i , X=x)
+        Follows the method by Zucchini A.1.8 p 334. '''
         N = len(observations)
-        alphas = np.zeros((N, self.n_states))  # initialize matrix with zeros
+        log_alphas = np.zeros((N, self.n_states))  # initialize matrix with zeros
 
         # a0, compute first forward as dot product of initial dist and state-dependent dist
         # Each element is scaled to sum to 1 in order to handle numerical underflow
@@ -51,7 +51,7 @@ class BaseHMM:
         sum_alpha_t = np.sum(alpha_t)
         alpha_t_scaled = alpha_t / sum_alpha_t
         llk = np.log(sum_alpha_t)  # Scalar to store the log likelihood
-        alphas[0, :] = llk + np.log(alpha_t_scaled)
+        log_alphas[0, :] = llk + np.log(alpha_t_scaled)
 
         # a1 to at, compute recursively
         for t in range(1, N):
@@ -59,29 +59,29 @@ class BaseHMM:
             sum_alpha_t = np.sum(alpha_t)
             alpha_t_scaled = alpha_t / sum_alpha_t
             llk = llk + np.log(sum_alpha_t) # Scalar to store likelihoods
-            alphas[t, :] = llk + np.log(alpha_t_scaled)  # alpha_t = previous likelihoods plus logarithm of regular
+            log_alphas[t, :] = llk + np.log(alpha_t_scaled)  # alpha_t = previous likelihoods plus logarithm of regular
                                                         # alpha - RESEARCH WHY YOU ADD THE PREVIOUS LIKELIHOOD
 
-        return np.exp(alphas)
+        return log_alphas
 
 
     def _log_backward_probs(self, observations):
         ''' Compute the log of backward probabilities in scaled form. Same procedure as forward probs.'''
         N = len(observations)
-        betas = np.zeros((N, self.n_states))  # initialize matrix with zeros
+        log_betas = np.zeros((N, self.n_states))  # initialize matrix with zeros
 
         beta_t = np.ones(self.n_states)
         llk = np.log(np.sum(beta_t))
-        betas[-1, :] = beta_t # Last result is 1
+        log_betas[-1, :] = np.log(beta_t) # Last result is 1
 
         for t in range(N-2, -1, -1):  # Count backwards
             beta_t = self.T @ self.P(observations[t + 1]) @ beta_t
-            betas[t, :] = llk + np.log(beta_t)
+            log_betas[t, :] = llk + np.log(beta_t)
             sum_beta_t = np.sum(beta_t)
             beta_t = beta_t / sum_beta_t
             llk = llk + np.log(sum_beta_t)
 
-        return np.exp(betas)
+        return log_betas
 
     def _e_step(self, observations):
         alphas = self._log_forward_probs(observations)
@@ -155,25 +155,6 @@ if __name__ == '__main__':
 
 
 
-else:  # Don't want to print this right now.....
-    hmm = BaseHMM(2, 3)
-    print('mu, std: ', hmm.mu, hmm.std)
-    print('A matrix: ', hmm.T)
-    # print('B matrix: ', hmm.B)
-    print('delta vector: ', hmm.delta)
-
-    x = 0
-    print('P(X): ', hmm.P(x))
-    print('Shape of P(X): ', np.shape(hmm.P(x)))
-
-    obs = [0, 1, 2]
-    print('-' * 50)
-    print('Alphas: ', hmm._log_forward_probs(obs))
-    # print('Likelihood: ', hmm._likelihood(obs))
-    print('Likelihood: ', hmm._log_forward_probs(obs, likelihood=True))
-
-    print('Betas: ', hmm._log_backward_probs(obs))
-
 
 def backward_pass(Gamma, D, B):
     return np.dot(Gamma, D).dot(B)
@@ -194,12 +175,12 @@ def state_dist(x, u_j):
     var = np.sum(u_j * (x - mu) ** 2) / np.sum(u_j)
     return mu, var
 
-    def _likelihood(self, observations):
-        alphas = self._log_forward_probs(observations)
-        wt = np.sum(alphas, axis=1)
-        print(wt)
-        lt = []
-        for t in range(1, len(observations)):
-            lt.append(np.log(wt[t] / wt[t - 1]))
+def _likelihood(self, observations):
+    alphas = self._log_forward_probs(observations)
+    wt = np.sum(alphas, axis=1)
+    print(wt)
+    lt = []
+    for t in range(1, len(observations)):
+        lt.append(np.log(wt[t] / wt[t - 1]))
 
-        return np.exp(np.sum(lt))  # alphas[-1].sum()
+    return np.exp(np.sum(lt))  # alphas[-1].sum()
