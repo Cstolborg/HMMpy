@@ -1,28 +1,20 @@
 import numpy as np
 from scipy import stats
+from sklearn.base import BaseEstimator
 
-from simulate_obs import simulate_obs
+from utils import simulate_obs
 
 ''' TODO NEXT:
 
-THIS FILE IS REPLICATING NYSTRUPS METHOD OF EM AS EMPLOYED IN HIS MASTER
-
-_log_forward_probs and _log_backward_probs currently returns alphas and betas as exponential and thus not log probs.
-
-In the _e_step, the likelihood returns zero when evaluating on real data. Find a fix to this - probably set a_t dot b_t'
-alpha_t dot beta_t' must equal likelihood for all t. Check that this condition is satisfied
-
-Something is wrong wit the scaling of alphas and betas. They keep getting smaller as t increases.
-
-
 Show why Zuchinni/Nystrups algorithm equals the scaling on p. 48 in the Zucchini book.
     - Derive in math how to compute log (alpha)
-
 '''
 
+class HiddenMarkovModel(BaseEstimator):
+    """ Class for computing HMM's using the EM algorithm.
+    Scikit-learn api is used as Parent see --> https://scikit-learn.org/stable/developers/develop.html
 
-class BaseHMM:
-
+    """
     def __init__(self, n_states, max_iter=10, random_state=42):
         self.n_states = n_states
 
@@ -47,14 +39,15 @@ class BaseHMM:
         return T
 
     def P(self, x: int):
-        """ Function for computing diagonal prob matrix P(x).
+        """Function for computing diagonal prob matrix P(x).
          Change the function depending on the type of distribution you want to evaluate"""
-        diag_probs = stats.norm.pdf(x, loc=self.mu, scale=self.std)
-        diag_probs = np.diag(diag_probs)
+
+        diag_probs = stats.norm.pdf(x, loc=self.mu, scale=self.std) # Evalute x in every state
+        diag_probs = np.diag(diag_probs)  # Transforms it into a diagonal matrix
         return diag_probs
 
     def log_all_probs(self, x: int):
-        ''' Compute all different probabilities p(x) given an observation sequence and n states '''
+        """ Compute all different log probabilities log(p(x)) given an observation sequence and n states """
         N = len(x)
         log_probs = np.zeros((N, self.n_states))  # Init N X M matrix
 
@@ -65,15 +58,18 @@ class BaseHMM:
         return log_probs
 
 
-    def _log_forward_probs(self, observations):
-        ''' Compute log forward probabilities in scaled form. P(M=i , X=x)
-        Follows the method by Zucchini A.1.8 p 334. '''
-        N = len(observations)
+    def _log_forward_probs(self, X):
+        """ Compute log forward probabilities in scaled form.
+
+        Forward probariblity is essentially the joint probability of observing
+        a state = i and observation = x, i.e. P(M=i , X=x).
+        Follows the method by Zucchini A.1.8 p 334. """
+        N = len(X)
         log_alphas = np.zeros((N, self.n_states))  # initialize matrix with zeros
 
         # a0, compute first forward as dot product of initial dist and state-dependent dist
         # Each element is scaled to sum to 1 in order to handle numerical underflow
-        alpha_t = self.delta @ self.P(observations[0])
+        alpha_t = self.delta @ self.P(X[0])
         sum_alpha_t = np.sum(alpha_t)
         alpha_t_scaled = alpha_t / sum_alpha_t
         llk = np.log(sum_alpha_t)  # Scalar to store the log likelihood
@@ -81,17 +77,21 @@ class BaseHMM:
 
         # a1 to at, compute recursively
         for t in range(1, N):
-            alpha_t = alpha_t_scaled @ self.T @ self.P(observations[t])
+            alpha_t = alpha_t_scaled @ self.T @ self.P(X[t])  # Dot product of previous forward_prob, transition matrix and P(X)
             sum_alpha_t = np.sum(alpha_t)
-            alpha_t_scaled = alpha_t / sum_alpha_t
+
+            alpha_t_scaled = alpha_t / sum_alpha_t  # Scale forward_probs to sum to 1
             llk = llk + np.log(sum_alpha_t) # Scalar to store likelihoods
             log_alphas[t, :] = llk + np.log(alpha_t_scaled)  # TODO RESEARCH WHY YOU ADD THE PREVIOUS LIKELIHOOD
-        print(log_alphas)
+
         return log_alphas
 
-    def _log_backward_probs(self, observations):
-        ''' Compute the log of backward probabilities in scaled form. Same procedure as forward probs.'''
-        N = len(observations)
+    def _log_backward_probs(self, X):
+        """ Compute the log of backward probabilities in scaled form.
+        Backward probabilities are the conditional probability of
+        some observation at t+1 given the current state = i. Equivalent to P(X_t+1 = x_t+1 | S_t = i)
+        """
+        N = len(X)
         log_betas = np.zeros((N, self.n_states))  # initialize matrix with zeros
 
         beta_t = np.ones(self.n_states) * 1/self.n_states  # TODO CHECK WHY WE USE 1/M
@@ -99,7 +99,7 @@ class BaseHMM:
         log_betas[-1, :] = np.log(np.ones(self.n_states))  # Last result is 0 since log(1)=0
 
         for t in range(N-2, -1, -1):  # Count backwards
-            beta_t = self.T @ self.P(observations[t + 1]) @ beta_t
+            beta_t = self.T @ self.P(X[t + 1]) @ beta_t
             log_betas[t, :] = llk + np.log(beta_t)
             sum_beta_t = np.sum(beta_t)
             beta_t = beta_t / sum_beta_t
@@ -107,20 +107,19 @@ class BaseHMM:
 
         return log_betas
 
-    def _e_step(self, observations):
+    def _e_step(self, X):
         ''' Do a single e-step '''
-        N = len(observations)
-        log_alphas = self._log_forward_probs(observations)
-        log_betas = self._log_backward_probs(observations)
-        log_all_probs = self.log_all_probs(observations)
+        N = len(X)
+        log_alphas = self._log_forward_probs(X)
+        log_betas = self._log_backward_probs(X)
+        log_all_probs = self.log_all_probs(X)
 
         # TODO CHECK HOW THIS C SCALINg PARAMETER WORKS
         c = np.max(log_alphas[-1, :]) # Max of the last vector in the matrix log_alpha
-        llk = c + np.log(np.sum(np.exp(log_alphas[-1, :] - c))) # Changed from earlier: alphas[0] @ betas[0].T #np.sum(alphas[-1, :])
+        llk = c + np.log(np.sum(np.exp(log_alphas[-1, :] - c)))
 
         # Expectation of being in state j at each time point
-        u = np.exp(log_alphas - log_betas - llk) # TODO FIND BETTER VARIABLE NAME
-
+        u = np.exp(log_alphas + log_betas - llk) # TODO FIND BETTER VARIABLE NAME
 
         # Initialize 2D array of shape j X j
         # We skip computing vhat and head straight to fhat
@@ -131,18 +130,23 @@ class BaseHMM:
 
         return u, f, llk
 
-    def _m_step(self, observations, u, f):
-        ''' Given u and f do a sigle m step '''
-        observations = np.array(observations)
+    def _m_step(self, X, u, f):
+        ''' Given u and f do a sigle m step.
+
+         Updates the model parameters delta, Transition matrix and state dependent distributions.
+         '''
+        X = np.array(X)
         self.T = f / np.sum(f, axis=1).reshape((2, 1))  # Check if this actually sums correct and to 1 on rows
         self.delta = u[0, :] / np.sum(u[0, :])
 
         for j in range(self.n_states):
-            self.mu[j] = np.sum(u[:, j] * observations) / np.sum(u[:, j])
-            self.std[j] = np.sqrt(np.sum(u[:, j] * np.square(observations - self.mu[j])) / np.sum(u[:, j]))
+            self.mu[j] = np.sum(u[:, j] * X) / np.sum(u[:, j])
+            self.std[j] = np.sqrt(np.sum(u[:, j] * np.square(X - self.mu[j])) / np.sum(u[:, j]))
 
 
-    def em(self, observations, epochs, print_output=False):
+    def em(self, X, epochs, print_output=False):
+        """Iterates through the e-step and the m-step"""
+
         llk = 0
         for i in range(epochs):
             if print_output:
@@ -154,58 +158,16 @@ class BaseHMM:
                 print('loglikelihood', llk)
 
                 print('.' * 40)
-            u, f, llk = self._e_step(observations)
-            self._m_step(observations, u, f)
+            u, f, llk = self._e_step(X)
+            self._m_step(X, u, f)
 
-
+    def fit(self, X):
+        pass
 
 
 if __name__ == '__main__':
-    hmm = BaseHMM(2, 3)
+    hmm = HiddenMarkovModel(2, 3)
 
-    obs = simulate_obs(plotting=True) # Simulate some observations in two states from normal distributions
-    print(np.shape(obs))
-    print(obs[:10])
+    obs = simulate_obs(plotting=False) # Simulate some X in two states from normal distributions
 
-    #obs = obs[:10]
-    b = hmm._log_backward_probs(obs)
-    a = hmm._log_forward_probs(obs)
-
-    #u, f, llk = hmm._e_step(obs)
-    #m = hmm._m_step(obs, u, f)
-    em = hmm.em(obs, epochs=5, print_output=True)
-
-    #hmm.em(obs, epochs=5)
-
-
-
-
-
-def backward_pass(Gamma, D, B):
-    return np.dot(Gamma, D).dot(B)
-
-
-def init_dist(u_j):
-    ''' Compute the intial distribution delta_j '''
-    return u_j
-
-
-def trans_prob(v_jk):
-    f_jk = np.sum(v_jk[1:])
-    return f_jk / np.sum(f_jk)
-
-
-def state_dist(x, u_j):
-    mu = np.sum(u_j * x) / np.sum(u_j)  # Should perhaps be a dot product
-    var = np.sum(u_j * (x - mu) ** 2) / np.sum(u_j)
-    return mu, var
-
-def _likelihood(self, observations):
-    alphas = self._log_forward_probs(observations)
-    wt = np.sum(alphas, axis=1)
-    print(wt)
-    lt = []
-    for t in range(1, len(observations)):
-        lt.append(np.log(wt[t] / wt[t - 1]))
-
-    return np.exp(np.sum(lt))  # alphas[-1].sum()
+    em = hmm.em(obs, epochs=10, print_output=True)

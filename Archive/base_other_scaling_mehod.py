@@ -3,13 +3,7 @@ from scipy import stats
 
 ''' TODO NEXT:
 
-_log_forward_probs and _log_backward_probs currently returns alphas and betas as exponential and thus not log probs.
-
-In the _e_step, the likelihood returns zero when evaluating on real data. Find a fix to this - probably set a_t dot b_t'
 alpha_t dot beta_t' must equal likelihood for all t. Check that this condition is satisfied
-
-Something is wrong wit the scaling of alphas and betas. They keep getting smaller as t increases.
-
 
 Show why Zuchinni/Nystrups algorithm equals the scaling on p. 48 in the Zucchini book.
     - Derive in math how to compute log (alpha)
@@ -21,7 +15,7 @@ Show why Zuchinni/Nystrups algorithm equals the scaling on p. 48 in the Zucchini
 
 class BaseHMM:
 
-    def __init__(self, n_states, max_iter=10, random_state=42):
+    def __init__(self, n_states, max_iter=500, random_state=42):
         self.n_states = n_states
 
         self.delta = np.array([0.2, 0.8])  # 1 X N vector
@@ -37,6 +31,8 @@ class BaseHMM:
         self.old_log_prob = -np.inf # TODO does this have a function?
 
     def trans_init(self):
+        """Initialize the transition matrix with specific values."""
+
         T = np.zeros((2,2))
         T[0, 0] = 0.7
         T[0, 1] = 0.3
