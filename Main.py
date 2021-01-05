@@ -2,7 +2,7 @@ import numpy as np
 from scipy import stats
 from sklearn.base import BaseEstimator
 
-from utils import simulate_obs
+from utils import simulate_2state_gaussian
 
 ''' TODO NEXT:
 
@@ -15,22 +15,24 @@ class HiddenMarkovModel(BaseEstimator):
     Scikit-learn api is used as Parent see --> https://scikit-learn.org/stable/developers/develop.html
 
     """
-    def __init__(self, n_states, max_iter=10, random_state=42):
+    def __init__(self, n_states, epochs=100, tol=1e-8, random_state=42):
         self.n_states = n_states
 
         self.delta = np.array([0.2, 0.8])  # 1 X N vector
-        self.T = self.trans_init()  # N X N transmission matrix
+        self.T = self._init_params()  # N X N transmission matrix
 
         # Random init of state distributions
-        np.random.seed(random_state)
+        self.random_state = random_state
+        np.random.seed(self.random_state)
         self.mu = np.random.rand(n_states)
         self.std = np.random.rand(n_states)
 
-        self.max_iter = max_iter
+        self.epochs = epochs
+        self.tol = tol
         self.current_iter = 0
-        self.old_log_prob = -np.inf # TODO does this have a function?
+        self.old_llk = -np.inf # TODO does this have a function?
 
-    def trans_init(self):
+    def _init_params(self):
         T = np.zeros((2,2))
         T[0, 0] = 0.7
         T[0, 1] = 0.3
@@ -62,7 +64,7 @@ class HiddenMarkovModel(BaseEstimator):
         """ Compute log forward probabilities in scaled form.
 
         Forward probariblity is essentially the joint probability of observing
-        a state = i and observation = x, i.e. P(M=i , X=x).
+        a state = i and observation sequences x^t=x_1...x_t, i.e. P(M=i , X^t=x^t).
         Follows the method by Zucchini A.1.8 p 334. """
         N = len(X)
         log_alphas = np.zeros((N, self.n_states))  # initialize matrix with zeros
@@ -94,7 +96,7 @@ class HiddenMarkovModel(BaseEstimator):
         N = len(X)
         log_betas = np.zeros((N, self.n_states))  # initialize matrix with zeros
 
-        beta_t = np.ones(self.n_states) * 1/self.n_states  # TODO CHECK WHY WE USE 1/M
+        beta_t = np.ones(self.n_states) * 1/self.n_states  # TODO CHECK WHY WE USE 1/M rather than ones
         llk = np.log(self.n_states)
         log_betas[-1, :] = np.log(np.ones(self.n_states))  # Last result is 0 since log(1)=0
 
@@ -116,7 +118,7 @@ class HiddenMarkovModel(BaseEstimator):
 
         # TODO CHECK HOW THIS C SCALINg PARAMETER WORKS
         c = np.max(log_alphas[-1, :]) # Max of the last vector in the matrix log_alpha
-        llk = c + np.log(np.sum(np.exp(log_alphas[-1, :] - c)))
+        llk = c + np.log(np.sum(np.exp(log_alphas[-1, :] - c)))  # Scale log-likelihood by c
 
         # Expectation of being in state j at each time point
         u = np.exp(log_alphas + log_betas - llk) # TODO FIND BETTER VARIABLE NAME
@@ -131,7 +133,7 @@ class HiddenMarkovModel(BaseEstimator):
         return u, f, llk
 
     def _m_step(self, X, u, f):
-        ''' Given u and f do a sigle m step.
+        ''' Given u and f do an m-step.
 
          Updates the model parameters delta, Transition matrix and state dependent distributions.
          '''
@@ -143,14 +145,15 @@ class HiddenMarkovModel(BaseEstimator):
             self.mu[j] = np.sum(u[:, j] * X) / np.sum(u[:, j])
             self.std[j] = np.sqrt(np.sum(u[:, j] * np.square(X - self.mu[j])) / np.sum(u[:, j]))
 
-
-    def em(self, X, epochs, print_output=False):
+    def fit(self, X, verbose=0):
         """Iterates through the e-step and the m-step"""
 
-        llk = 0
-        for i in range(epochs):
-            if print_output:
-                print(i)
+        for iter in range(self.epochs):
+            u, f, llk = self._e_step(X)
+            self._m_step(X, u, f)
+
+            if verbose == 2:
+                print(iter)
                 print('MEAN: ', self.mu)
                 print('STD: ', self.std)
                 print('Gamma: ', self.T)
@@ -158,16 +161,39 @@ class HiddenMarkovModel(BaseEstimator):
                 print('loglikelihood', llk)
 
                 print('.' * 40)
-            u, f, llk = self._e_step(X)
-            self._m_step(X, u, f)
 
-    def fit(self, X):
+            if verbose == 1:
+                print(f'Iteration {iter} - LLK {llk} - Means: {self.mu} - STD {self.std} - Gamma {self.T.flatten()} - Delta {self.delta}')
+
+            # Check convergence
+            crit = np.abs(llk - self.old_llk)  # Improvement in log likelihood
+            if crit < self.tol:
+                print(f'Iteration {iter} - LLK {llk} - Means: {self.mu} - STD {self.std} - Gamma {self.T.flatten()} - Delta {self.delta}')
+                break
+
+            else:
+                self.old_llk = llk
+
+        print(f'No convergence after {iter} iterations')
+
+    def predict(self, X):
         pass
 
 
+
+    def viterbi(self, X):
+        """ Compute the most likely sequence of states given the observations
+         To reduce CPU time consider storing each sequence --> will save T*m function evaluations
+
+         """
+        xi = self.delta @ P(X[0])
+
+
+
+
 if __name__ == '__main__':
-    hmm = HiddenMarkovModel(2, 3)
+    hmm = HiddenMarkovModel(n_states=2)
 
-    obs = simulate_obs(plotting=False) # Simulate some X in two states from normal distributions
+    obs = simulate_2state_gaussian(plotting=False) # Simulate some X in two states from normal distributions
 
-    em = hmm.em(obs, epochs=10, print_output=True)
+    em = hmm.fit(obs, verbose=0)

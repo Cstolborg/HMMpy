@@ -2,7 +2,7 @@ import numpy as np
 from scipy import stats
 import matplotlib.pyplot as plt
 
-def simulate_obs(N=150, means=None, std=None, plotting=False, random_state=42):
+def simulate_2state_gaussian(N=150, means=None, std=None, plotting=False, random_state=42):
     '''Simulate data for bull and bear market using Normal distribution '''
 
     if means == None:
