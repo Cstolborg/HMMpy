@@ -190,42 +190,46 @@ class HiddenMarkovModel(BaseEstimator):
 
          """
         N = len(X)
-        xi = np.zeros((N, self.n_states))
+        posteriors = np.zeros((N, self.n_states))
 
         # Initiate xi_0 and scale it as:
-        xi_temp = self.delta @ self.P(X[0])  # xi at time 0
-        xi[0, :] = xi_temp / np.sum(xi_temp)  # Scaled xi at time 0
+        posterior_temp = self.delta @ self.P(X[0])  # posteriors at time 0
+        posteriors[0, :] = posterior_temp / np.sum(posterior_temp)  # Scaled posteriors at time 0
 
-        # Do a forward recursion to compute xi
+        # Do a forward recursion to compute posteriors
         for t in range(1, N):
-            xi_temp = np.max([xi[t-1, :] * self.T], axis=1) @ self.P(X[t])  # TODO double check the max function returns the correct values
-            xi[t, :] = xi_temp / np.sum(xi_temp)
+            posterior_temp = np.max(posteriors[t - 1, :] * self.T, axis=1) @ self.P(X[t])  # TODO double check the max function returns the correct values
+            posteriors[t, :] = posterior_temp / np.sum(posterior_temp)
 
-        # From xi get the the most likeley sequence of states i
-        best_states = np.zeros(N)  # Vector of length N
-        best_states[-1] = int(np.argmax(xi[-1, :]))  # Last most likely state is the index position
+        # From posteriors get the the most likeley sequence of states i
+        state_preds = np.zeros(N).astype(int)  # Vector of length N
+        state_preds[-1] = np.argmax(posteriors[-1, :])  # Last most likely state is the index position
 
-        # Do a backward recursion to calculate
+        # Do a backward recursion to calculate most likely state sequence
         for t in range(N-2, -1, -1):  # Count backwards
-            best_states[t] = np.argmax(xi[t, :] * self.T[:, int(best_states[t+1])])  # TODO double check the max function returns the correct values
+            state_preds[t] = np.argmax(posteriors[t, :] * self.T[:, state_preds[t + 1]])  # TODO double check the max function returns the correct values
 
-        return best_states, xi
+        return state_preds, posteriors
 
 if __name__ == '__main__':
-    hmm1 = HiddenMarkovModel(n_states=2)
+    hmm_model = HiddenMarkovModel(n_states=2)
 
     returns, true_regimes = simulate_2state_gaussian(plotting=False) # Simulate some X in two states from normal distributions
 
-    em = hmm1.fit(returns, verbose=0)
+    hmm_model.fit(returns, verbose=0)
 
-    states, posteriors = hmm1.viterbi(returns)
+    states, posteriors = hmm_model.viterbi(returns)
+    #print(posteriors)
 
-    #plt.plot(posteriors, label='Posteriors', )
-    plt.plot(states, label='Predicted states', ls='dotted')
-    plt.plot(true_regimes, label='True states', ls='dashed')
+    plotting = True
+    if plotting == True:
+        plt.plot(posteriors[:, 0], label='Posteriors state 1', )
+        plt.plot(posteriors[:, 1], label='Posteriors state 2', )
+        #plt.plot(states, label='Predicted states', ls='dotted')
+        #plt.plot(true_regimes, label='True states', ls='dashed')
 
-    plt.legend()
-    plt.show()
+        plt.legend()
+        plt.show()
 
     check_hmmlearn = False
     if check_hmmlearn == True:
