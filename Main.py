@@ -1,10 +1,15 @@
 import numpy as np
 from scipy import stats
 from sklearn.base import BaseEstimator
+import matplotlib.pyplot as plt
+
+
 
 from utils import simulate_2state_gaussian
 
 ''' TODO NEXT:
+
+Viterbi show too few state transitions. Probably an error in its posterior probs.
 
 Show why Zuchinni/Nystrups algorithm equals the scaling on p. 48 in the Zucchini book.
     - Derive in math how to compute log (alpha)
@@ -58,7 +63,6 @@ class HiddenMarkovModel(BaseEstimator):
             log_probs[:, j] = stats.norm.logpdf(x, loc=self.mu[j], scale=self.std[j])
 
         return log_probs
-
 
     def _log_forward_probs(self, X):
         """ Compute log forward probabilities in scaled form.
@@ -121,10 +125,10 @@ class HiddenMarkovModel(BaseEstimator):
         llk = c + np.log(np.sum(np.exp(log_alphas[-1, :] - c)))  # Scale log-likelihood by c
 
         # Expectation of being in state j at each time point
-        u = np.exp(log_alphas + log_betas - llk) # TODO FIND BETTER VARIABLE NAME
+        u = np.exp(log_alphas + log_betas - llk) # TODO FIND BETTER VARIABLE NAME # Expectation of being in state j at time t given sequence x^t
 
-        # Initialize 2D array of shape j X j
-        # We skip computing vhat and head straight to fhat
+        # Initialize matrix of shape j X j
+        # We skip computing vhat and head straight to fhat for computational reasons
         f = np.zeros(shape=(self.n_states, self.n_states))  # TODO FIND BETTER VARIABLE NAME
         for j in range(self.n_states):
             for k in range(self.n_states):
@@ -171,29 +175,68 @@ class HiddenMarkovModel(BaseEstimator):
                 print(f'Iteration {iter} - LLK {llk} - Means: {self.mu} - STD {self.std} - Gamma {self.T.flatten()} - Delta {self.delta}')
                 break
 
+            elif iter == self.epochs-1:
+                print(f'No convergence after {iter} iterations')
+
             else:
                 self.old_llk = llk
 
-        print(f'No convergence after {iter} iterations')
-
     def predict(self, X):
         pass
-
-
 
     def viterbi(self, X):
         """ Compute the most likely sequence of states given the observations
          To reduce CPU time consider storing each sequence --> will save T*m function evaluations
 
          """
-        xi = self.delta @ P(X[0])
+        N = len(X)
+        xi = np.zeros((N, self.n_states))
 
+        # Initiate xi_0 and scale it as:
+        xi_temp = self.delta @ self.P(X[0])  # xi at time 0
+        xi[0, :] = xi_temp / np.sum(xi_temp)  # Scaled xi at time 0
 
+        # Do a forward recursion to compute xi
+        for t in range(1, N):
+            xi_temp = np.max([xi[t-1, :] * self.T], axis=1) @ self.P(X[t])  # TODO double check the max function returns the correct values
+            xi[t, :] = xi_temp / np.sum(xi_temp)
 
+        # From xi get the the most likeley sequence of states i
+        best_states = np.zeros(N)  # Vector of length N
+        best_states[-1] = int(np.argmax(xi[-1, :]))  # Last most likely state is the index position
+
+        # Do a backward recursion to calculate
+        for t in range(N-2, -1, -1):  # Count backwards
+            best_states[t] = np.argmax(xi[t, :] * self.T[:, int(best_states[t+1])])  # TODO double check the max function returns the correct values
+
+        return best_states, xi
 
 if __name__ == '__main__':
-    hmm = HiddenMarkovModel(n_states=2)
+    hmm1 = HiddenMarkovModel(n_states=2)
 
-    obs = simulate_2state_gaussian(plotting=False) # Simulate some X in two states from normal distributions
+    returns, true_regimes = simulate_2state_gaussian(plotting=False) # Simulate some X in two states from normal distributions
 
-    em = hmm.fit(obs, verbose=0)
+    em = hmm1.fit(returns, verbose=0)
+
+    states, posteriors = hmm1.viterbi(returns)
+
+    #plt.plot(posteriors, label='Posteriors', )
+    plt.plot(states, label='Predicted states', ls='dotted')
+    plt.plot(true_regimes, label='True states', ls='dashed')
+
+    plt.legend()
+    plt.show()
+
+    check_hmmlearn = False
+    if check_hmmlearn == True:
+        from hmmlearn import hmm
+
+        model = hmm.GaussianHMM(n_components=2, covariance_type="full",n_iter=1000).fit(returns.reshape(-1,1))
+
+        print(model.transmat_)
+        print(model.means_)
+        print(model.covars_)
+
+        predictions = model.predict(returns.reshape(-1,1))
+        print(predictions)
+

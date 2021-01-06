@@ -2,6 +2,8 @@ import numpy as np
 from scipy import stats
 import matplotlib.pyplot as plt
 
+
+
 def simulate_2state_gaussian(N=150, means=None, std=None, plotting=False, random_state=42):
     '''Simulate data for bull and bear market using Normal distribution '''
 
@@ -20,10 +22,20 @@ def simulate_2state_gaussian(N=150, means=None, std=None, plotting=False, random
     market_bear_4 = stats.norm.rvs(loc=bear_mean, scale=bear_std, size=N)
     market_bull_5 = stats.norm.rvs(loc=bull_mean, scale=bull_std, size=N)
 
-    obs = np.array([market_bull_1]+ [market_bear_2]+ [market_bull_3]+ [market_bear_4]+ [market_bull_5]).flatten()
+    # Create the list of true regime states and full returns list
+    returns = np.array([market_bull_1] + [market_bear_2] + [market_bull_3] + [market_bear_4] + [market_bull_5]).flatten()
+    true_regimes = np.array([np.ones(N), np.zeros(N), np.ones(N), np.zeros(N), np.ones(N)]).flatten()
+
+    #true_regimes = np.array([len(market_bull_1)] + [len(market_bear_2)] + [len(market_bull_3)] + [len(market_bear_4)] + [len(market_bull_5)]).flatten()
 
     if plotting:
-        plt.plot(obs)
+        plt.plot(returns)
+        plt.plot(true_regimes)
         plt.show()
 
-    return obs
+    return returns, true_regimes
+
+
+if __name__ == '__main__':
+    returns, true_regimes = simulate_2state_gaussian(plotting= True)
+    print(true_regimes)
