@@ -192,11 +192,11 @@ if __name__ == '__main__':
     b = hmm._log_backward_probs(obs, norm)
 
 
-    #u, f, llk = hmm._e_step(obs)
-    #m = hmm._m_step(obs, u, f)
+    #u, f, llk = HMM._e_step(obs)
+    #m = HMM._m_step(obs, u, f)
     em = hmm.em(obs, epochs=5, print_output=True)
 
-    #hmm.em(obs, epochs=5)
+    #HMM.em(obs, epochs=5)
 
 
 
