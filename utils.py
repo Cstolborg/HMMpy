@@ -12,7 +12,7 @@ Need a sampling function that is easily adapted to N states and any conditional 
 """
 
 
-def simulate_2state_gaussian(N=150, means=None, std=None, plotting=False, random_state=42):
+def simulate_2state_gaussian(N=200, means=None, std=None, plotting=False, random_state=42):
     '''Simulate data for bull and bear market using Normal distribution
 
     If means and std = None, the distributions follow those estimated by Hardy(2001)
