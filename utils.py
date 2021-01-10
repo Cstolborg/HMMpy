@@ -19,8 +19,6 @@ def simulate_2state_gaussian(N=200, means=None, std=None, plotting=False, random
     which are based on monthly returns from a stock index.
     '''
 
-    test1 = 'Some_string'
-
     if means == None:
         bull_mean = 0.0123
         bear_mean = -0.0157

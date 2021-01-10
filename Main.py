@@ -22,8 +22,19 @@ class HiddenMarkovModel(BaseEstimator):
     """ Class for computing HMM's using the EM algorithm.
     Scikit-learn api is used as Parent see --> https://scikit-learn.org/stable/developers/develop.html
 
+
+    Parameters
+    ----------
+    n_states : Number of hidden states
+    epochs : Maximum number of iterations to perform during expectation-maximization
+    tol : Criterion for early stopping
+
+    Returns
+    ----------
+    Can be used to fit HMM parameters or to decode hidden states.
+
     """
-    def __init__(self, n_states, epochs=100, tol=1e-8, random_state=42):
+    def __init__(self, n_states: int, epochs:int =100, tol: int=1e-8, random_state:int =42):
         self.n_states = n_states
 
         # TODO improve parameter initialization
@@ -49,6 +60,7 @@ class HiddenMarkovModel(BaseEstimator):
         T[1, 0] = 0.2
         T[1, 1] = 0.8
         return T
+
 
     def P(self, x: int):
         """Function for computing diagonal prob matrix P(x).
