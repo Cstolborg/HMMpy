@@ -3,9 +3,11 @@ from scipy import stats
 import matplotlib.pyplot as plt
 
 from utils import simulate_2state_gaussian
-from Main import HiddenMarkovModel
+from Main import BaseHiddenMarkov
 
 """ TODO
+
+Move all state-dependent functions from the base class into this class
 
 Enable modelling of conditional t distribution:
     - Requires the P(x), log_all_probs(X) to be updated
@@ -14,7 +16,10 @@ Enable modelling of conditional t distribution:
 """
 
 
-class HMM(HiddenMarkovModel):
+class GaussianHMM(BaseHiddenMarkov):
+    """
+    Class for estimating gaussian HMMs.
+    """
 
     def __init__(self, n_states, random_state=42):
         super().__init__(n_states)
@@ -97,7 +102,7 @@ class HMM(HiddenMarkovModel):
 
 if __name__ == '__main__':
 
-    model = HMM(n_states=2)
+    model = GaussianHMM(n_states=2)
     returns, true_regimes = simulate_2state_gaussian(plotting=False)  # Simulate some X in two states from normal distributions
 
     model.fit(returns, verbose=0)

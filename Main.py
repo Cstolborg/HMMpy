@@ -18,7 +18,7 @@ Show why Zuchinni/Nystrups algorithm equals the scaling on p. 48 in the Zucchini
     - Derive in math how to compute log (alpha)
 '''
 
-class HiddenMarkovModel(BaseEstimator):
+class BaseHiddenMarkov(BaseEstimator):
     """ Class for computing HMM's using the EM algorithm.
     Scikit-learn api is used as Parent see --> https://scikit-learn.org/stable/developers/develop.html
 
@@ -237,7 +237,7 @@ if __name__ == '__main__':
     X, true_regimes = simulate_2state_gaussian(plotting=False)  # Simulate some X in two states from normal distributions
     print('Example data: ', X[:5])
 
-    model = HiddenMarkovModel(n_states=2, epochs=500)
+    model = BaseHiddenMarkov(n_states=2, epochs=500)
     print('N states', model.n_states)
 
     print('P(x) ', model.P(X[0]) )
@@ -269,7 +269,7 @@ if __name__ == '__main__':
 
 temp = False
 if temp:
-    hmm_model = HiddenMarkovModel(n_states=2)
+    hmm_model = BaseHiddenMarkov(n_states=2)
 
     returns, true_regimes = simulate_2state_gaussian(plotting=False)  # Simulate some X in two states from normal distributions
 
