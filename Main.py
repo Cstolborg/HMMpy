@@ -11,12 +11,19 @@ from utils import simulate_2state_gaussian
 
 Improve parameter initialization
     - Multiple random initializations
-    - Look into kmeans++ init
+    
+Problems with underflow when random_state = 1
 
+Test on 3 states.
+
+Add sampler
+
+Add AIC and BIC to fit()
 
 Show why Zuchinni/Nystrups algorithm equals the scaling on p. 48 in the Zucchini book.
     - Derive in math how to compute log (alpha)
 '''
+
 
 class BaseHiddenMarkov(BaseEstimator):
     """ Class for computing HMM's using the EM algorithm.
@@ -34,33 +41,45 @@ class BaseHiddenMarkov(BaseEstimator):
     Can be used to fit HMM parameters or to decode hidden states.
 
     """
-    def __init__(self, n_states: int, epochs:int =100, tol: int=1e-8, random_state:int =42):
+
+    def __init__(self, n_states: int, epochs: int = 100, tol: int = 1e-4, random_state: int = 42):
         self.n_states = n_states
-
-        # TODO improve parameter initialization
-        self.delta = np.array([0.2, 0.8])  # initial distribution 1 X N vector
-        self.T = self._init_params()  # N X N transition matrix
-
-        # Random init of state distributions
         self.random_state = random_state
+
+        # Random init
         np.random.seed(self.random_state)
-        self.mu = np.random.rand(n_states)
-        self.std = np.random.rand(n_states)
+        self.delta, self.T = self._init_params()  # N X N transition matrix
+        self.mu = np.random.uniform(low=-0.05, high=0.15, size=self.n_states)  # np.random.rand(self.n_states)
+        self.std = np.random.uniform(low=0.01, high=0.3, size=self.n_states)  # np.random.rand(self.n_states) #
 
         self.epochs = epochs
         self.tol = tol
-        self.current_iter = 0
-        self.old_llk = -np.inf #  Used to check model convergence
 
-    @abstractmethod
-    def _init_params(self):
-        T = np.zeros((2,2))
-        T[0, 0] = 0.7
-        T[0, 1] = 0.3
-        T[1, 0] = 0.2
-        T[1, 1] = 0.8
-        return T
+    def _init_params(self, random_init: bool = True, diag_uniform_dist: list = [.7, .99]):
 
+        if random_init:
+            # Transition probabilities
+            trans_prob = np.diag(np.random.uniform(low=diag_uniform_dist[0], high=diag_uniform_dist[1],
+                                                   size=self.n_states))  # Sample diag as uniform dist
+            remaining_row_nums = (1 - np.diag(trans_prob)) / (
+                        self.n_states - 1)  # Spread the remaining mass evenly onto remaining row values
+            trans_prob += remaining_row_nums.reshape(-1, 1)  # Add this to the uniform diagonal matrix
+            np.fill_diagonal(trans_prob,
+                             trans_prob.diagonal() - remaining_row_nums)  # And subtract these numbers from the diagonal so it remains uniform
+
+            # initial distribution
+            init_dist = np.random.uniform(low=0., high=1., size=self.n_states)
+            init_dist /= np.sum(init_dist)
+
+        else:
+            trans_prob = np.zeros((2, 2))
+            trans_prob[0, 0] = 0.7
+            trans_prob[0, 1] = 0.3
+            trans_prob[1, 0] = 0.2
+            trans_prob[1, 1] = 0.8
+            init_dist = np.array([0.2, 0.8])  # initial distribution 1 X N vector
+
+        return init_dist, trans_prob
 
     def P(self, x: int):
         """Function for computing diagonal prob matrix P(x).
@@ -68,7 +87,7 @@ class BaseHiddenMarkov(BaseEstimator):
          Returns: Diagonal matrix of size n_states X n_states
          """
 
-        diag_probs = stats.norm.pdf(x, loc=self.mu, scale=self.std) # Evaluate x in every state
+        diag_probs = stats.norm.pdf(x, loc=self.mu, scale=self.std)  # Evaluate x in every state
         diag_probs = np.diag(diag_probs)  # Transforms it into a diagonal matrix
         return diag_probs
 
@@ -106,11 +125,12 @@ class BaseHiddenMarkov(BaseEstimator):
 
         # a1 to at, compute recursively
         for t in range(1, T):
-            alpha_t = alpha_t_scaled @ self.T @ self.P(X[t])  # Dot product of previous forward_prob, transition matrix and P(X)
+            alpha_t = alpha_t_scaled @ self.T @ self.P(
+                X[t])  # Dot product of previous forward_prob, transition matrix and P(X)
             sum_alpha_t = np.sum(alpha_t)
 
             alpha_t_scaled = alpha_t / sum_alpha_t  # Scale forward_probs to sum to 1
-            llk = llk + np.log(sum_alpha_t) # Scalar to store likelihoods
+            llk = llk + np.log(sum_alpha_t)  # Scalar to store likelihoods
             log_alphas[t, :] = llk + np.log(alpha_t_scaled)  # TODO RESEARCH WHY YOU ADD THE PREVIOUS LIKELIHOOD
 
         return log_alphas
@@ -123,11 +143,11 @@ class BaseHiddenMarkov(BaseEstimator):
         T = len(X)
         log_betas = np.zeros((T, self.n_states))  # initialize matrix with zeros
 
-        beta_t = np.ones(self.n_states) * 1/self.n_states  # TODO CHECK WHY WE USE 1/M rather than ones
+        beta_t = np.ones(self.n_states) * 1 / self.n_states  # TODO CHECK WHY WE USE 1/M rather than ones
         llk = np.log(self.n_states)
         log_betas[-1, :] = np.log(np.ones(self.n_states))  # Last result is 0 since log(1)=0
 
-        for t in range(T-2, -1, -1):  # Count backwards
+        for t in range(T - 2, -1, -1):  # Count backwards
             beta_t = self.T @ self.P(X[t + 1]) @ beta_t
             log_betas[t, :] = llk + np.log(beta_t)
             sum_beta_t = np.sum(beta_t)
@@ -146,19 +166,21 @@ class BaseHiddenMarkov(BaseEstimator):
         log_all_probs = self.log_all_probs(X)
 
         # Compute scaled log-likelihood
-        llk_scale_factor = np.max(log_alphas[-1, :]) # Max of the last vector in the matrix log_alpha
-        llk = llk_scale_factor + np.log(np.sum(np.exp(log_alphas[-1, :] - llk_scale_factor)))  # Scale log-likelihood by c
+        llk_scale_factor = np.max(log_alphas[-1, :])  # Max of the last vector in the matrix log_alpha
+        llk = llk_scale_factor + np.log(
+            np.sum(np.exp(log_alphas[-1, :] - llk_scale_factor)))  # Scale log-likelihood by c
 
         # Expectation of being in state j given a sequence x^T
         # P(S_t = j | x^T)
-        u = np.exp(log_alphas + log_betas - llk) # TODO FIND BETTER VARIABLE NAME
+        u = np.exp(log_alphas + log_betas - llk)  # TODO FIND BETTER VARIABLE NAME
 
         # Initialize matrix of shape j X j
         # We skip computing vhat and head straight to fhat for computational reasons
         f = np.zeros(shape=(self.n_states, self.n_states))  # TODO FIND BETTER VARIABLE NAME
         for j in range(self.n_states):
             for k in range(self.n_states):
-                f[j, k] = self.T[j, k] * np.sum(np.exp(log_alphas[:-1, j] + log_betas[1:, k] + log_all_probs[1:, k] - llk))
+                f[j, k] = self.T[j, k] * np.sum(
+                    np.exp(log_alphas[:-1, j] + log_betas[1:, k] + log_all_probs[1:, k] - llk))
 
         return u, f, llk
 
@@ -170,7 +192,7 @@ class BaseHiddenMarkov(BaseEstimator):
         X = np.array(X)
 
         # Update transition matrix and initial probs
-        self.T = f / np.sum(f, axis=1).reshape((2, 1))  # Check if this actually sums correct and to 1 on rows
+        self.T = f / np.sum(f, axis=1).reshape((-1, 1))  # Check if this actually sums correct and to 1 on rows
         self.delta = u[0, :] / np.sum(u[0, :])
 
         # Update state-dependent distributions
@@ -180,26 +202,28 @@ class BaseHiddenMarkov(BaseEstimator):
 
     def fit(self, X, verbose=0):
         """Iterates through the e-step and the m-step"""
+        self.old_llk = -np.inf  # Used to check model convergence
 
         for iter in range(self.epochs):
+            # Do e- and m-step
             u, f, llk = self._e_step(X)
             self._m_step(X, u, f)
 
             # Check convergence criterion
             crit = np.abs(llk - self.old_llk)  # Improvement in log likelihood
             if crit < self.tol:
-                #self.aic_ = -2 * np.log(llk) + 2 *
-                print(f'Iteration {iter} - LLK {llk} - Means: {self.mu} - STD {self.std} - Gamma {self.T.flatten()} - Delta {self.delta}')
+                # self.aic_ = -2 * np.log(llk) + 2 *
+                print(
+                    f'Iteration {iter} - LLK {llk} - Means: {self.mu} - STD {self.std} - Gamma {np.diag(self.T)} - Delta {self.delta}')
                 break
 
-            elif iter == self.epochs-1:
+            elif iter == self.epochs - 1:
                 print(f'No convergence after {iter} iterations')
-
             else:
                 self.old_llk = llk
 
             if verbose == 1:
-                print(f'Iteration {iter} - LLK {llk} - Means: {self.mu} - STD {self.std} - Gamma {self.T.flatten()} - Delta {self.delta}')
+                print(f'Iteration {iter} - LLK {llk} - Means: {self.mu} - STD {self.std} - Gamma {np.diag(self.T)} - Delta {self.delta}')
 
     def predict(self, X):
         pass
@@ -218,7 +242,7 @@ class BaseHiddenMarkov(BaseEstimator):
 
         # Do a forward recursion to compute posteriors
         for t in range(1, T):
-            posterior_temp = np.max(posteriors[t - 1, :] * self.T, axis=1) @ self.P(X[t])  # TODO double check the max function returns the correct values
+            posterior_temp = np.max(posteriors[t - 1, :] * self.T, axis=1) @ self.P( X[t])  # TODO double check the max function returns the correct values
             posteriors[t, :] = posterior_temp / np.sum(posterior_temp)  # Scale rows to sum to 1
 
         # From posteriors get the the most likeley sequence of states i
@@ -226,64 +250,44 @@ class BaseHiddenMarkov(BaseEstimator):
         state_preds[-1] = np.argmax(posteriors[-1, :])  # Last most likely state is the index position
 
         # Do a backward recursion to calculate most likely state sequence
-        for t in range(T-2, -1, -1):  # Count backwards
+        for t in range(T - 2, -1, -1):  # Count backwards
             state_preds[t] = np.argmax(posteriors[t, :] * self.T[:, state_preds[t + 1]])  # TODO double check the max function returns the correct values
 
         return state_preds, posteriors
 
+    def sample(self, X):
+        sample_len = len(X)
 
+        state_index = np.arange(start=0, stop=self.n_states, step=1, dtype=int)  # Array of possible states
+        sample_states = np.zeros(sample_len).astype(int)  # Init sample vector
+        sample_states[0] = np.random.choice(a=state_index, size=1, p=self.delta) # First state is determined by initial dist
+
+        for t in range(1, sample_len):
+            # Each new state is chosen using the transition probs corresponding to the previous state sojourn.
+            sample_states[t] = np.random.choice(a=state_index, size=1, p=self.T[sample_states[t-1], :])
+
+        samples = stats.norm.rvs(loc=self.mu[sample_states], scale = self.std[sample_states], size=sample_len)
+
+        return samples, sample_states
 
 if __name__ == '__main__':
-    X, true_regimes = simulate_2state_gaussian(plotting=False)  # Simulate some X in two states from normal distributions
-    print('Example data: ', X[:5])
+    model = BaseHiddenMarkov(n_states=2, random_state=42)
+    print('Beg. mu: ', model.mu)
+    print('Beg. std: ', model.std)
 
-    model = BaseHiddenMarkov(n_states=2, epochs=500)
-    print('N states', model.n_states)
+    returns, true_regimes = simulate_2state_gaussian(plotting=False)  # Simulate some data from two normal distributions
 
-    print('P(x) ', model.P(X[0]) )
-    print("."*40)
+    model.fit(returns, verbose=1)
+    states, posteriors = model._viterbi(returns)
 
-    #model._log_forward_probs(X)
-
-    print('Log All probs shape: ', np.shape(model.log_all_probs(X)))
-    #print(model.log_all_probs(X))
-
-    print('.'*50)
-    Probability_state_i,f,llk = (model._e_step(X))
-    #print(Probability_state_i)
-    #print(f)
-
-    #print('Initial delta: ', model.delta)
-    #model._m_step(X, Probability_state_i, f)
-    #print('Updated delta: ', model.delta)
-
-
-    model.fit(X, verbose=0)
-
-    states, preds = model._viterbi(X)
-
-
-
-
-
-
-temp = False
-if temp:
-    hmm_model = BaseHiddenMarkov(n_states=2)
-
-    returns, true_regimes = simulate_2state_gaussian(plotting=False)  # Simulate some X in two states from normal distributions
-
-    hmm_model.fit(returns, verbose=0)
-
-    states, posteriors = hmm_model._viterbi(returns)
-    #print(posteriors)
 
     plotting = False
     if plotting == True:
-        plt.plot(posteriors[:, 0], label='Posteriors state 1', )
-        plt.plot(posteriors[:, 1], label='Posteriors state 2', )
-        #plt.plot(states, label='Predicted states', ls='dotted')
-        #plt.plot(true_regimes, label='True states', ls='dashed')
+        fig, ax = plt.subplots(nrows=2, ncols=1)
+        ax[0].plot(posteriors[:, 0], label='Posteriors state 1', )
+        ax[0].plot(posteriors[:, 1], label='Posteriors state 2', )
+        ax[1].plot(states, label='Predicted states', ls='dotted')
+        ax[1].plot(true_regimes, label='True states', ls='dashed')
 
         plt.legend()
         plt.show()
@@ -292,12 +296,10 @@ if temp:
     if check_hmmlearn == True:
         from hmmlearn import hmm
 
-        model = hmm.GaussianHMM(n_components=2, covariance_type="full",n_iter=1000).fit(returns.reshape(-1,1))
+        hmmlearn = hmm.GaussianHMM(n_components=2, covariance_type="full", n_iter=1000).fit(returns.reshape(-1, 1))
 
-        print(model.transmat_)
-        print(model.means_)
-        print(model.covars_)
+        print(hmmlearn.transmat_)
+        print(hmmlearn.means_)
+        print(hmmlearn.covars_)
 
-        predictions = model.predict(returns.reshape(-1,1))
-        print(predictions)
-
+        predictions = hmmlearn.predict(returns.reshape(-1, 1))
