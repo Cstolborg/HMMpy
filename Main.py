@@ -3,25 +3,19 @@ from scipy import stats
 from sklearn.base import BaseEstimator
 import matplotlib.pyplot as plt
 
+from typing import List
 from abc import abstractmethod
 
 from utils import simulate_2state_gaussian
 
 ''' TODO NEXT:
-
-Improve parameter initialization
-    - Multiple random initializations
     
-Problems with underflow when random_state = 1
-
-Test on 3 states.
-
-Add sampler
+Remove P(x)  --- Check if this is used anywhere else in the code
 
 Add AIC and BIC to fit()
 
-Show why Zuchinni/Nystrups algorithm equals the scaling on p. 48 in the Zucchini book.
-    - Derive in math how to compute log (alpha)
+Add iterative random inits to fit()
+
 '''
 
 
@@ -55,7 +49,7 @@ class BaseHiddenMarkov(BaseEstimator):
         self.epochs = epochs
         self.tol = tol
 
-    def _init_params(self, random_init: bool = True, diag_uniform_dist: list = [.7, .99]):
+    def _init_params(self, random_init: bool = True, diag_uniform_dist: List[float] = [.7, .99]):
 
         if random_init:
             # Transition probabilities
@@ -91,21 +85,24 @@ class BaseHiddenMarkov(BaseEstimator):
         diag_probs = np.diag(diag_probs)  # Transforms it into a diagonal matrix
         return diag_probs
 
-    def log_all_probs(self, X: list):
+    def emission_probs(self, X: list):
         """ Compute all different log probabilities log(p(x)) given an observation sequence and n states
 
         Returns: T X N matrix
         """
         T = len(X)
         log_probs = np.zeros((T, self.n_states))  # Init T X N matrix
+        probs = np.zeros((T, self.n_states))
 
         # For all states evaluate the density function
         for j in range(self.n_states):
             log_probs[:, j] = stats.norm.logpdf(X, loc=self.mu[j], scale=self.std[j])
 
-        return log_probs
+        probs = np.exp(log_probs)
 
-    def _log_forward_probs(self, X):
+        return probs, log_probs
+
+    def _log_forward_probs(self, X: List[float], emission_probs: np.ndarray):
         """ Compute log forward probabilities in scaled form.
 
         Forward probability is essentially the joint probability of observing
@@ -117,7 +114,7 @@ class BaseHiddenMarkov(BaseEstimator):
 
         # a0, compute first forward as dot product of initial dist and state-dependent dist
         # Each element is scaled to sum to 1 in order to handle numerical underflow
-        alpha_t = self.delta @ self.P(X[0])
+        alpha_t = self.delta * emission_probs[0, :]
         sum_alpha_t = np.sum(alpha_t)
         alpha_t_scaled = alpha_t / sum_alpha_t
         llk = np.log(sum_alpha_t)  # Scalar to store the log likelihood
@@ -125,8 +122,7 @@ class BaseHiddenMarkov(BaseEstimator):
 
         # a1 to at, compute recursively
         for t in range(1, T):
-            alpha_t = alpha_t_scaled @ self.T @ self.P(
-                X[t])  # Dot product of previous forward_prob, transition matrix and P(X)
+            alpha_t = (alpha_t_scaled @ self.T) * emission_probs[t, :]  # Dot product of previous forward_prob, transition matrix and emmission probablitites
             sum_alpha_t = np.sum(alpha_t)
 
             alpha_t_scaled = alpha_t / sum_alpha_t  # Scale forward_probs to sum to 1
@@ -135,7 +131,7 @@ class BaseHiddenMarkov(BaseEstimator):
 
         return log_alphas
 
-    def _log_backward_probs(self, X):
+    def _log_backward_probs(self, X: List[float], emission_probs: np.ndarray):
         """ Compute the log of backward probabilities in scaled form.
         Backward probabilities are the conditional probability of
         some observation at t+1 given the current state = i. Equivalent to P(X_t+1 = x_t+1 | S_t = i)
@@ -148,7 +144,7 @@ class BaseHiddenMarkov(BaseEstimator):
         log_betas[-1, :] = np.log(np.ones(self.n_states))  # Last result is 0 since log(1)=0
 
         for t in range(T - 2, -1, -1):  # Count backwards
-            beta_t = self.T @ self.P(X[t + 1]) @ beta_t
+            beta_t = (self.T * emission_probs[t+1, :]) @ beta_t
             log_betas[t, :] = llk + np.log(beta_t)
             sum_beta_t = np.sum(beta_t)
             beta_t = beta_t / sum_beta_t  # Scale rows to sum to 1
@@ -156,14 +152,14 @@ class BaseHiddenMarkov(BaseEstimator):
 
         return log_betas
 
-    def _e_step(self, X):
+    def _e_step(self, X: List[float]):
         ''' Do a single e-step in Baum-Welch algorithm
 
         '''
         T = len(X)
-        log_alphas = self._log_forward_probs(X)
-        log_betas = self._log_backward_probs(X)
-        log_all_probs = self.log_all_probs(X)
+        emission_probs, log_emission_probs = self.emission_probs(X)
+        log_alphas = self._log_forward_probs(X, emission_probs)
+        log_betas = self._log_backward_probs(X, emission_probs)
 
         # Compute scaled log-likelihood
         llk_scale_factor = np.max(log_alphas[-1, :])  # Max of the last vector in the matrix log_alpha
@@ -180,11 +176,11 @@ class BaseHiddenMarkov(BaseEstimator):
         for j in range(self.n_states):
             for k in range(self.n_states):
                 f[j, k] = self.T[j, k] * np.sum(
-                    np.exp(log_alphas[:-1, j] + log_betas[1:, k] + log_all_probs[1:, k] - llk))
+                    np.exp(log_alphas[:-1, j] + log_betas[1:, k] + log_emission_probs[1:, k] - llk))
 
         return u, f, llk
 
-    def _m_step(self, X, u, f):
+    def _m_step(self, X: List[float], u, f):
         ''' Given u and f do an m-step.
 
          Updates the model parameters delta, Transition matrix and state dependent distributions.
@@ -200,9 +196,20 @@ class BaseHiddenMarkov(BaseEstimator):
             self.mu[j] = np.sum(u[:, j] * X) / np.sum(u[:, j])
             self.std[j] = np.sqrt(np.sum(u[:, j] * np.square(X - self.mu[j])) / np.sum(u[:, j]))
 
-    def fit(self, X, verbose=0):
-        """Iterates through the e-step and the m-step"""
+    def fit(self, X: List[float], verbose=0):
+        """
+        Iterates through the e-step and the m-step.
+        Parameters
+        ----------
+        X
+        verbose
+
+        Returns
+        -------
+
+        """
         self.old_llk = -np.inf  # Used to check model convergence
+
 
         for iter in range(self.epochs):
             # Do e- and m-step
@@ -278,7 +285,7 @@ if __name__ == '__main__':
     returns, true_regimes = simulate_2state_gaussian(plotting=False)  # Simulate some data from two normal distributions
 
     model.fit(returns, verbose=1)
-    states, posteriors = model._viterbi(returns)
+    #states, posteriors = model._viterbi(returns)
 
 
     plotting = False
