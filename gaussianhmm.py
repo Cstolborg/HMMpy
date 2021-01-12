@@ -3,7 +3,7 @@ from scipy import stats
 import matplotlib.pyplot as plt
 
 from utils import simulate_2state_gaussian
-from Main import BaseHiddenMarkov
+from base_hmm import BaseHiddenMarkov
 
 """ TODO
 
