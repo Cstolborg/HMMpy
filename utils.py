@@ -20,12 +20,12 @@ def simulate_2state_gaussian(N=200, means=None, std=None, plotting=False, random
     '''
 
     if means == None:
-        bull_mean = 0.0123
-        bear_mean = -0.0157
+        bull_mean = 0.1
+        bear_mean = -0.05
 
     if std == None:
-        bull_std = 0.0347
-        bear_std = 0.0778
+        bull_std = 0.1
+        bear_std = 0.2
 
     np.random.seed(random_state)
     market_bull_1 = stats.norm.rvs(loc=bull_mean, scale=bull_std, size=N)
@@ -36,7 +36,7 @@ def simulate_2state_gaussian(N=200, means=None, std=None, plotting=False, random
 
     # Create the list of true regime states and full returns list
     returns = np.array([market_bull_1] + [market_bear_2] + [market_bull_3] + [market_bear_4] + [market_bull_5]).flatten()
-    true_regimes = np.array([np.ones(N), np.zeros(N), np.ones(N), np.zeros(N), np.ones(N)]).flatten()
+    true_regimes = np.array([np.zeros(N), np.ones(N), np.zeros(N), np.ones(N), np.zeros(N)]).flatten()
 
     #true_regimes = np.array([len(market_bull_1)] + [len(market_bear_2)] + [len(market_bull_3)] + [len(market_bear_4)] + [len(market_bull_5)]).flatten()
 

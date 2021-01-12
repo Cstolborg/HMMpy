@@ -15,7 +15,6 @@ Enable modelling of conditional t distribution:
 
 """
 
-
 class GaussianHMM(BaseHiddenMarkov):
     """
     Class for estimating gaussian HMMs.
@@ -33,14 +32,6 @@ class GaussianHMM(BaseHiddenMarkov):
         self.mu = np.random.rand(n_states)
         self.std = np.random.rand(n_states)
 
-    def _init_params(self):
-        T = np.zeros((2, 2))
-        T[0, 0] = 0.7
-        T[0, 1] = 0.3
-        T[1, 0] = 0.2
-        T[1, 1] = 0.8
-        return T
-
     def P(self, x: int):
         """Function for computing diagonal prob matrix P(x).
          Change the function depending on the type of distribution you want to evaluate"""
@@ -49,7 +40,7 @@ class GaussianHMM(BaseHiddenMarkov):
         diag_probs = np.diag(diag_probs)  # Transforms it into a diagonal matrix
         return diag_probs
 
-    def log_all_probs(self, X: list):
+    def emission_probs(self, X: list):
         """ Compute all different log probabilities log(p(x)) given an observation sequence and n states
 
         Returns: T X N matrix
@@ -63,22 +54,28 @@ class GaussianHMM(BaseHiddenMarkov):
 
         return log_probs
 
+    def _m_step(self, X, u, f):
+        ''' Given u and f do an m-step.
+
+         Updates the model parameters delta, Transition matrix and state dependent distributions.
+         '''
+        X = np.array(X)
+
+        # Update transition matrix and initial probs
+        self.T = f / np.sum(f, axis=1).reshape((-1, 1))  # Check if this actually sums correct and to 1 on rows
+        self.delta = u[0, :] / np.sum(u[0, :])
+
+        # Update state-dependent distributions
+        for j in range(self.n_states):
+            self.mu[j] = np.sum(u[:, j] * X) / np.sum(u[:, j])
+            self.std[j] = np.sqrt(np.sum(u[:, j] * np.square(X - self.mu[j])) / np.sum(u[:, j]))
+
     def fit(self, X, verbose=0):
         """Iterates through the e-step and the m-step"""
 
         for iter in range(self.epochs):
             u, f, llk = self._e_step(X)
             self._m_step(X, u, f)
-
-            if verbose == 2:
-                print(iter)
-                print('MEAN: ', self.mu)
-                print('STD: ', self.std)
-                print('Gamma: ', self.T)
-                print('DELTA', self.delta)
-                print('loglikelihood', llk)
-
-                print('.' * 40)
 
             if verbose == 1:
                 print(f'Iteration {iter} - LLK {llk} - Means: {self.mu} - STD {self.std} - Gamma {self.T.flatten()} - Delta {self.delta}')

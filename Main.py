@@ -12,6 +12,9 @@ from utils import simulate_2state_gaussian
     
 Remove P(x)  --- Check if this is used anywhere else in the code
 
+If delta is misspecified it quickly converges to the wrong state.
+    - I.e. if init as [0.2, 0.8] the 0.8 will quickly go to 1 despite it being the wrong starting state.
+
 Add AIC and BIC to fit()
 
 Add iterative random inits to fit()
@@ -36,34 +39,32 @@ class BaseHiddenMarkov(BaseEstimator):
 
     """
 
-    def __init__(self, n_states: int, epochs: int = 100, tol: int = 1e-4, random_state: int = 42):
+    def __init__(self, n_states: int = 2, init: str = 'random', epochs: int = 100, tol: int = 1e-4, random_state: int = 42):
         self.n_states = n_states
         self.random_state = random_state
 
         # Random init
         np.random.seed(self.random_state)
-        self.delta, self.T = self._init_params()  # N X N transition matrix
+        self.delta, self.T = self._init_params(init='random')  # N X N transition matrix
         self.mu = np.random.uniform(low=-0.05, high=0.15, size=self.n_states)  # np.random.rand(self.n_states)
         self.std = np.random.uniform(low=0.01, high=0.3, size=self.n_states)  # np.random.rand(self.n_states) #
 
         self.epochs = epochs
         self.tol = tol
 
-    def _init_params(self, random_init: bool = True, diag_uniform_dist: List[float] = [.7, .99]):
+    def _init_params(self, init: str = 'random', diag_uniform_dist: List[float] = [.7, .99]):
 
-        if random_init:
+        if init == 'random':
             # Transition probabilities
-            trans_prob = np.diag(np.random.uniform(low=diag_uniform_dist[0], high=diag_uniform_dist[1],
-                                                   size=self.n_states))  # Sample diag as uniform dist
-            remaining_row_nums = (1 - np.diag(trans_prob)) / (
-                        self.n_states - 1)  # Spread the remaining mass evenly onto remaining row values
+            trans_prob = np.diag(np.random.uniform(low=diag_uniform_dist[0], high=diag_uniform_dist[1], size=self.n_states))  # Sample diag as uniform dist
+            remaining_row_nums = (1 - np.diag(trans_prob)) / (self.n_states - 1)  # Spread the remaining mass evenly onto remaining row values
             trans_prob += remaining_row_nums.reshape(-1, 1)  # Add this to the uniform diagonal matrix
-            np.fill_diagonal(trans_prob,
-                             trans_prob.diagonal() - remaining_row_nums)  # And subtract these numbers from the diagonal so it remains uniform
+            np.fill_diagonal(trans_prob, trans_prob.diagonal() - remaining_row_nums)  # And subtract these numbers from the diagonal so it remains uniform
 
             # initial distribution
-            init_dist = np.random.uniform(low=0., high=1., size=self.n_states)
-            init_dist /= np.sum(init_dist)
+            #init_dist = np.random.uniform(low=0.4, high=0.6, size=self.n_states)
+            #init_dist /= np.sum(init_dist)
+            init_dist = np.ones(self.n_states) / np.sum(self.n_states)  # initial distribution 1 X N vector
 
         else:
             trans_prob = np.zeros((2, 2))
@@ -74,16 +75,6 @@ class BaseHiddenMarkov(BaseEstimator):
             init_dist = np.array([0.2, 0.8])  # initial distribution 1 X N vector
 
         return init_dist, trans_prob
-
-    def P(self, x: int):
-        """Function for computing diagonal prob matrix P(x).
-
-         Returns: Diagonal matrix of size n_states X n_states
-         """
-
-        diag_probs = stats.norm.pdf(x, loc=self.mu, scale=self.std)  # Evaluate x in every state
-        diag_probs = np.diag(diag_probs)  # Transforms it into a diagonal matrix
-        return diag_probs
 
     def emission_probs(self, X: list):
         """ Compute all different log probabilities log(p(x)) given an observation sequence and n states
@@ -157,9 +148,9 @@ class BaseHiddenMarkov(BaseEstimator):
 
         '''
         T = len(X)
-        emission_probs, log_emission_probs = self.emission_probs(X)
-        log_alphas = self._log_forward_probs(X, emission_probs)
-        log_betas = self._log_backward_probs(X, emission_probs)
+        self.emission_probs_, self.log_emission_probs_ = self.emission_probs(X)
+        log_alphas = self._log_forward_probs(X, self.emission_probs_)
+        log_betas = self._log_backward_probs(X, self.emission_probs_)
 
         # Compute scaled log-likelihood
         llk_scale_factor = np.max(log_alphas[-1, :])  # Max of the last vector in the matrix log_alpha
@@ -176,7 +167,7 @@ class BaseHiddenMarkov(BaseEstimator):
         for j in range(self.n_states):
             for k in range(self.n_states):
                 f[j, k] = self.T[j, k] * np.sum(
-                    np.exp(log_alphas[:-1, j] + log_betas[1:, k] + log_emission_probs[1:, k] - llk))
+                    np.exp(log_alphas[:-1, j] + log_betas[1:, k] + self.log_emission_probs_[1:, k] - llk))
 
         return u, f, llk
 
@@ -220,8 +211,7 @@ class BaseHiddenMarkov(BaseEstimator):
             crit = np.abs(llk - self.old_llk)  # Improvement in log likelihood
             if crit < self.tol:
                 # self.aic_ = -2 * np.log(llk) + 2 *
-                print(
-                    f'Iteration {iter} - LLK {llk} - Means: {self.mu} - STD {self.std} - Gamma {np.diag(self.T)} - Delta {self.delta}')
+                print(f'Iteration {iter} - LLK {llk} - Means: {self.mu} - STD {self.std} - Gamma {np.diag(self.T)} - Delta {self.delta}')
                 break
 
             elif iter == self.epochs - 1:
@@ -242,14 +232,15 @@ class BaseHiddenMarkov(BaseEstimator):
          """
         T = len(X)
         posteriors = np.zeros((T, self.n_states))  # Init T X N matrix
+        self.emission_probs_, self.log_emission_probs_ = self.emission_probs(X)
 
         # Initiate posterior at time 0 and scale it as:
-        posterior_temp = self.delta @ self.P(X[0])  # posteriors at time 0
+        posterior_temp = self.delta * self.emission_probs_[0, :]  # posteriors at time 0
         posteriors[0, :] = posterior_temp / np.sum(posterior_temp)  # Scaled posteriors at time 0
 
         # Do a forward recursion to compute posteriors
         for t in range(1, T):
-            posterior_temp = np.max(posteriors[t - 1, :] * self.T, axis=1) @ self.P( X[t])  # TODO double check the max function returns the correct values
+            posterior_temp = np.max(posteriors[t - 1, :] * self.T, axis=1) * self.emission_probs_[t, :]  # TODO double check the max function returns the correct values
             posteriors[t, :] = posterior_temp / np.sum(posterior_temp)  # Scale rows to sum to 1
 
         # From posteriors get the the most likeley sequence of states i
@@ -285,10 +276,10 @@ if __name__ == '__main__':
     returns, true_regimes = simulate_2state_gaussian(plotting=False)  # Simulate some data from two normal distributions
 
     model.fit(returns, verbose=1)
-    #states, posteriors = model._viterbi(returns)
+    states, posteriors = model._viterbi(returns)
 
 
-    plotting = False
+    plotting = True
     if plotting == True:
         fig, ax = plt.subplots(nrows=2, ncols=1)
         ax[0].plot(posteriors[:, 0], label='Posteriors state 1', )
