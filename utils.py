@@ -85,6 +85,23 @@ def simulate_bear_t(N=200, means=None, std=None, df=None, plotting=True, random_
 
         return returns, true_regimes
 
+
+def simulate_3state_gaussian_t(N=200, means=None, std=None, df=None, plotting=True, random_state=42):  # Simulate 3 state.
+    if means == None:
+        bull_mean = 0.1
+        bear_mean = -0.05
+        recession_mean = -0.10
+
+    if std == None:
+        bull_std = 0.1
+        bear_std = 0.2
+        recession_std = 0.3
+
+    if df == None:
+        recession_df = N - 1  # Bull and bear state is normal distribution hence it is not specified.
+
+
+
 if __name__ == '__main__':
     returns, true_regimes = simulate_bear_t(plotting= True)
     print(true_regimes)
