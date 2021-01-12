@@ -14,6 +14,7 @@ Enable modelling of conditional t distribution:
     - m-step must be updated
 
 """
+
 import scipy.optimize as opt
 
 
@@ -61,6 +62,11 @@ class GaussianHMM(BaseHiddenMarkov):
          '''
         # Empty list to store u_it values
 
+        def object_fun(X):
+            return X
+
+        opt.root(object_fun, )
+
         T = len(X)
         self.u_it = np.zeros((T, self.n_states))  # Init N X M matrix
 
@@ -82,8 +88,8 @@ class GaussianHMM(BaseHiddenMarkov):
             for t in range(1, T):
                 self.u_it[t, j] = np.square(self.std[j]) * (self.dof + 1) / ((np.square(self.std[j]) * self.dof) + np.square(X[t] - self.mu[j]))
 
-        for j in range(self.n_states):
             self.dof[j] = 1-stats.special.digamma(0.5*self.dof[j])+log(0.5*self.dof[j])+stats.special.digamma((self.dof[j]+1)/2)-log((self.dof[j]+1)/2)+1/np.sum(u[:,j])*(np.sum(u[:,j]*(log(self.u_it[t,j]-self.u_it[t,j])))
+            opt.root(f, ...)
 
     def fit(self, X, verbose=0):
         """Iterates through the e-step and the m-step"""
