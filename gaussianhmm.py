@@ -20,17 +20,9 @@ class GaussianHMM(BaseHiddenMarkov):
     Class for estimating gaussian HMMs.
     """
 
-    def __init__(self, n_states, random_state=42):
+    def __init__(self, n_states: int = 2, random_state=42):
         super().__init__(n_states)
-
-        self.delta = np.array([0.2, 0.8])  # 1 X N vector
-        self.T = self._init_params()  # N X N transmission matrix
-
-        # Random init of state distributions
-        self.random_state = random_state
         np.random.seed(self.random_state)
-        self.mu = np.random.rand(n_states)
-        self.std = np.random.rand(n_states)
 
     def P(self, x: int):
         """Function for computing diagonal prob matrix P(x).
@@ -41,18 +33,29 @@ class GaussianHMM(BaseHiddenMarkov):
         return diag_probs
 
     def emission_probs(self, X: list):
-        """ Compute all different log probabilities log(p(x)) given an observation sequence and n states
+        """
+        Compute all different probabilities p(x) given an observation sequence and n states
 
-        Returns: T X N matrix
+        Parameters
+        ----------
+        X: 1D-array
+            Observation sequence
+
+        Returns
+        -------
+        T X N matrix of emission probabilities
         """
         T = len(X)
-        log_probs = np.zeros((T, self.n_states))  # Init N X M matrix
+        log_probs = np.zeros((T, self.n_states))  # Init T X N matrix
+        probs = np.zeros((T, self.n_states))
 
         # For all states evaluate the density function
         for j in range(self.n_states):
             log_probs[:, j] = stats.norm.logpdf(X, loc=self.mu[j], scale=self.std[j])
 
-        return log_probs
+        probs = np.exp(log_probs)
+
+        return probs, log_probs
 
     def _m_step(self, X, u, f):
         ''' Given u and f do an m-step.
@@ -73,7 +76,7 @@ class GaussianHMM(BaseHiddenMarkov):
     def fit(self, X, verbose=0):
         """Iterates through the e-step and the m-step"""
 
-        for iter in range(self.epochs):
+        for iter in range(self.max_iter):
             u, f, llk = self._e_step(X)
             self._m_step(X, u, f)
 
@@ -86,7 +89,7 @@ class GaussianHMM(BaseHiddenMarkov):
                 print(f'Iteration {iter} - LLK {llk} - Means: {self.mu} - STD {self.std} - Gamma {self.T.flatten()} - Delta {self.delta}')
                 break
 
-            elif iter == self.epochs-1:
+            elif iter == self.max_iter-1:
                 print(f'No convergence after {iter} iterations')
 
             else:

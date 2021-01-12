@@ -63,6 +63,7 @@ class BaseHiddenMarkov(BaseEstimator):
         self.delta: 1 X N vector of initial probabilities
         self.mu: 1 X N vector of state dependent means
         self.std: 1 X N vector of state dependent STDs
+        self.dof: int with degrees of freedom for t-distribution
 
         """
 
@@ -96,6 +97,7 @@ class BaseHiddenMarkov(BaseEstimator):
         self.delta = init_dist
         self.mu = mu
         self.std = std
+        self.dof = 2
 
     def emission_probs(self, X: list):
         """ Compute all different log probabilities log(p(x)) given an observation sequence and n states
@@ -192,7 +194,7 @@ class BaseHiddenMarkov(BaseEstimator):
 
         return u, f, llk
 
-    def _m_step(self, X: List[float], u, f):
+    def _m_step(self, X: List[float], u, f, iterations: int = None):
         ''' Given u and f do an m-step.
 
          Updates the model parameters delta, Transition matrix and state dependent distributions.
