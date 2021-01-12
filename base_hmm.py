@@ -298,6 +298,7 @@ class BaseHiddenMarkov(BaseEstimator):
 
         return samples, sample_states
 
+
 if __name__ == '__main__':
     model = BaseHiddenMarkov(n_states=2, random_state=42)
 
