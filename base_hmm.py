@@ -4,20 +4,13 @@ from sklearn.base import BaseEstimator
 import matplotlib.pyplot as plt
 
 from typing import List
-from abc import abstractmethod
 
 from utils import simulate_2state_gaussian
 
 ''' TODO NEXT:
-    
-Remove P(x)  --- Check if this is used anywhere else in the code
 
 If delta is misspecified it quickly converges to the wrong state.
     - I.e. if init as [0.2, 0.8] the 0.8 will quickly go to 1 despite it being the wrong starting state.
-
-Add AIC and BIC to fit()
-
-Add iterative random inits to fit()
 
 '''
 
@@ -30,7 +23,7 @@ class BaseHiddenMarkov(BaseEstimator):
     Parameters
     ----------
     n_states : Number of hidden states
-    epochs : Maximum number of iterations to perform during expectation-maximization
+    max_iter : Maximum number of iterations to perform during expectation-maximization
     tol : Criterion for early stopping
 
     Returns
@@ -39,20 +32,39 @@ class BaseHiddenMarkov(BaseEstimator):
 
     """
 
-    def __init__(self, n_states: int = 2, init: str = 'random', epochs: int = 100, tol: int = 1e-4, random_state: int = 42):
+    def __init__(self, n_states: int = 2, init: str = 'random', max_iter: int = 100, tol: int = 1e-4,
+                 epochs: int = 1, random_state: int = 42):
         self.n_states = n_states
         self.random_state = random_state
-
-        # Random init
-        np.random.seed(self.random_state)
-        self.delta, self.T = self._init_params(init='random')  # N X N transition matrix
-        self.mu = np.random.uniform(low=-0.05, high=0.15, size=self.n_states)  # np.random.rand(self.n_states)
-        self.std = np.random.uniform(low=0.01, high=0.3, size=self.n_states)  # np.random.rand(self.n_states) #
-
-        self.epochs = epochs
+        self.max_iter = max_iter  # Max iterations to fit model
+        self.epochs = epochs  # Set number of random inits used in model fitting
         self.tol = tol
 
+        # Init parameters initial distribution, transition matrix and state-dependent distributions from function
+        np.random.seed(self.random_state)
+        self._init_params(init='random')  # Initializes model parameters.
+
     def _init_params(self, init: str = 'random', diag_uniform_dist: List[float] = [.7, .99]):
+        """
+        Function to initialize HMM parameters.
+
+        Parameters
+        ----------
+        init: str
+            Set to 'random' for random initialization.
+            Set to None for deterministic init.
+
+        diag_uniform_dist: 1D-array
+            The lower and upper bounds of uniform distribution to sample init from.
+
+        Returns
+        -------
+        self.T: N X N matrix of transition probabilities
+        self.delta: 1 X N vector of initial probabilities
+        self.mu: 1 X N vector of state dependent means
+        self.std: 1 X N vector of state dependent STDs
+
+        """
 
         if init == 'random':
             # Transition probabilities
@@ -66,6 +78,10 @@ class BaseHiddenMarkov(BaseEstimator):
             #init_dist /= np.sum(init_dist)
             init_dist = np.ones(self.n_states) / np.sum(self.n_states)  # initial distribution 1 X N vector
 
+            # State dependent distributions
+            mu = np.random.uniform(low=-0.05, high=0.15, size=self.n_states)  # np.random.rand(self.n_states)
+            std = np.random.uniform(low=0.01, high=0.3, size=self.n_states)  # np.random.rand(self.n_states) #
+
         else:
             trans_prob = np.zeros((2, 2))
             trans_prob[0, 0] = 0.7
@@ -73,8 +89,13 @@ class BaseHiddenMarkov(BaseEstimator):
             trans_prob[1, 0] = 0.2
             trans_prob[1, 1] = 0.8
             init_dist = np.array([0.2, 0.8])  # initial distribution 1 X N vector
+            mu = [-0.05, 0.1]
+            std = [0.2, 0.1]
 
-        return init_dist, trans_prob
+        self.T = trans_prob
+        self.delta = init_dist
+        self.mu = mu
+        self.std = std
 
     def emission_probs(self, X: list):
         """ Compute all different log probabilities log(p(x)) given an observation sequence and n states
@@ -201,26 +222,35 @@ class BaseHiddenMarkov(BaseEstimator):
         """
         self.old_llk = -np.inf  # Used to check model convergence
 
+        for epoch in range(self.epochs):
+            # Do multiple random runs
+            if epoch > 1: self._init_params(init='random')
+            #print(f'Epoch {epoch} - Means: {self.mu} - STD {self.std} - Gamma {np.diag(self.T)} - Delta {self.delta}')
 
-        for iter in range(self.epochs):
-            # Do e- and m-step
-            u, f, llk = self._e_step(X)
-            self._m_step(X, u, f)
+            for iter in range(self.max_iter):
+                # Do e- and m-step
+                u, f, llk = self._e_step(X)
+                self._m_step(X, u, f)
 
-            # Check convergence criterion
-            crit = np.abs(llk - self.old_llk)  # Improvement in log likelihood
-            if crit < self.tol:
-                # self.aic_ = -2 * np.log(llk) + 2 *
-                print(f'Iteration {iter} - LLK {llk} - Means: {self.mu} - STD {self.std} - Gamma {np.diag(self.T)} - Delta {self.delta}')
-                break
+                # Check convergence criterion
+                crit = np.abs(llk - self.old_llk)  # Improvement in log likelihood
+                if crit < self.tol:
+                    # Compute AIC and BIC and print model results
+                    # AIC & BIC computed as shown on
+                    # https://rdrr.io/cran/HMMpa/man/AIC_HMM.html
+                    num_independent_params = self.n_states**2 + 2*self.n_states - 1  # True for normal distributions
+                    self.aic_ = -2 * llk + 2 * num_independent_params
+                    self.bic_ = -2 * llk + num_independent_params * np.log(len(X))
 
-            elif iter == self.epochs - 1:
-                print(f'No convergence after {iter} iterations')
-            else:
-                self.old_llk = llk
+                    print(f'Iteration {iter} - LLK {llk} - Means: {self.mu} - STD {self.std} - Gamma {np.diag(self.T)} - Delta {self.delta}')
+                    break
 
-            if verbose == 1:
-                print(f'Iteration {iter} - LLK {llk} - Means: {self.mu} - STD {self.std} - Gamma {np.diag(self.T)} - Delta {self.delta}')
+                elif iter == self.max_iter - 1:
+                    print(f'No convergence after {iter} iterations')
+                else:
+                    self.old_llk = llk
+
+                if verbose == 1: print(f'Iteration {iter} - LLK {llk} - Means: {self.mu} - STD {self.std} - Gamma {np.diag(self.T)} - Delta {self.delta}')
 
     def predict(self, X):
         pass
@@ -270,16 +300,14 @@ class BaseHiddenMarkov(BaseEstimator):
 
 if __name__ == '__main__':
     model = BaseHiddenMarkov(n_states=2, random_state=42)
-    print('Beg. mu: ', model.mu)
-    print('Beg. std: ', model.std)
 
     returns, true_regimes = simulate_2state_gaussian(plotting=False)  # Simulate some data from two normal distributions
 
-    model.fit(returns, verbose=1)
+    model.fit(returns, verbose=0)
     states, posteriors = model._viterbi(returns)
 
 
-    plotting = True
+    plotting = False
     if plotting == True:
         fig, ax = plt.subplots(nrows=2, ncols=1)
         ax[0].plot(posteriors[:, 0], label='Posteriors state 1', )
