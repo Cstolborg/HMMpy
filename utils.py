@@ -1,6 +1,7 @@
 import numpy as np
 from scipy import stats
 import matplotlib.pyplot as plt
+
 from t import Student
 from base_hmm import BaseHiddenMarkov
 

@@ -32,7 +32,7 @@ class BaseHiddenMarkov(BaseEstimator):
 
     """
 
-    def __init__(self, n_states: int = 2, init: str = 'random', max_iter: int = 100, tol: int = 1e-4,
+    def __init__(self, n_states: int = 2, params_init: str = 'random', max_iter: int = 100, tol: int = 1e-4,
                  epochs: int = 1, random_state: int = 42):
         self.n_states = n_states
         self.random_state = random_state
@@ -42,7 +42,7 @@ class BaseHiddenMarkov(BaseEstimator):
 
         # Init parameters initial distribution, transition matrix and state-dependent distributions from function
         np.random.seed(self.random_state)
-        self._init_params(init='random')  # Initializes model parameters.
+        self._init_params(init=params_init)  # Initializes model parameters.
 
     def _init_params(self, init: str = 'random', diag_uniform_dist: List[float] = [.7, .99]):
         """
@@ -255,7 +255,8 @@ class BaseHiddenMarkov(BaseEstimator):
                 if verbose == 1: print(f'Iteration {iter} - LLK {llk} - Means: {self.mu} - STD {self.std} - Gamma {np.diag(self.T)} - Delta {self.delta}')
 
     def predict(self, X):
-        pass
+        state_preds, posteriors = self._viterbi(X)
+        return state_preds, posteriors
 
     def _viterbi(self, X):
         """ Compute the most likely sequence of states given the observations
