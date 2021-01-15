@@ -2,9 +2,6 @@ import numpy as np
 from scipy import stats
 import matplotlib.pyplot as plt
 
-from t import Student
-from base_hmm import BaseHiddenMarkov
-
 """ TODO
 
 We need to be able to sample from a HMM not just from two combined distributions.
@@ -124,10 +121,6 @@ def simulate_3state_gaussian_t(N=500, means=None, std=None, df=None, plotting=Tr
 if __name__ == '__main__':
     returns, true_regimes = simulate_3state_gaussian_t(plotting= True)
     print(true_regimes)
-    model = (3, epochs=10)
-    model.fit(returns)
-    model._viterbi(returns)
-
 
 
 

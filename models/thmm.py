@@ -6,8 +6,8 @@ import matplotlib.pyplot as plt
 
 from typing import List
 
-from utils import simulate_2state_gaussian
-from base_hmm import BaseHiddenMarkov
+from utils.simulate_returns import simulate_2state_gaussian
+from base_hmm import MLEHiddenMarkov
 
 
 """ TODO
@@ -16,7 +16,7 @@ Check dof is fitting correctly. Currently it seems to overshoot a bit.
 
 """
 
-class StudentTHiddenMarkov(BaseHiddenMarkov):
+class TDistHMM(MLEHiddenMarkov):
     """
     Class for estimating HMMs with a mixture of gaussian and students t distributions.
     """
@@ -97,7 +97,7 @@ class StudentTHiddenMarkov(BaseHiddenMarkov):
 
 if __name__ == '__main__':
 
-    model = StudentTHiddenMarkov(n_states=2, epochs=5)
+    model = TDistHMM(n_states=2, epochs=5)
     returns, true_regimes = simulate_2state_gaussian(plotting=False)  # Simulate some X in two states from normal distributions
 
     model.fit(returns, verbose=0)

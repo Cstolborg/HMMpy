@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 from typing import List
 
-from utils import simulate_2state_gaussian
+from utils.simulate_returns import simulate_2state_gaussian
 
 ''' TODO NEXT:
 
@@ -15,7 +15,7 @@ If delta is misspecified it quickly converges to the wrong state.
 '''
 
 
-class BaseHiddenMarkov(BaseEstimator):
+class MLEHiddenMarkov(BaseEstimator):
     """ Class for computing HMM's using the EM algorithm.
     Scikit-learn api is used as Parent see --> https://scikit-learn.org/stable/developers/develop.html
 
@@ -303,7 +303,7 @@ class BaseHiddenMarkov(BaseEstimator):
 
 
 if __name__ == '__main__':
-    model = BaseHiddenMarkov(n_states=2, random_state=42)
+    model = MLEHiddenMarkov(n_states=2, random_state=42)
 
     returns, true_regimes = simulate_2state_gaussian(plotting=False)  # Simulate some data from two normal distributions
 
