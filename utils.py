@@ -2,7 +2,8 @@ import numpy as np
 from scipy import stats
 import matplotlib.pyplot as plt
 
-#from base_hmm import BaseHiddenMarkov
+from t import Student
+from base_hmm import BaseHiddenMarkov
 
 """ TODO
 
@@ -86,7 +87,7 @@ def simulate_bear_t(N=200, means=None, std=None, df=None, plotting=True, random_
         return returns, true_regimes
 
 
-def simulate_3state_gaussian_t(N=200, means=None, std=None, df=None, plotting=True, random_state=42):  # Simulate 3 state.
+def simulate_3state_gaussian_t(N=500, means=None, std=None, df=None, plotting=True, random_state=42):  # Simulate 3 state.
     if means == None:
         bull_mean = 0.1
         bear_mean = -0.05
@@ -100,13 +101,30 @@ def simulate_3state_gaussian_t(N=200, means=None, std=None, df=None, plotting=Tr
     if df == None:
         recession_df = N - 1  # Bull and bear state is normal distribution hence it is not specified.
 
+    np.random.seed(random_state)
+    market_bull_1 = stats.norm.rvs(loc= bull_mean, scale=bull_std, size=N)
+    market_bear_2 = stats.norm.rvs(loc= bear_mean, scale=bear_std, size=N)
+    market_recession_3 = stats.t.rvs(loc= recession_mean, scale=recession_std, size=N, df = recession_df)
+    market_bull_4 = stats.norm.rvs(loc=bull_mean, scale=bull_std, size=N)
+    market_recession_5 = stats.t.rvs(loc = recession_mean, scale = recession_std, size=N, df=recession_df)
+    market_bear_6 = stats.norm.rvs(loc = bear_mean, scale = bear_std, size=N)
+    market_bull_7 = stats.norm.rvs(loc = bull_mean, scale = bull_std, size=N)
+
+    returns = np.array([market_bull_1] + [market_bear_2] + [market_recession_3] + [market_bull_4] + [market_recession_5] + [market_bear_6] + [market_bull_7]).flatten()
+    true_regimes = np.array([np.zeros(N), np.ones(N), np.ones(N)*2, np.zeros(N), np.ones(N)*2, np.ones(N), np.zeros(N)]).flatten()
+
+    if plotting:
+        plt.plot(returns)
+        plt.plot(true_regimes)
+        plt.show()
+
+    return returns, true_regimes
 
 
 if __name__ == '__main__':
-    returns, true_regimes = simulate_bear_t(plotting= True)
+    returns, true_regimes = simulate_3state_gaussian_t(plotting= True)
     print(true_regimes)
-
-    model = BaseHiddenMarkov(2)
+    model = (3, epochs=10)
     model.fit(returns)
     model._viterbi(returns)
 
