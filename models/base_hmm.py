@@ -7,12 +7,6 @@ from typing import List
 
 from utils.simulate_returns import simulate_2state_gaussian
 
-''' TODO NEXT:
-
-If delta is misspecified it quickly converges to the wrong state.
-    - I.e. if init as [0.2, 0.8] the 0.8 will quickly go to 1 despite it being the wrong starting state.
-
-'''
 
 
 class MLEHiddenMarkov(BaseEstimator):

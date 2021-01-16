@@ -10,11 +10,6 @@ from utils.simulate_returns import simulate_2state_gaussian
 from base_hmm import MLEHiddenMarkov
 
 
-""" TODO
-
-Check dof is fitting correctly. Currently it seems to overshoot a bit.
-
-"""
 
 class TDistHMM(MLEHiddenMarkov):
     """
