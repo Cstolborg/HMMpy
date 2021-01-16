@@ -32,19 +32,30 @@ class JumpHMM(BaseEstimator):
         Y[1:, 1] = np.abs(np.diff(X))
         Y[:-1, 2] = np.abs(np.diff(X))
 
+        def right_mean(X, N):  # Consider using pandas rolling mean for this as welL (written)
+            #R_m = np.cumsum(np.insert(X, 0, window_len)) # Cumulative sum for a given window
+            #return (R_m[window_len:] - R_m[:-window_len]) / float(window_len)
+            moving_mean = df.rolling(window_len).mean().shift(-2)
+            return moving_mean
+
         x_1 = np.convolve(X, np.ones(N) / 3, mode='valid')
 
-        def right_mean(X, N):
-            R_m = np.cumsum(np.insert(X, 0, window_len)) # Cumulative sum for a given window
-            return (R_m[window_len:] - R_m[:-window_len]) / float(window_len)
-
         def right_std(X, N):
-            #R_s = np.cumsum((np.insert(X, 0, window_len)))
-            #Sum_obs = R_s[window_len:]-R_s[:-window_len] #Sum of X observations
-            #Mean_obs = right_mean(X,N)
             std_roll = df
-            moving_std = std_roll.rolling(window_len).std(ddof=0) #note standard is 1 (sample)
-            return moving_std
+            moving_std_right= std_roll.rolling(window_len).std(ddof=0).shift(-2) #note standard is 1 (sample)
+            return moving_std_right
+
+        def left_mean(X,N):
+            #L_m = np.cumsum(np.insert(X, 0, window_len)) # Consider using pandas rolling mean for this as welL!
+            #return (L_m[window_len:] - L_m[:-window_len]) / float(window_len)
+            moving_mean_left = df.rolling(window_len).mean()
+            return moving_mean_left
+
+        def left_std(X,N):
+            std_roll = df
+            moving_std_left = std_roll.rolling(window_len).std(ddof=0)
+            return moving_std_left
+
 
 
         # Centered moments
@@ -58,10 +69,8 @@ class JumpHMM(BaseEstimator):
         print('Right absolute change =', Y[:-1, 2])
         print("Right mean = ", right_mean(X,N))
         print("Right std = ", right_std(X,N))
-
-
-
-
+        print("Left mean = ", left_mean(X,N))
+        print('Left std = ', left_std(X,N))
 
 
 
