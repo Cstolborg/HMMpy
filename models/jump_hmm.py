@@ -21,62 +21,30 @@ class JumpHMM(BaseEstimator):
         # Init parameters initial distribution, transition matrix and state-dependent distributions from function
         np.random.seed(self.random_state)
 
-    def construct_features(self, X: ndarray, window_len: int):
+    def construct_features(self, X: ndarray, window_len: int, num_features = 9):
         N = len(X)
-        Y = np.zeros(shape=(len(X), 9))
-        df = pd.DataFrame(Y, columns=list('123456789'))
-        Y[:, 0] = X  # Observations
+        Y = np.zeros(shape=(len(X), num_features))
+        df = pd.DataFrame(X)
+
+
+        df['Left local mean'] = df.rolling(window_len).mean()
+        df['Left local std'] = df[0].rolling(window_len).std(ddof=0)
+
+        df['Right local mean'] = df[0].rolling(window_len).mean().shift(-window_len+1)
+        df['Right local std'] = df[0].rolling(window_len).std(ddof=0).shift(-window_len + 1)
+
+        look_ahead = df[0].rolling(window_len).sum().shift(-window_len)  # Looks forward with window_len (Helper 1)
+        look_back = df[0].rolling(window_len).sum()  # Includes current position and looks window_len - 1 backward (Helper 2)
+        df['Central local mean'] = (look_ahead + look_back) / (2 * window_len)
+        df['Centered local std'] = df[0].rolling(window_len * 2).std(ddof=0).shift(-window_len)  # Rolls from 0 and 2x length iteratively, then shifts back 1x window length
 
 
         # Absolute changes
-        Y[1:, 1] = np.abs(np.diff(X))
-        Y[:-1, 2] = np.abs(np.diff(X))
+        #Y[1:, 1] = np.abs(np.diff(X))
+        #Y[:-1, 2] = np.abs(np.diff(X))
 
+        print(df)
 
-        # Right local moments
-        def right_mean(X, N):  # Consider using pandas rolling mean for this as welL (written)
-            #R_m = np.cumsum(np.insert(X, 0, window_len)) # Cumulative sum for a given window
-            #return (R_m[window_len:] - R_m[:-window_len]) / float(window_len)
-            right_local_mean = df.rolling(window_len).mean().shift(-window_len+1)
-            return right_local_mean
-
-        def right_std(X, N):
-            right_local_std = df.rolling(window_len).std(ddof=0).shift(-window_len+1)
-            return right_local_std
-
-
-        # Left local moments
-        def left_mean(X,N):
-            left_local_mean = df.rolling(window_len).mean()
-            return left_local_mean
-
-        def left_std(X,N):
-            left_local_std = df.rolling(window_len).std(ddof=0)
-            return left_local_std
-
-
-        # Centered moments
-        def local_mean (X,N):
-            look_ahead = df.rolling(window_len).sum().shift(-window_len) # Looks forward with window_len
-            look_back = df.rolling(window_len).sum() #Includes current position and looks window_len - 1 backward
-            centered_local_mean = (look_ahead + look_back) / (2 * window_len)
-            return centered_local_mean
-
-        def local_std (X,N):
-            centered_local_std = df.rolling(window_len*2).std(ddof = 0).shift(-window_len) #Rolls from 0 and 2x length iteratively, then shifts back 1x window length
-            return centered_local_std
-
-        # Prints used to validate calculations:
-
-        #print(Y)
-        #print("Left absolute change = ",Y[1:, 1])
-        #print('Right absolute change =', Y[:-1, 2])
-        #print("Right mean = ", right_mean(X,N))
-        #print("Right std = ", right_std(X,N))
-        #print("Left mean = ", left_mean(X,N))
-        #print('Left std = ', left_std(X,N))
-        #print("Local mean = ", local_mean(X,N))
-        #print('Local std =', local_std(X,N))
 
 
 
