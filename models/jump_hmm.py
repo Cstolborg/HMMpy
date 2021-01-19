@@ -10,9 +10,9 @@ from utils.simulate_returns import simulate_2state_gaussian
 
 class JumpHMM(BaseEstimator):
 
-    def __init__(self, n_states_: int = 2, max_iter: int = 100, tol: int = 1e-4,
+    def __init__(self, n_states: int = 2, max_iter: int = 100, tol: int = 1e-4,
                  epochs: int = 1, random_state: int = 42):
-        self.n_states_ = n_states_
+        self.n_states = n_states
         self.random_state = random_state
         self.max_iter = max_iter  # Max iterations to fit model
         self.epochs = epochs  # Set number of random inits used in model fitting
@@ -42,32 +42,52 @@ class JumpHMM(BaseEstimator):
         #Y[1:, 1] = np.abs(np.diff(X))
         #Y[:-1, 2] = np.abs(np.diff(X))
         Z = df.dropna().to_numpy()
-        self.n_features_ = Z.shape[1]
+        self.n_features = Z.shape[1]
 
         return Z
 
-    def _init_params(self, Z):
+    def _init_params(self, Z: ndarray):
         # State sequence
-        state_index = np.arange(start=0, stop=self.n_states_, step=1, dtype=int)  # Array of possible states
+        state_index = np.arange(start=0, stop=self.n_states, step=1, dtype=int)  # Array of possible states
         state_seq = np.random.choice(a=state_index, size=len(Z))  # Sample sequence uniformly
-        self.state_seq_ = state_seq
+        self.state_seq = state_seq
 
         # Theta
-        self.theta_ = np.zeros(shape=(self.n_features_, self.n_states_))  # Init as empty matrix
-
+        self.theta = np.zeros(shape=(self.n_features, self.n_states))  # Init as empty matrix
 
     def _fit_theta(self, Z):
-        pass
+        for j in range(self.n_states):
+            state_slicer = self.state_seq == j  # Boolean array of True/False
+
+            N_j = sum(state_slicer)  # Number of terms in state j
+            z = Z[state_slicer].sum(axis=0)  # Sum each feature across time
+            self.theta[:, j] = 1 / N_j * z
+
+
 
     def loss(self, X, theta):
-        return np.sqrt(np.sum(np.square(X - theta)))
+        return np.linalg.norm(X) ** 2  # squared l2 norm.
+
+    def noob_loss(self, X, theta):
+        return np.sum(np.square(X - theta))  # Sum of squares/ squared l2 norm.
+
+
 
 if __name__ == '__main__':
-    model = JumpHMM(n_states_=2)
-    returns, true_regimes = simulate_2state_gaussian(plotting=False)  # Simulate some data from two normal distributions
-    #returns = np.arange(1,10,1)
-    #returns = returns ** 2
+    model = JumpHMM(n_states=2)
+    returns, true_regimes = simulate_2state_gaussian(
+        plotting=False)  # Simulate some data from two normal distributions
+    # returns = np.arange(1,10,1)
+    # returns = returns ** 2
 
-    Z = model.construct_features(returns, window_len= 3)
+    Z = model.construct_features(returns, window_len=3)
+    # print(Z)
 
     model._init_params(Z)
+    model.state_seq = true_regimes[2:-3]  # Arbitrarily give it the answer alrady
+
+
+    print(model.state_seq.sum())
+
+    model._fit_theta(Z)
+
