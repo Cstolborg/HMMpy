@@ -35,7 +35,7 @@ def simulate_2state_gaussian(N=200, means=None, std=None, plotting=False, random
 
     # Create the list of true regime states and full returns list
     returns = np.array([market_bull_1] + [market_bear_2] + [market_bull_3] + [market_bear_4] + [market_bull_5]).flatten()
-    true_regimes = np.array([np.zeros(N), np.ones(N), np.zeros(N), np.ones(N), np.zeros(N)]).flatten()
+    true_regimes = np.array([np.zeros(N), np.ones(N), np.zeros(N), np.ones(N), np.zeros(N)]).flatten().astype(int)
 
     #true_regimes = np.array([len(market_bull_1)] + [len(market_bear_2)] + [len(market_bull_3)] + [len(market_bear_4)] + [len(market_bull_5)]).flatten()
 
