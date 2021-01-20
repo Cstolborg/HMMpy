@@ -19,6 +19,9 @@ class MLEHiddenMarkov(BaseEstimator):
     n_states : Number of hidden states
     max_iter : Maximum number of iterations to perform during expectation-maximization
     tol : Criterion for early stopping
+    init: str
+            Set to 'random' for random initialization.
+            Set to None for deterministic init.
 
     Returns
     ----------
@@ -26,28 +29,25 @@ class MLEHiddenMarkov(BaseEstimator):
 
     """
 
-    def __init__(self, n_states: int = 2, params_init: str = 'random', max_iter: int = 100, tol: int = 1e-4,
+    def __init__(self, n_states: int = 2, init: str = 'random', max_iter: int = 100, tol: int = 1e-4,
                  epochs: int = 1, random_state: int = 42):
         self.n_states = n_states
         self.random_state = random_state
         self.max_iter = max_iter  # Max iterations to fit model
         self.epochs = epochs  # Set number of random inits used in model fitting
         self.tol = tol
+        self.init = init
 
         # Init parameters initial distribution, transition matrix and state-dependent distributions from function
         np.random.seed(self.random_state)
-        self._init_params(init=params_init)  # Initializes model parameters.
+        self._init_params()  # Initializes model parameters.
 
-    def _init_params(self, init: str = 'random', diag_uniform_dist: List[float] = [.7, .99]):
+    def _init_params(self, diag_uniform_dist: List[float] = [.7, .99]):  # TODO Would a tuple work?
         """
         Function to initialize HMM parameters.
 
         Parameters
         ----------
-        init: str
-            Set to 'random' for random initialization.
-            Set to None for deterministic init.
-
         diag_uniform_dist: 1D-array
             The lower and upper bounds of uniform distribution to sample init from.
 
@@ -61,7 +61,7 @@ class MLEHiddenMarkov(BaseEstimator):
 
         """
 
-        if init == 'random':
+        if self.init == 'random':
             # Transition probabilities
             trans_prob = np.diag(np.random.uniform(low=diag_uniform_dist[0], high=diag_uniform_dist[1], size=self.n_states))  # Sample diag as uniform dist
             remaining_row_nums = (1 - np.diag(trans_prob)) / (self.n_states - 1)  # Spread the remaining mass evenly onto remaining row values
@@ -220,7 +220,7 @@ class MLEHiddenMarkov(BaseEstimator):
 
         for epoch in range(self.epochs):
             # Do multiple random runs
-            if epoch > 1: self._init_params(init='random')
+            if epoch > 1: self._init_params()
             #print(f'Epoch {epoch} - Means: {self.mu} - STD {self.std} - Gamma {np.diag(self.T)} - Delta {self.delta}')
 
             for iter in range(self.max_iter):

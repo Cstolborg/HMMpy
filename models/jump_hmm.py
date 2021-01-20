@@ -3,6 +3,8 @@ from numpy import ndarray
 import pandas as pd
 from scipy import stats
 from sklearn.base import BaseEstimator
+from sklearn.cluster._kmeans import kmeans_plusplus
+
 import matplotlib.pyplot as plt
 
 from utils.simulate_returns import simulate_2state_gaussian
@@ -10,23 +12,24 @@ from utils.simulate_returns import simulate_2state_gaussian
 
 class JumpHMM(BaseEstimator):
 
-    def __init__(self, n_states: int = 2, jump_penalty: float = .1, max_iter: int = 100, tol: int = 1e-4,
-                 epochs: int = 1, random_state: int = 42):
+    def __init__(self, n_states: int = 2, jump_penalty: float = .2, init: str = 'kmeans++',
+                 max_iter: int = 30, tol: int = 1e-4,
+                 epochs: int = 10, random_state: int = 42):
         self.n_states = n_states
         self.jump_penalty = jump_penalty
         self.random_state = random_state
         self.max_iter = max_iter  # Max iterations to fit model
         self.epochs = epochs  # Set number of random inits used in model fitting
         self.tol = tol
+        self.init = init
+        self.best_objective_likelihood = np.inf
 
         # Init parameters initial distribution, transition matrix and state-dependent distributions from function
         np.random.seed(self.random_state)
 
-    def construct_features(self, X: ndarray, window_len: int, num_features = 9):
+    def construct_features(self, X: ndarray, window_len: int):
         N = len(X)
-        #Y = np.zeros(shape=(len(X), num_features))
         df = pd.DataFrame(X)
-
 
         df['Left local mean'] = df.rolling(window_len).mean()
         df['Left local std'] = df[0].rolling(window_len).std(ddof=0)
@@ -48,13 +51,24 @@ class JumpHMM(BaseEstimator):
         return Z
 
     def _init_params(self, Z: ndarray):
-        # State sequence
-        state_index = np.arange(start=0, stop=self.n_states, step=1, dtype=int)  # Array of possible states
-        state_seq = np.random.choice(a=state_index, size=len(Z))  # Sample sequence uniformly
-        self.state_seq = state_seq
 
-        # Theta
-        self.theta = np.zeros(shape=(self.n_features, self.n_states))  # Init as empty matrix
+
+        if self.init == 'kmeans++':
+            # Theta
+            centroids, _ = kmeans_plusplus(Z, self.n_states)  # Use sklearns kmeans++ algorithm
+            self.theta = centroids.T  # Transpose to get shape: N_features X N_states
+
+            # State sequence
+            self._fit_state_seq(Z)  # this function implicitly updates self.state_seq
+
+        else:
+            # Init theta as zeros and sample state seq from uniform dist
+            self.theta = np.zeros(shape=(self.n_features, self.n_states))  # Init as empty matrix
+            state_index = np.arange(start=0, stop=self.n_states, step=1, dtype=int)  # Array of possible states
+            state_seq = np.random.choice(a=state_index, size=len(Z))  # Sample sequence uniformly
+            self.state_seq = state_seq
+
+        self.old_state_seq = self.state_seq  # Required in fit() method
 
     def _fit_theta(self, Z):
         for j in range(self.n_states):
@@ -66,9 +80,6 @@ class JumpHMM(BaseEstimator):
 
     def _fit_state_seq(self, Z: ndarray):
         T = len(Z)
-
-        indicator = self.state_change_indicator()  # True/False array indicating state shifts
-
 
         losses = np.zeros(shape=(T, self.n_states))  # Init T X N matrix
         losses[-1, :] = self.loss(Z[-1], self.theta)  # loss corresponding to last state
@@ -97,33 +108,37 @@ class JumpHMM(BaseEstimator):
 
             state_preds[t] = np.argmin(losses[t] + state_change_penalty)
 
+        # Finally compute score of objective function
+        all_likelihoods = losses[np.arange(len(losses)), state_preds].sum()
+        jump_penalty = np.diff(state_preds) != 0   # True/False array showing state changes
+        jump_penalty = (jump_penalty * self.jump_penalty).sum()  # Multiply all True values with penalty
+
+
+        self.objective_likelihood = all_likelihoods + jump_penalty
         self.state_seq = state_preds
 
-    def fit(self, Z: ndarray, verbose=0):
 
-        self.old_llk = -np.inf  # Used to check model convergence
-        self.old_state_seq = self.state_seq
+    def fit(self, Z: ndarray, verbose=0):
+        # Init params
+        self._init_params(Z)
 
         for epoch in range(self.epochs):
-            # Do multiple random runs
-            #if epoch > 1: self._init_params(init='random')
-            # print(f'Epoch {epoch} - Means: {self.mu} - STD {self.std} - Gamma {np.diag(self.T)} - Delta {self.delta}')
+            # Do new init at each epoch
+            if epoch > 1: self._init_params(Z)
 
             for iter in range(self.max_iter):
                 self._fit_theta(Z)
                 self._fit_state_seq(Z)
 
                 # Check convergence criterion
-                crit = np.sum(np.abs(self.state_seq - self.old_state_seq))  # Improvement in log likelihood
-                if crit < self.tol:
-                    # Compute AIC and BIC and print model results
-                    # AIC & BIC computed as shown on
-                    # https://rdrr.io/cran/HMMpa/man/AIC_HMM.html
-                    #num_independent_params = self.n_states ** 2 + 2 * self.n_states - 1  # True for normal distributions
-                    #self.aic_ = -2 * llk + 2 * num_independent_params
-                    #self.bic_ = -2 * llk + num_independent_params * np.log(len(X))
+                crit = np.array_equal(self.state_seq, self.old_state_seq)  # Improvement in log likelihood
+                if crit == True:
+                    if self.objective_likelihood < self.best_objective_likelihood:
+                        self.best_objective_likelihood = self.objective_likelihood
+                        self.best_sequence = self.state_seq
+                        self.best_theta = self.theta
 
-                    print(f'Iteration {iter} - CRIT {crit} - Theta {self.theta} ')#Means: {self.mu} - STD {self.std} - Gamma {np.diag(self.T)} - Delta {self.delta}')
+                    print(f'Epoch {epoch} -- Iter {iter} -- likelihood {self.objective_likelihood} -- Theta {self.theta[0]} ')#Means: {self.mu} - STD {self.std} - Gamma {np.diag(self.T)} - Delta {self.delta}')
                     break
 
                 elif iter == self.max_iter - 1:
@@ -131,15 +146,12 @@ class JumpHMM(BaseEstimator):
                 else:
                     self.old_state_seq = self.state_seq
 
-                #if verbose == 1: print(
-                    #f'Iteration {iter} - LLK {llk} - Means: {self.mu} - STD {self.std} - Gamma {np.diag(self.T)} - Delta {self.delta}')
-
     def loss(self, z, theta): # z must always be a vector but theta can be either a vector or a matrix
         # Subtract z from theta row-wise. Requires the transpose of the column matrix theta
         diff = (theta.T - z).T
         return np.linalg.norm(diff, axis=0) ** 2  # squared l2 norm.
 
-    def state_change_indicator(self):
+    def state_change_indicator(self):  # TODO deprecate this
         # Take the diff over the array. If it is different than zero a state change has occurred
         indicator = np.diff(self.state_seq) != 0
         indicator = np.append([False] , indicator)  # Add False as the first term since np.diff removes the first obs.
@@ -147,27 +159,32 @@ class JumpHMM(BaseEstimator):
 
 
 if __name__ == '__main__':
-    model = JumpHMM(n_states=2, epochs=1, tol=5)
+    model = JumpHMM(n_states=2, random_state=42)
     returns, true_regimes = simulate_2state_gaussian(
         plotting=False)  # Simulate some data from two normal distributions
     #returns = np.arange(1,20,1)
     #returns = returns ** 2
 
-    Z = model.construct_features(returns, window_len=3)
-    #print(Z)
+    Z = model.construct_features(returns, window_len=6)
 
-    model._init_params(Z)
+    #model._init_params(Z)
     #model.state_seq = true_regimes[2:-3].astype(int)  # Arbitrarily give it the answer alrady
-    model._fit_theta(Z)
-    #print(model.loss(Z[-1], model.theta[:, model.state_seq[-1]]))
 
-    #print(model.theta)
-    model._fit_state_seq(Z)
 
     model.fit(Z)
 
 
+    plotting = False
+    if plotting == True:
+        fig, ax = plt.subplots(nrows=2, ncols=1)
+        #ax[0].plot(posteriors[:, 0], label='Posteriors state 1', )
+        #ax[0].plot(posteriors[:, 1], label='Posteriors state 2', )
+        #ax[1].plot(first_seq, label='First Predicted states', ls='dashdot')
+        ax[1].plot(model.state_seq, label='Predicted states', ls='dotted')
+        ax[1].plot(true_regimes, label='True states', ls='dashed')
 
+        plt.legend()
+        plt.show()
 
 
 '''
