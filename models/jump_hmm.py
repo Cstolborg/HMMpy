@@ -11,8 +11,6 @@ from utils.simulate_returns import simulate_2state_gaussian
 
 ''' TODO:
 
-Compute transition probs and distributions from best model after calling fit() method.
-
 Add sampler func
 Add predict func
 
@@ -136,15 +134,26 @@ class JumpHMM(BaseEstimator):
         elif X.ndim > 1:
             X = X[:, 0]
 
-        # Groupby states
-        state_ret = pd.DataFrame({'state_seq': self.best_state_seq,
-                                  'X': X})
-        state_groupby = state_ret.groupby('state_seq')
-        self.mu = state_groupby.mean().values.T[0]  # transform mean back into 1darray
-        self.std =  state_groupby.std().values.T[0]
+        # group by states
+        diff = np.diff(self.best_state_seq)
+        df_states = pd.DataFrame({'state_seq': self.best_state_seq,
+                                  'X': X,
+                                  'state_sojourns': np.append([False], diff == 0),
+                                  'state_changes': np.append([False], diff != 0)})
 
-        state_changes = np.append([False], np.diff(self.best_state_seq) != 0)   # True/False array showing state changes
+        state_groupby = df_states.groupby('state_seq')
 
+        # Transition probabilities
+        # TODO only works for a 2-state HMM
+        self.T = np.diag(state_groupby['state_sojourns'].sum())
+        state_changes = state_groupby['state_changes'].sum()
+        self.T[0, 1] = state_changes[0]
+        self.T[1, 0] = state_changes[1]
+        self.T = self.T / self.T.sum(axis=0)  # make rows sum to 1
+
+        # Conditional distributions
+        self.mu = state_groupby['X'].mean().values.T  # transform mean back into 1darray
+        self.std = state_groupby['X'].std().values.T
 
     def fit(self, Z: ndarray, verbose=0):
         # Init params
@@ -192,10 +201,10 @@ if __name__ == '__main__':
     Z = model.construct_features(returns, window_len=6)
 
     model.fit(Z)
+
     print(model.mu)
     print(model.std)
-    print(model.best_theta)
-
+    print(model.T)
 
     plotting = False
     if plotting == True:
