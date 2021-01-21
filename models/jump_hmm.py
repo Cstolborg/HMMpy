@@ -1,7 +1,6 @@
 import numpy as np
 from numpy import ndarray
 import pandas as pd
-from scipy import stats
 from sklearn.base import BaseEstimator
 from sklearn.cluster._kmeans import kmeans_plusplus
 
@@ -10,10 +9,23 @@ import matplotlib.pyplot as plt
 from utils.simulate_returns import simulate_2state_gaussian
 
 
+''' TODO:
+
+Compute transition probs and distributions from best model after calling fit() method.
+
+Add sampler func
+Add predict func
+
+implement simulation and BAC to choose jump penalty.
+
+Z-score standardisation
+
+'''
+
 class JumpHMM(BaseEstimator):
 
     def __init__(self, n_states: int = 2, jump_penalty: float = .2, init: str = 'kmeans++',
-                 max_iter: int = 30, tol: int = 1e-4,
+                 max_iter: int = 30, tol: int = 1e-6,
                  epochs: int = 10, random_state: int = 42):
         self.n_states = n_states
         self.jump_penalty = jump_penalty
@@ -23,11 +35,12 @@ class JumpHMM(BaseEstimator):
         self.tol = tol
         self.init = init
         self.best_objective_likelihood = np.inf
+        self.old_objective_likelihood = np.inf
 
         # Init parameters initial distribution, transition matrix and state-dependent distributions from function
         np.random.seed(self.random_state)
 
-    def construct_features(self, X: ndarray, window_len: int):
+    def construct_features(self, X: ndarray, window_len: int):  # TODO remove forward-looking params and slice X accordingly
         N = len(X)
         df = pd.DataFrame(X)
 
@@ -47,6 +60,7 @@ class JumpHMM(BaseEstimator):
         #Y[:-1, 2] = np.abs(np.diff(X))
         Z = df.dropna().to_numpy()
         self.n_features = Z.shape[1]
+        self.window_len = window_len
 
         return Z
 
@@ -92,7 +106,6 @@ class JumpHMM(BaseEstimator):
             for j in range(self.n_states):  # TODO redefine this as a matrix problem and get rid of loop
                 state_change_penalty = np.ones(self.n_states) * self.jump_penalty  # Init jump penalty
                 state_change_penalty[j] = 0  # And remove it for all but current state
-
                 losses[t, j] = current_loss[j] + np.min(last_loss + state_change_penalty)
 
         # From losses get the most likely sequence of states i
@@ -110,12 +123,27 @@ class JumpHMM(BaseEstimator):
 
         # Finally compute score of objective function
         all_likelihoods = losses[np.arange(len(losses)), state_preds].sum()
-        jump_penalty = np.diff(state_preds) != 0   # True/False array showing state changes
-        jump_penalty = (jump_penalty * self.jump_penalty).sum()  # Multiply all True values with penalty
+        state_changes = np.diff(state_preds) != 0   # True/False array showing state changes
+        jump_penalty = (state_changes * self.jump_penalty).sum()  # Multiply all True values with penalty
 
-
-        self.objective_likelihood = all_likelihoods + jump_penalty
+        self.objective_likelihood = all_likelihoods + jump_penalty  # Float
         self.state_seq = state_preds
+
+    def get_hmm_params(self, X: ndarray):  # TODO remove forward-looking params and slice X accordingly
+        # Slice data
+        if X.ndim == 1:  # Makes function compatible on Z
+            X = X[(self.window_len-1) : -self.window_len]
+        elif X.ndim > 1:
+            X = X[:, 0]
+
+        # Groupby states
+        state_ret = pd.DataFrame({'state_seq': self.best_state_seq,
+                                  'X': X})
+        state_groupby = state_ret.groupby('state_seq')
+        self.mu = state_groupby.mean().values.T[0]  # transform mean back into 1darray
+        self.std =  state_groupby.std().values.T[0]
+
+        state_changes = np.append([False], np.diff(self.best_state_seq) != 0)   # True/False array showing state changes
 
 
     def fit(self, Z: ndarray, verbose=0):
@@ -131,12 +159,14 @@ class JumpHMM(BaseEstimator):
                 self._fit_state_seq(Z)
 
                 # Check convergence criterion
-                crit = np.array_equal(self.state_seq, self.old_state_seq)  # Improvement in log likelihood
-                if crit == True:
+                crit1 = np.array_equal(self.state_seq, self.old_state_seq)  # No change in state sequence
+                crit2 = np.abs(self.old_objective_likelihood - self.objective_likelihood)
+                if crit1 == True or crit2 < self.tol:
                     if self.objective_likelihood < self.best_objective_likelihood:
                         self.best_objective_likelihood = self.objective_likelihood
-                        self.best_sequence = self.state_seq
+                        self.best_state_seq = self.state_seq
                         self.best_theta = self.theta
+                        self.get_hmm_params(Z)
 
                     print(f'Epoch {epoch} -- Iter {iter} -- likelihood {self.objective_likelihood} -- Theta {self.theta[0]} ')#Means: {self.mu} - STD {self.std} - Gamma {np.diag(self.T)} - Delta {self.delta}')
                     break
@@ -145,18 +175,12 @@ class JumpHMM(BaseEstimator):
                     print(f'No convergence after {iter} iterations')
                 else:
                     self.old_state_seq = self.state_seq
+                    self.old_objective_likelihood = self.objective_likelihood
 
     def loss(self, z, theta): # z must always be a vector but theta can be either a vector or a matrix
         # Subtract z from theta row-wise. Requires the transpose of the column matrix theta
         diff = (theta.T - z).T
         return np.linalg.norm(diff, axis=0) ** 2  # squared l2 norm.
-
-    def state_change_indicator(self):  # TODO deprecate this
-        # Take the diff over the array. If it is different than zero a state change has occurred
-        indicator = np.diff(self.state_seq) != 0
-        indicator = np.append([False] , indicator)  # Add False as the first term since np.diff removes the first obs.
-        return indicator
-
 
 if __name__ == '__main__':
     model = JumpHMM(n_states=2, random_state=42)
@@ -167,11 +191,10 @@ if __name__ == '__main__':
 
     Z = model.construct_features(returns, window_len=6)
 
-    #model._init_params(Z)
-    #model.state_seq = true_regimes[2:-3].astype(int)  # Arbitrarily give it the answer alrady
-
-
     model.fit(Z)
+    print(model.mu)
+    print(model.std)
+    print(model.best_theta)
 
 
     plotting = False
@@ -180,21 +203,10 @@ if __name__ == '__main__':
         #ax[0].plot(posteriors[:, 0], label='Posteriors state 1', )
         #ax[0].plot(posteriors[:, 1], label='Posteriors state 2', )
         #ax[1].plot(first_seq, label='First Predicted states', ls='dashdot')
-        ax[1].plot(model.state_seq, label='Predicted states', ls='dotted')
+        ax[1].plot(model.best_state_seq, label='Predicted states', ls='dotted')
         ax[1].plot(true_regimes, label='True states', ls='dashed')
 
         plt.legend()
         plt.show()
-
-
-'''
-    print(Z[0], Z[0].shape)
-    print(Z[0, None], Z[0, None].shape)
-    print(model.theta, model.theta.shape)
-    print('.'*40)
-    print(model.loss(Z[0], model.theta ))
-'''
-
-
 
 

@@ -16,7 +16,7 @@ class TDistHMM(MLEHiddenMarkov):
     Class for estimating HMMs with a mixture of gaussian and students t distributions.
     """
 
-    def __init__(self, n_states: int = 2, init: str = 'random', max_iter: int = 100, tol: int = 1e-4,
+    def __init__(self, n_states: int = 2, init: str = 'random', max_iter: int = 100, tol: int = 1e-6,
                  epochs: int = 1, random_state: int = 42):
         super().__init__(n_states, init, max_iter, tol, epochs, random_state)
         self.dof = 2  # TODO how do we init this???
@@ -46,6 +46,14 @@ class TDistHMM(MLEHiddenMarkov):
 
         return probs, log_probs
 
+    def dof_estimator(dof):  # TODO research why Nystrup master p. 94 use exp(dof) rather than dof
+        term1 = 1 - digamma(0.5 * dof)
+        term2 = np.log(0.5 * dof)
+        term3 = digamma((dof + 1) / 2)
+        term4 = -np.log((dof + 1) / 2)
+        term5 = 1 / np.sum(u[:, j]) * np.sum(u[:, j] * (np.log(u_it) - u_it))
+        return term1 + term2 + term3 + term4 + term5
+
     def _m_step(self, X: List[float], u, f, iterations: int = 2):
         ''' Given u and f do an m-step.
           Update degrees of freedom iteratively.
@@ -61,7 +69,7 @@ class TDistHMM(MLEHiddenMarkov):
         self.T = f / np.sum(f, axis=1).reshape((-1, 1))  # Check if this actually sums correct and to 1 on rows
         self.delta = u[0, :] / np.sum(u[0, :])
 
-
+        # TODO Remove iterations from findinf DOF as it is not necessary.
         # Update state-dependent distributions
         for iteration in range(iterations): # Iterate over this procedure until dof has converged
             for j in range(self.n_states):
@@ -75,14 +83,6 @@ class TDistHMM(MLEHiddenMarkov):
                     self.u_it = np.square(self.std[j]) * (self.dof + 1) / ((np.square(self.std[j]) * self.dof) + np.square(X - self.mu[j]))
 
                     # Find root of some estimator function based on digammas and dof
-                    def dof_estimator(dof):  # TODO research why Nystrup master p. 94 use exp(dof) rather than dof
-                        term1 = 1-digamma(0.5*dof)
-                        term2 = np.log(0.5*dof)
-                        term3 = digamma((dof+1)/2)
-                        term4 = -np.log((dof+1)/2)
-                        term5 = 1 / np.sum(u[:, j]) * np.sum(u[:, j] * (np.log(u_it)-u_it))
-                        return term1 + term2 + term3 + term4 + term5
-
                     self.dof = opt.root(fun=dof_estimator, x0=self.dof).x
 
     def predict(self, X):

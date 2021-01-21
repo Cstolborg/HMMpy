@@ -29,7 +29,7 @@ class MLEHiddenMarkov(BaseEstimator):
 
     """
 
-    def __init__(self, n_states: int = 2, init: str = 'random', max_iter: int = 100, tol: int = 1e-4,
+    def __init__(self, n_states: int = 2, init: str = 'random', max_iter: int = 100, tol: int = 1e-6,
                  epochs: int = 1, random_state: int = 42):
         self.n_states = n_states
         self.random_state = random_state
@@ -303,6 +303,8 @@ if __name__ == '__main__':
 
     model.fit(returns, verbose=0)
     states, posteriors = model._viterbi(returns)
+
+    print(model.mu)
 
 
     plotting = False
