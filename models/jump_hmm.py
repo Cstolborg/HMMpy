@@ -1,5 +1,6 @@
 import numpy as np
 from numpy import ndarray
+from scipy import stats
 import pandas as pd
 from sklearn.base import BaseEstimator
 from sklearn.cluster._kmeans import kmeans_plusplus
@@ -11,9 +12,9 @@ from utils.simulate_returns import simulate_2state_gaussian
 
 ''' TODO:
 
-Add sampler func
 Add predict func
-
+add stationary distribution
+ 
 implement simulation and BAC to choose jump penalty.
 
 Z-score standardisation
@@ -149,7 +150,7 @@ class JumpHMM(BaseEstimator):
         state_changes = state_groupby['state_changes'].sum()
         self.T[0, 1] = state_changes[0]
         self.T[1, 0] = state_changes[1]
-        self.T = self.T / self.T.sum(axis=0)  # make rows sum to 1
+        self.T = self.T / self.T.sum(axis=1).reshape(-1, 1)  # make rows sum to 1
 
         # Conditional distributions
         self.mu = state_groupby['X'].mean().values.T  # transform mean back into 1darray
@@ -191,20 +192,43 @@ class JumpHMM(BaseEstimator):
         diff = (theta.T - z).T
         return np.linalg.norm(diff, axis=0) ** 2  # squared l2 norm.
 
+    def sample(self, n_samples: int):
+        '''
+        Sample from a fitted hmm.
+
+        Parameters
+        ----------
+        n_samples: int
+                Amount of samples to generate
+
+        Returns
+        -------
+        Sample of same size n_samples
+        '''
+        state_index = np.arange(start=0, stop=self.n_states, step=1, dtype=int)  # Array of possible states
+        sample_states = np.zeros(n_samples).astype(int)  # Init sample vector
+        sample_states[0] = np.random.choice(a=state_index, size=1) # TODO add stationary distribution First state is determined by initial dist
+
+        for t in range(1, n_samples):
+            # Each new state is chosen using the transition probs corresponding to the previous state sojourn.
+            sample_states[t] = np.random.choice(a=state_index, size=1, p=self.T[sample_states[t-1], :])
+
+        samples = stats.norm.rvs(loc=self.mu[sample_states], scale = self.std[sample_states], size=n_samples)
+
+        return samples, sample_states
+
+
+
+
 if __name__ == '__main__':
     model = JumpHMM(n_states=2, random_state=42)
     returns, true_regimes = simulate_2state_gaussian(
         plotting=False)  # Simulate some data from two normal distributions
-    #returns = np.arange(1,20,1)
-    #returns = returns ** 2
 
     Z = model.construct_features(returns, window_len=6)
 
     model.fit(Z)
-
-    print(model.mu)
-    print(model.std)
-    print(model.T)
+    samples, states = model.sample(10000)
 
     plotting = False
     if plotting == True:

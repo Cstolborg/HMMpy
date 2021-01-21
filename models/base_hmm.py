@@ -280,18 +280,28 @@ class MLEHiddenMarkov(BaseEstimator):
 
         return state_preds, posteriors
 
-    def sample(self, X):
-        sample_len = len(X)
+    def sample(self, n_samples: int):
+        '''
+        Sample from a fitted hmm.
 
+        Parameters
+        ----------
+        n_samples: int
+                Amount of samples to generate
+
+        Returns
+        -------
+        Sample of same size n_samples
+        '''
         state_index = np.arange(start=0, stop=self.n_states, step=1, dtype=int)  # Array of possible states
-        sample_states = np.zeros(sample_len).astype(int)  # Init sample vector
+        sample_states = np.zeros(n_samples).astype(int)  # Init sample vector
         sample_states[0] = np.random.choice(a=state_index, size=1, p=self.delta) # First state is determined by initial dist
 
-        for t in range(1, sample_len):
+        for t in range(1, n_samples):
             # Each new state is chosen using the transition probs corresponding to the previous state sojourn.
             sample_states[t] = np.random.choice(a=state_index, size=1, p=self.T[sample_states[t-1], :])
 
-        samples = stats.norm.rvs(loc=self.mu[sample_states], scale = self.std[sample_states], size=sample_len)
+        samples = stats.norm.rvs(loc=self.mu[sample_states], scale = self.std[sample_states], size=n_samples)
 
         return samples, sample_states
 
