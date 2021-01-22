@@ -1,6 +1,7 @@
 import numpy as np
 from numpy import ndarray
 from scipy import stats
+import scipy.optimize as opt
 import pandas as pd
 from sklearn.base import BaseEstimator
 from sklearn.cluster._kmeans import kmeans_plusplus
@@ -12,7 +13,7 @@ from utils.simulate_returns import simulate_2state_gaussian
 
 ''' TODO:
 
-Add predict func
+Add predict func -- USE Zuchinni
 add stationary distribution
  
 implement simulation and BAC to choose jump penalty.
@@ -217,18 +218,30 @@ class JumpHMM(BaseEstimator):
 
         return samples, sample_states
 
+    def get_stationary_dist(self):
+        ones = np.ones(shape=(self.n_states,self.n_states))
+        identity = np.diag(ones)
+        init_guess = np.ones(self.n_states)/self.n_states
+
+        def solve_stationary(stationary_dist):
+            return (stationary_dist @ (identity - self.T + ones)) - np.ones(self.n_states)
+
+        stationary_dist = opt.root(solve_stationary, x0=init_guess)
+        print(stationary_dist)
+
+
 
 
 
 if __name__ == '__main__':
     model = JumpHMM(n_states=2, random_state=42)
-    returns, true_regimes = simulate_2state_gaussian(
-        plotting=False)  # Simulate some data from two normal distributions
+    returns, true_regimes = simulate_2state_gaussian(plotting=False)  # Simulate some data from two normal distributions
 
     Z = model.construct_features(returns, window_len=6)
 
     model.fit(Z)
-    samples, states = model.sample(10000)
+    print(model.T)
+    model.get_stationary_dist()
 
     plotting = False
     if plotting == True:

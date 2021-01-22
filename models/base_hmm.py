@@ -6,6 +6,15 @@ import matplotlib.pyplot as plt
 from typing import List
 
 from utils.simulate_returns import simulate_2state_gaussian
+from models.hmm_cython import _log_forward_probs
+
+''' TODO
+
+Add kmeans++ init
+
+Move key algos into cython
+
+'''
 
 
 
@@ -93,7 +102,7 @@ class MLEHiddenMarkov(BaseEstimator):
         self.std = std
         self.dof = 2
 
-    def emission_probs(self, X: list):
+    def emission_probs(self, X):
         """ Compute all different log probabilities log(p(x)) given an observation sequence and n states
 
         Returns: T X N matrix
@@ -311,10 +320,29 @@ if __name__ == '__main__':
 
     returns, true_regimes = simulate_2state_gaussian(plotting=False)  # Simulate some data from two normal distributions
 
-    model.fit(returns, verbose=0)
-    states, posteriors = model._viterbi(returns)
+    #model.fit(returns, verbose=0)
+    #states, posteriors = model._viterbi(returns)
 
-    print(model.mu)
+    n_states = model.n_states
+    emission_probs = model.emission_probs(returns)
+    delta = model.delta
+    TPM = model.T
+
+
+    print(_log_forward_probs(n_states, returns, emission_probs, delta, TPM) )
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     plotting = False
@@ -327,6 +355,12 @@ if __name__ == '__main__':
 
         plt.legend()
         plt.show()
+
+
+
+
+
+
 
     check_hmmlearn = False
     if check_hmmlearn == True:
