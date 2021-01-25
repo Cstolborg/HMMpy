@@ -12,9 +12,9 @@ from base_hmm import MLEHiddenMarkov
 
 class GradientMarkov(MLEHiddenMarkov):
 
-    def __init__(self, n_states: int = 2, params_init: str = 'random', max_iter: int = 100, tol: int = 1e-4,
+    def __init__(self, n_states: int = 2, init: str = 'random', max_iter: int = 100, tol: int = 1e-4,
                  epochs: int = 1, random_state: int = 42):
-        super().__init__(n_states, params_init, max_iter, tol, epochs, random_state)
+        super().__init__(n_states, init, max_iter, tol, epochs, random_state)
 
         # Random init of state distributions
         np.random.seed(self.random_state)
