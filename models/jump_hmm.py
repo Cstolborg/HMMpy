@@ -20,6 +20,8 @@ implement simulation and BAC to choose jump penalty.
 
 Z-score standardisation
 
+
+
 '''
 
 class JumpHMM(BaseEstimator):
@@ -65,7 +67,6 @@ class JumpHMM(BaseEstimator):
         return Z
 
     def _init_params(self, Z: ndarray):
-
 
         if self.init == 'kmeans++':
             # Theta
@@ -241,7 +242,7 @@ if __name__ == '__main__':
 
     model.fit(Z)
     print(model.T)
-    model.get_stationary_dist()
+    #model.get_stationary_dist()
 
     plotting = False
     if plotting == True:

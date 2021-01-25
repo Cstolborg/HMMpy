@@ -329,7 +329,7 @@ if __name__ == '__main__':
     TPM = model.T
 
 
-    print(_log_forward_probs(n_states, returns, emission_probs, delta, TPM) )
+    #print(_log_forward_probs(n_states, returns, emission_probs, delta, TPM) )
 
 
 
