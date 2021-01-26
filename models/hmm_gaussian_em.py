@@ -1,4 +1,5 @@
 import numpy as np
+from numpy import ndarray
 from scipy import stats
 import matplotlib.pyplot as plt
 
@@ -11,7 +12,6 @@ from models.hmm_base import BaseHiddenMarkov
 ''' TODO
 
 Add kmeans++ init
-
 Move key algos into cython
 
 '''
@@ -42,27 +42,10 @@ class MLEHiddenMarkov(BaseHiddenMarkov):
                  epochs: int = 1, random_state: int = 42):
         super().__init__(n_states, init, max_iter, tol, epochs, random_state)
 
-        # Init parameters initial distribution, transition matrix and state-dependent distributions from function
-        self._init_params()  # Initializes model parameters.
+        # Init parameters initial distribution, transition matrix and state-dependent distributions
+        self._init_params()
 
-    def emission_probs(self, X):
-        """ Compute all different log probabilities log(p(x)) given an observation sequence and n states
-
-        Returns: T X N matrix
-        """
-        T = len(X)
-        log_probs = np.zeros((T, self.n_states))  # Init T X N matrix
-        probs = np.zeros((T, self.n_states))
-
-        # For all states evaluate the density function
-        for j in range(self.n_states):
-            log_probs[:, j] = stats.norm.logpdf(X, loc=self.mu[j], scale=self.std[j])
-
-        probs = np.exp(log_probs)
-
-        return probs, log_probs
-
-    def _log_forward_probs(self, X: List[float], emission_probs: np.ndarray):
+    def _log_forward_probs(self, X: ndarray, emission_probs: ndarray):
         """ Compute log forward probabilities in scaled form.
 
         Forward probability is essentially the joint probability of observing
@@ -91,7 +74,7 @@ class MLEHiddenMarkov(BaseHiddenMarkov):
 
         return log_alphas
 
-    def _log_backward_probs(self, X: List[float], emission_probs: np.ndarray):
+    def _log_backward_probs(self, X: ndarray, emission_probs: ndarray):
         """ Compute the log of backward probabilities in scaled form.
         Backward probabilities are the conditional probability of
         some observation at t+1 given the current state = i. Equivalent to P(X_t+1 = x_t+1 | S_t = i)
@@ -112,7 +95,7 @@ class MLEHiddenMarkov(BaseHiddenMarkov):
 
         return log_betas
 
-    def _e_step(self, X: List[float]):
+    def _e_step(self, X: ndarray):
         ''' Do a single e-step in Baum-Welch algorithm
 
         '''
@@ -140,7 +123,7 @@ class MLEHiddenMarkov(BaseHiddenMarkov):
 
         return u, f, llk
 
-    def _m_step(self, X: List[float], u, f, iterations: int = None):
+    def _m_step(self, X: ndarray, u, f, iterations: int = None):
         ''' Given u and f do an m-step.
 
          Updates the model parameters delta, Transition matrix and state dependent distributions.
@@ -156,7 +139,7 @@ class MLEHiddenMarkov(BaseHiddenMarkov):
             self.mu[j] = np.sum(u[:, j] * X) / np.sum(u[:, j])
             self.std[j] = np.sqrt(np.sum(u[:, j] * np.square(X - self.mu[j])) / np.sum(u[:, j]))
 
-    def fit(self, X: List[float], verbose=0):
+    def fit(self, X: ndarray, verbose=0):
         """
         Iterates through the e-step and the m-step.
         Parameters
@@ -200,73 +183,18 @@ class MLEHiddenMarkov(BaseHiddenMarkov):
 
                 if verbose == 1: print(f'Iteration {iter} - LLK {llk} - Means: {self.mu} - STD {self.std} - Gamma {np.diag(self.T)} - Delta {self.delta}')
 
-    def predict(self, X):
-        state_preds, posteriors = self._viterbi(X)
-        return state_preds, posteriors
-
-    def _viterbi(self, X):
-        """ Compute the most likely sequence of states given the observations
-         To reduce CPU time consider storing each sequence --> will save T*m function evaluations
-
-         """
-        T = len(X)
-        posteriors = np.zeros((T, self.n_states))  # Init T X N matrix
-        self.emission_probs_, self.log_emission_probs_ = self.emission_probs(X)
-
-        # Initiate posterior at time 0 and scale it as:
-        posterior_temp = self.delta * self.emission_probs_[0, :]  # posteriors at time 0
-        posteriors[0, :] = posterior_temp / np.sum(posterior_temp)  # Scaled posteriors at time 0
-
-        # Do a forward recursion to compute posteriors
-        for t in range(1, T):
-            posterior_temp = np.max(posteriors[t - 1, :] * self.T, axis=1) * self.emission_probs_[t, :]  # TODO double check the max function returns the correct values
-            posteriors[t, :] = posterior_temp / np.sum(posterior_temp)  # Scale rows to sum to 1
-
-        # From posteriors get the the most likeley sequence of states i
-        state_preds = np.zeros(T).astype(int)  # Vector of length N
-        state_preds[-1] = np.argmax(posteriors[-1, :])  # Last most likely state is the index position
-
-        # Do a backward recursion to calculate most likely state sequence
-        for t in range(T - 2, -1, -1):  # Count backwards
-            state_preds[t] = np.argmax(posteriors[t, :] * self.T[:, state_preds[t + 1]])  # TODO double check the max function returns the correct values
-
-        return state_preds, posteriors
-
-    def sample(self, n_samples: int):
-        '''
-        Sample from a fitted hmm.
-
-        Parameters
-        ----------
-        n_samples: int
-                Amount of samples to generate
-
-        Returns
-        -------
-        Sample of same size n_samples
-        '''
-        state_index = np.arange(start=0, stop=self.n_states, step=1, dtype=int)  # Array of possible states
-        sample_states = np.zeros(n_samples).astype(int)  # Init sample vector
-        sample_states[0] = np.random.choice(a=state_index, size=1, p=self.delta) # First state is determined by initial dist
-
-        for t in range(1, n_samples):
-            # Each new state is chosen using the transition probs corresponding to the previous state sojourn.
-            sample_states[t] = np.random.choice(a=state_index, size=1, p=self.T[sample_states[t-1], :])
-
-        samples = stats.norm.rvs(loc=self.mu[sample_states], scale = self.std[sample_states], size=n_samples)
-
-        return samples, sample_states
-
 
 if __name__ == '__main__':
     model = MLEHiddenMarkov(n_states=2)
+    returns, true_regimes = simulate_2state_gaussian(plotting=False)  # Simulate some data from two normal distributions
+
+    model.fit(returns)
+    states, posteriors = model.predict(returns)
 
     print(model.mu)
     print(model.std)
     print(model.T)
     print(model.delta)
-
-    returns, true_regimes = simulate_2state_gaussian(plotting=False)  # Simulate some data from two normal distributions
 
     '''
     #model.fit(returns, verbose=0)
@@ -282,18 +210,6 @@ if __name__ == '__main__':
     '''
 
 
-
-
-
-
-
-
-
-
-
-
-
-    '''
     plotting = False
     if plotting == True:
         fig, ax = plt.subplots(nrows=2, ncols=1)
@@ -304,7 +220,6 @@ if __name__ == '__main__':
 
         plt.legend()
         plt.show()
-    '''
 
 
 

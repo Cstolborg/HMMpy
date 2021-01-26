@@ -162,8 +162,7 @@ class BaseHiddenMarkov(BaseEstimator):
         '''
         state_index = np.arange(start=0, stop=self.n_states, step=1, dtype=int)  # Array of possible states
         sample_states = np.zeros(n_samples).astype(int)  # Init sample vector
-        sample_states[0] = np.random.choice(a=state_index, size=1,
-                                            p=self.delta)  # First state is determined by initial dist
+        sample_states[0] = np.random.choice(a=state_index, size=1, p=self.stationary_dist)  # First state is determined by initial dist
 
         for t in range(1, n_samples):
             # Each new state is chosen using the transition probs corresponding to the previous state sojourn.
@@ -173,8 +172,7 @@ class BaseHiddenMarkov(BaseEstimator):
 
         return samples, sample_states
 
-    def get_hmm_params(self, X: ndarray,
-                       state_sequence: ndarray):  # TODO remove forward-looking params and slice X accordingly
+    def get_hmm_params(self, X: ndarray, state_sequence: ndarray):  # TODO remove forward-looking params and slice X accordingly
         # Slice data
         if X.ndim == 1:  # Makes function compatible on Z
             X = X[(self.window_len - 1): -self.window_len]
@@ -213,9 +211,12 @@ class BaseHiddenMarkov(BaseEstimator):
         stationary_dist = opt.root(solve_stationary, x0=init_guess)
         print(stationary_dist)
 
+        self.stationary_dist = stationary_dist
+
 
 if __name__ == '__main__':
     model = BaseHiddenMarkov(n_states=2)
+    model._init_params()
 
     print(model.mu)
     print(model.std)
