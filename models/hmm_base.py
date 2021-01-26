@@ -14,6 +14,10 @@ from models.hmm_cython import _log_forward_probs
 
 ''' TODO:
 
+Very bad integration of kmeans++ init for EM algos.
+ -   Consider moving entirely into jump models
+ -   OR make a better version
+
 Add predict func -- USE Zuchinni
 add stationary distribution - use it in sample function
 
@@ -24,12 +28,12 @@ Add method to get HMM params from a state sequence
 
 class BaseHiddenMarkov(BaseEstimator):
     """
-    Base class for Hidden Markov methods with gaussian distributions.
+    Parent class for Hidden Markov methods with gaussian distributions.
     Contain methods related to:
     1. Initializing HMM parameters
     2. Methods that assumes an HMM is fitted and are used for sampling, prediction etc.
 
-
+    To fit HMMs refer to the respective child classes
     """
 
     def __init__(self, n_states: int = 2, init: str = 'random', max_iter: int = 100, tol: int = 1e-6,
@@ -41,12 +45,15 @@ class BaseHiddenMarkov(BaseEstimator):
         self.tol = tol
         self.init = init
 
+        self.jump_penalty = 0.2  # TODO figure out better integration between kmeans++ init and jump
+
         # Init parameters initial distribution, transition matrix and state-dependent distributions from function
         np.random.seed(self.random_state)
 
-    def _init_params(self, diag_uniform_dist: List[float] = [.7, .99]):  # TODO Would a tuple work?
+    def _init_params(self, X, diag_uniform_dist = (.7, .99), output_hmm_params=True):
         """
-        Function to initialize HMM parameters.
+        Function to initialize HMM parameters. Can do so using kmeans++, randomly
+        or completely deterministic.
 
         Parameters
         ----------
@@ -62,7 +69,21 @@ class BaseHiddenMarkov(BaseEstimator):
 
         """
 
-        if self.init == 'random':
+        if self.init == "kmeans++":
+            if X.ndim == 1:
+                X = X.reshape(-1, 1)  # Compatible with sklearn
+
+            # Theta - only used in jump models and are discarded in EM models
+            centroids, _ = kmeans_plusplus(X, self.n_states)  # Use sklearns kmeans++ algorithm
+            self.theta = centroids.T  # Transpose to get shape: N_features X N_states
+
+            # State sequence
+            self._fit_state_seq(X)  # this function implicitly updates self.state_seq
+
+            if output_hmm_params == True: # output all hmm parameters from state sequence
+                self.get_hmm_params(X, state_sequence=self.state_seq)
+
+        elif self.init == 'random':
             # Transition probabilities
             trans_prob = np.diag(np.random.uniform(low=diag_uniform_dist[0], high=diag_uniform_dist[1],
                                                    size=self.n_states))  # Sample diag as uniform dist
@@ -81,7 +102,18 @@ class BaseHiddenMarkov(BaseEstimator):
             mu = np.random.uniform(low=-0.05, high=0.15, size=self.n_states)  # np.random.rand(self.n_states)
             std = np.random.uniform(low=0.01, high=0.3, size=self.n_states)  # np.random.rand(self.n_states) #
 
+            self.T = trans_prob
+            self.delta = init_dist
+            self.mu = mu
+            self.std = std
+
         else:
+            # Init theta as zeros and sample state seq from uniform dist
+            self.theta = np.zeros(shape=(self.n_features, self.n_states))  # Init as empty matrix
+            state_index = np.arange(start=0, stop=self.n_states, step=1, dtype=int)  # Array of possible states
+            state_seq = np.random.choice(a=state_index, size=len(X))  # Sample sequence uniformly
+            self.state_seq = state_seq
+
             trans_prob = np.zeros((2, 2))
             trans_prob[0, 0] = 0.7
             trans_prob[0, 1] = 0.3
@@ -91,10 +123,47 @@ class BaseHiddenMarkov(BaseEstimator):
             mu = [-0.05, 0.1]
             std = [0.2, 0.1]
 
-        self.T = trans_prob
-        self.delta = init_dist
-        self.mu = mu
-        self.std = std
+            self.T = trans_prob
+            self.delta = init_dist
+            self.mu = mu
+            self.std = std
+
+    def _fit_state_seq(self, X: ndarray):
+        T = len(X)
+
+        losses = np.zeros(shape=(T, self.n_states))  # Init T X N matrix
+        losses[-1, :] = self._l2_norm_squared(X[-1], self.theta)  # loss corresponding to last state
+
+        # Do a backward recursion to get losses
+        for t in range(T - 2, -1, -1):  # Count backwards
+            current_loss = self._l2_norm_squared(X[t], self.theta)  # n-state vector of current losses
+            last_loss = self._l2_norm_squared(X[t + 1], self.theta)  # n-state vector of last losses
+
+            for j in range(self.n_states):  # TODO redefine this as a matrix problem and get rid of loop
+                state_change_penalty = np.ones(self.n_states) * self.jump_penalty  # Init jump penalty
+                state_change_penalty[j] = 0  # And remove it for all but current state
+                losses[t, j] = current_loss[j] + np.min(last_loss + state_change_penalty)
+
+        # From losses get the most likely sequence of states i
+        state_preds = np.zeros(T).astype(int)  # Vector of length N
+        state_preds[0] = np.argmin(losses[0])  # First most likely state is the index position
+
+        # Do a forward recursion to calculate most likely state sequence
+        for t in range(1, T):  # Count backwards
+            last_state = state_preds[t-1]
+
+            state_change_penalty = np.ones(self.n_states) * self.jump_penalty  # Init jump penalty
+            state_change_penalty[last_state] = 0  # And remove it for all but current state
+
+            state_preds[t] = np.argmin(losses[t] + state_change_penalty)
+
+        # Finally compute score of objective function
+        all_likelihoods = losses[np.arange(len(losses)), state_preds].sum()
+        state_changes = np.diff(state_preds) != 0   # True/False array showing state changes
+        jump_penalty = (state_changes * self.jump_penalty).sum()  # Multiply all True values with penalty
+
+        self.objective_likelihood = all_likelihoods + jump_penalty  # Float
+        self.state_seq = state_preds
 
     def predict(self, X):
         state_preds, posteriors = self._viterbi(X)
@@ -174,7 +243,7 @@ class BaseHiddenMarkov(BaseEstimator):
 
     def get_hmm_params(self, X: ndarray, state_sequence: ndarray):  # TODO remove forward-looking params and slice X accordingly
         # Slice data
-        if X.ndim == 1:  # Makes function compatible on Z
+        if X.ndim == 1:  # Makes function compatible on higher dimensions
             X = X[(self.window_len - 1): -self.window_len]
         elif X.ndim > 1:
             X = X[:, 0]
@@ -196,9 +265,18 @@ class BaseHiddenMarkov(BaseEstimator):
         self.T[1, 0] = state_changes[1]
         self.T = self.T / self.T.sum(axis=1).reshape(-1, 1)  # make rows sum to 1
 
+        # init dist and stationary dist
+        self.delta = np.zeros(self.n_states)
+        self.delta[state_sequence[0]] = 1.
+
         # Conditional distributions
         self.mu = state_groupby['X'].mean().values.T  # transform mean back into 1darray
         self.std = state_groupby['X'].std().values.T
+
+    def _l2_norm_squared(self, z, theta): # z must always be a vector but theta can be either a vector or a matrix
+        # Subtract z from theta row-wise. Requires the transpose of the column matrix theta
+        diff = (theta.T - z).T
+        return np.square(np.linalg.norm(diff, axis=0))  # squared l2 norm.
 
     def get_stationary_dist(self):
         ones = np.ones(shape=(self.n_states, self.n_states))

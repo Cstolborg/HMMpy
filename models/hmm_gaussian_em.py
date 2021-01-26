@@ -18,10 +18,8 @@ Move key algos into cython
 
 
 
-class MLEHiddenMarkov(BaseHiddenMarkov):
+class EMHiddenMarkov(BaseHiddenMarkov):
     """ Class for computing HMM's using the EM algorithm.
-    Scikit-learn api is used as Parent see --> https://scikit-learn.org/stable/developers/develop.html
-
 
     Parameters
     ----------
@@ -39,11 +37,8 @@ class MLEHiddenMarkov(BaseHiddenMarkov):
     """
 
     def __init__(self, n_states: int = 2, init: str = 'random', max_iter: int = 100, tol: int = 1e-6,
-                 epochs: int = 1, random_state: int = 42):
+                 epochs: int = 10, random_state: int = 42):
         super().__init__(n_states, init, max_iter, tol, epochs, random_state)
-
-        # Init parameters initial distribution, transition matrix and state-dependent distributions
-        self._init_params()
 
     def _log_forward_probs(self, X: ndarray, emission_probs: ndarray):
         """ Compute log forward probabilities in scaled form.
@@ -151,11 +146,13 @@ class MLEHiddenMarkov(BaseHiddenMarkov):
         -------
 
         """
+        # Init parameters initial distribution, transition matrix and state-dependent distributions
+        self._init_params(X, output_hmm_params=True)
         self.old_llk = -np.inf  # Used to check model convergence
 
         for epoch in range(self.epochs):
             # Do multiple random runs
-            if epoch > 1: self._init_params()
+            if epoch > 1: self._init_params(X, output_hmm_params=True)
             #print(f'Epoch {epoch} - Means: {self.mu} - STD {self.std} - Gamma {np.diag(self.T)} - Delta {self.delta}')
 
             for iter in range(self.max_iter):
@@ -185,16 +182,11 @@ class MLEHiddenMarkov(BaseHiddenMarkov):
 
 
 if __name__ == '__main__':
-    model = MLEHiddenMarkov(n_states=2)
+    model = EMHiddenMarkov(n_states=2, init="random", random_state=42)
     returns, true_regimes = simulate_2state_gaussian(plotting=False)  # Simulate some data from two normal distributions
 
     model.fit(returns)
     states, posteriors = model.predict(returns)
-
-    print(model.mu)
-    print(model.std)
-    print(model.T)
-    print(model.delta)
 
     '''
     #model.fit(returns, verbose=0)
