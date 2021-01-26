@@ -1,12 +1,12 @@
 import numpy as np
 from scipy import stats
-from sklearn.base import BaseEstimator
 import matplotlib.pyplot as plt
 
 from typing import List
 
 from utils.simulate_returns import simulate_2state_gaussian
 from models.hmm_cython import _log_forward_probs
+from models.hmm_base import BaseHiddenMarkov
 
 ''' TODO
 
@@ -18,7 +18,7 @@ Move key algos into cython
 
 
 
-class MLEHiddenMarkov(BaseEstimator):
+class MLEHiddenMarkov(BaseHiddenMarkov):
     """ Class for computing HMM's using the EM algorithm.
     Scikit-learn api is used as Parent see --> https://scikit-learn.org/stable/developers/develop.html
 
@@ -40,67 +40,10 @@ class MLEHiddenMarkov(BaseEstimator):
 
     def __init__(self, n_states: int = 2, init: str = 'random', max_iter: int = 100, tol: int = 1e-6,
                  epochs: int = 1, random_state: int = 42):
-        self.n_states = n_states
-        self.random_state = random_state
-        self.max_iter = max_iter  # Max iterations to fit model
-        self.epochs = epochs  # Set number of random inits used in model fitting
-        self.tol = tol
-        self.init = init
+        super().__init__(n_states, init, max_iter, tol, epochs, random_state)
 
         # Init parameters initial distribution, transition matrix and state-dependent distributions from function
-        np.random.seed(self.random_state)
         self._init_params()  # Initializes model parameters.
-
-    def _init_params(self, diag_uniform_dist: List[float] = [.7, .99]):  # TODO Would a tuple work?
-        """
-        Function to initialize HMM parameters.
-
-        Parameters
-        ----------
-        diag_uniform_dist: 1D-array
-            The lower and upper bounds of uniform distribution to sample init from.
-
-        Returns
-        -------
-        self.T: N X N matrix of transition probabilities
-        self.delta: 1 X N vector of initial probabilities
-        self.mu: 1 X N vector of state dependent means
-        self.std: 1 X N vector of state dependent STDs
-        self.dof: int with degrees of freedom for t-distribution
-
-        """
-
-        if self.init == 'random':
-            # Transition probabilities
-            trans_prob = np.diag(np.random.uniform(low=diag_uniform_dist[0], high=diag_uniform_dist[1], size=self.n_states))  # Sample diag as uniform dist
-            remaining_row_nums = (1 - np.diag(trans_prob)) / (self.n_states - 1)  # Spread the remaining mass evenly onto remaining row values
-            trans_prob += remaining_row_nums.reshape(-1, 1)  # Add this to the uniform diagonal matrix
-            np.fill_diagonal(trans_prob, trans_prob.diagonal() - remaining_row_nums)  # And subtract these numbers from the diagonal so it remains uniform
-
-            # initial distribution
-            #init_dist = np.random.uniform(low=0.4, high=0.6, size=self.n_states)
-            #init_dist /= np.sum(init_dist)
-            init_dist = np.ones(self.n_states) / np.sum(self.n_states)  # initial distribution 1 X N vector
-
-            # State dependent distributions
-            mu = np.random.uniform(low=-0.05, high=0.15, size=self.n_states)  # np.random.rand(self.n_states)
-            std = np.random.uniform(low=0.01, high=0.3, size=self.n_states)  # np.random.rand(self.n_states) #
-
-        else:
-            trans_prob = np.zeros((2, 2))
-            trans_prob[0, 0] = 0.7
-            trans_prob[0, 1] = 0.3
-            trans_prob[1, 0] = 0.2
-            trans_prob[1, 1] = 0.8
-            init_dist = np.array([0.2, 0.8])  # initial distribution 1 X N vector
-            mu = [-0.05, 0.1]
-            std = [0.2, 0.1]
-
-        self.T = trans_prob
-        self.delta = init_dist
-        self.mu = mu
-        self.std = std
-        self.dof = 2
 
     def emission_probs(self, X):
         """ Compute all different log probabilities log(p(x)) given an observation sequence and n states
@@ -316,10 +259,16 @@ class MLEHiddenMarkov(BaseEstimator):
 
 
 if __name__ == '__main__':
-    model = MLEHiddenMarkov(n_states=2, random_state=42)
+    model = MLEHiddenMarkov(n_states=2)
+
+    print(model.mu)
+    print(model.std)
+    print(model.T)
+    print(model.delta)
 
     returns, true_regimes = simulate_2state_gaussian(plotting=False)  # Simulate some data from two normal distributions
 
+    '''
     #model.fit(returns, verbose=0)
     #states, posteriors = model._viterbi(returns)
 
@@ -330,6 +279,7 @@ if __name__ == '__main__':
 
 
     #print(_log_forward_probs(n_states, returns, emission_probs, delta, TPM) )
+    '''
 
 
 
@@ -343,8 +293,7 @@ if __name__ == '__main__':
 
 
 
-
-
+    '''
     plotting = False
     if plotting == True:
         fig, ax = plt.subplots(nrows=2, ncols=1)
@@ -355,7 +304,7 @@ if __name__ == '__main__':
 
         plt.legend()
         plt.show()
-
+    '''
 
 
 

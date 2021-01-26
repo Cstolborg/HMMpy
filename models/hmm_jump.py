@@ -20,8 +20,6 @@ implement simulation and BAC to choose jump penalty.
 
 Z-score standardisation
 
-
-
 '''
 
 class JumpHMM(BaseEstimator):
@@ -130,7 +128,7 @@ class JumpHMM(BaseEstimator):
         self.objective_likelihood = all_likelihoods + jump_penalty  # Float
         self.state_seq = state_preds
 
-    def get_hmm_params(self, X: ndarray):  # TODO remove forward-looking params and slice X accordingly
+    def get_hmm_params(self, X: ndarray, state_sequence: ndarray):  # TODO remove forward-looking params and slice X accordingly
         # Slice data
         if X.ndim == 1:  # Makes function compatible on Z
             X = X[(self.window_len-1) : -self.window_len]
@@ -138,8 +136,8 @@ class JumpHMM(BaseEstimator):
             X = X[:, 0]
 
         # group by states
-        diff = np.diff(self.best_state_seq)
-        df_states = pd.DataFrame({'state_seq': self.best_state_seq,
+        diff = np.diff(state_sequence)
+        df_states = pd.DataFrame({'state_seq': state_sequence,
                                   'X': X,
                                   'state_sojourns': np.append([False], diff == 0),
                                   'state_changes': np.append([False], diff != 0)})
@@ -178,7 +176,7 @@ class JumpHMM(BaseEstimator):
                         self.best_objective_likelihood = self.objective_likelihood
                         self.best_state_seq = self.state_seq
                         self.best_theta = self.theta
-                        self.get_hmm_params(Z)
+                        self.get_hmm_params(Z, state_sequence=self.best_state_seq)
 
                     print(f'Epoch {epoch} -- Iter {iter} -- likelihood {self.objective_likelihood} -- Theta {self.theta[0]} ')#Means: {self.mu} - STD {self.std} - Gamma {np.diag(self.T)} - Delta {self.delta}')
                     break
@@ -192,7 +190,7 @@ class JumpHMM(BaseEstimator):
     def loss(self, z, theta): # z must always be a vector but theta can be either a vector or a matrix
         # Subtract z from theta row-wise. Requires the transpose of the column matrix theta
         diff = (theta.T - z).T
-        return np.linalg.norm(diff, axis=0) ** 2  # squared l2 norm.
+        return np.square(np.linalg.norm(diff, axis=0))  # squared l2 norm.
 
     def sample(self, n_samples: int):
         '''

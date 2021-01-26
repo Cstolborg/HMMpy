@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from typing import List
 
 from utils.simulate_returns import simulate_2state_gaussian
-from base_hmm import MLEHiddenMarkov
+from hmm_gaussian_em import MLEHiddenMarkov
 
 
 
