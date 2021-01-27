@@ -18,10 +18,8 @@ Very bad integration of kmeans++ init for EM algos.
  -   Consider moving entirely into jump models
  -   OR make a better version
 
-Add predict func -- USE Zuchinni
-add stationary distribution - use it in sample function
 
-Add method to get HMM params from a state sequence
+add stationary distribution - use it in sample function
 
 '''
 
@@ -38,6 +36,7 @@ class BaseHiddenMarkov(BaseEstimator):
 
     def __init__(self, n_states: int = 2, init: str = 'random', max_iter: int = 100, tol: int = 1e-6,
                  epochs: int = 1, random_state: int = 42):
+        self.window_len = None
         self.n_states = n_states
         self.random_state = random_state
         self.max_iter = max_iter  # Max iterations to fit model
@@ -50,7 +49,7 @@ class BaseHiddenMarkov(BaseEstimator):
         # Init parameters initial distribution, transition matrix and state-dependent distributions from function
         np.random.seed(self.random_state)
 
-    def _init_params(self, X, diag_uniform_dist = (.7, .99), output_hmm_params=True):
+    def _init_params(self, X=None, diag_uniform_dist = (.7, .99), output_hmm_params=True):
         """
         Function to initialize HMM parameters. Can do so using kmeans++, randomly
         or completely deterministic.
@@ -70,6 +69,8 @@ class BaseHiddenMarkov(BaseEstimator):
         """
 
         if self.init == "kmeans++":
+            if not isinstance(X, np.ndarray):
+                raise Exception("To initialize with kmeans++ a sequence of data must be provided in an ndarray")
             if X.ndim == 1:
                 X = X.reshape(-1, 1)  # Compatible with sklearn
 
@@ -81,7 +82,7 @@ class BaseHiddenMarkov(BaseEstimator):
             self._fit_state_seq(X)  # this function implicitly updates self.state_seq
 
             if output_hmm_params == True: # output all hmm parameters from state sequence
-                self.get_hmm_params(X, state_sequence=self.state_seq)
+                self.get_params_from_seq(X, state_sequence=self.state_seq)
 
         elif self.init == 'random':
             # Transition probabilities
@@ -165,12 +166,12 @@ class BaseHiddenMarkov(BaseEstimator):
         self.objective_likelihood = all_likelihoods + jump_penalty  # Float
         self.state_seq = state_preds
 
-    def predict(self, X):
+    def decode(self, X):
         state_preds, posteriors = self._viterbi(X)
         return state_preds, posteriors
 
     def emission_probs(self, X):
-        """ Compute all different log probabilities p(x) given an observation sequence and n states
+        """ Compute all different probabilities p(x) given an observation sequence and n states
 
         Returns: T X N matrix
         """
@@ -229,6 +230,7 @@ class BaseHiddenMarkov(BaseEstimator):
         -------
         Sample of same size n_samples
         '''
+
         state_index = np.arange(start=0, stop=self.n_states, step=1, dtype=int)  # Array of possible states
         sample_states = np.zeros(n_samples).astype(int)  # Init sample vector
         sample_states[0] = np.random.choice(a=state_index, size=1, p=self.stationary_dist)  # First state is determined by initial dist
@@ -241,7 +243,64 @@ class BaseHiddenMarkov(BaseEstimator):
 
         return samples, sample_states
 
-    def get_hmm_params(self, X: ndarray, state_sequence: ndarray):  # TODO remove forward-looking params and slice X accordingly
+    def _log_forward_probs(self, X: ndarray, emission_probs: ndarray):
+        """ Compute log forward probabilities in scaled form.
+
+        Forward probability is essentially the joint probability of observing
+        a state = i and observation sequences x^t=x_1...x_t, i.e. P(St=i , X^t=x^t).
+        Follows the method by Zucchini A.1.8 p 334.
+        """
+        T = len(X)
+        log_alphas = np.zeros((T, self.n_states))  # initialize matrix with zeros
+
+        # a0, compute first forward as dot product of initial dist and state-dependent dist
+        # Each element is scaled to sum to 1 in order to handle numerical underflow
+        alpha_t = self.delta * emission_probs[0, :]
+        sum_alpha_t = np.sum(alpha_t)
+        alpha_t_scaled = alpha_t / sum_alpha_t
+        llk = np.log(sum_alpha_t)  # Scalar to store the log likelihood
+        log_alphas[0, :] = llk + np.log(alpha_t_scaled)
+
+        # a1 to at, compute recursively
+        for t in range(1, T):
+            alpha_t = (alpha_t_scaled @ self.T) * emission_probs[t, :]  # Dot product of previous forward_prob, transition matrix and emmission probablitites
+            sum_alpha_t = np.sum(alpha_t)
+
+            alpha_t_scaled = alpha_t / sum_alpha_t  # Scale forward_probs to sum to 1
+            llk = llk + np.log(sum_alpha_t)  # Scalar to store likelihoods
+            log_alphas[t, :] = llk + np.log(alpha_t_scaled)  # TODO RESEARCH WHY YOU ADD THE PREVIOUS LIKELIHOOD
+
+        return log_alphas
+
+    def predict_proba(self, X, n_preds=1):
+        """
+        Compute the probability P(St+h = i | X^T = x^T).
+        Calculates the probability of being in state i at future time step h.
+
+        Parameters
+        ----------
+        X
+        n_preds
+
+        Returns
+        -------
+        """
+
+        log_alphas = self._log_forward_probs(X, self.emission_probs_)
+        # Compute scaled log-likelihood
+        llk_scale_factor = np.max(log_alphas[-1, :])  # Max of the last vector in the matrix log_alpha
+        llk = llk_scale_factor + np.log(
+            np.sum(np.exp(log_alphas[-1, :] - llk_scale_factor)))  # Scale log-likelihood by c
+        state_pred_t = np.exp(log_alphas[-1, :] - llk)
+
+        state_preds = np.zeros(shape=(n_preds, self.n_states))  # Init matrix of predictions
+        for t in range(n_preds):
+            state_pred_t = state_pred_t @ self.T
+            state_preds[t] = state_pred_t
+
+        return state_preds
+
+    def get_params_from_seq(self, X: ndarray, state_sequence: ndarray):  # TODO remove forward-looking params and slice X accordingly
         # Slice data
         if X.ndim == 1:  # Makes function compatible on higher dimensions
             X = X[(self.window_len - 1): -self.window_len]
@@ -273,11 +332,6 @@ class BaseHiddenMarkov(BaseEstimator):
         self.mu = state_groupby['X'].mean().values.T  # transform mean back into 1darray
         self.std = state_groupby['X'].std().values.T
 
-    def _l2_norm_squared(self, z, theta): # z must always be a vector but theta can be either a vector or a matrix
-        # Subtract z from theta row-wise. Requires the transpose of the column matrix theta
-        diff = (theta.T - z).T
-        return np.square(np.linalg.norm(diff, axis=0))  # squared l2 norm.
-
     def get_stationary_dist(self):
         ones = np.ones(shape=(self.n_states, self.n_states))
         identity = np.diag(ones)
@@ -291,12 +345,21 @@ class BaseHiddenMarkov(BaseEstimator):
 
         self.stationary_dist = stationary_dist
 
+    def _l2_norm_squared(self, z, theta): # z must always be a vector but theta can be either a vector or a matrix
+        # Subtract z from theta row-wise. Requires the transpose of the column matrix theta
+        diff = (theta.T - z).T
+        return np.square(np.linalg.norm(diff, axis=0))  # squared l2 norm.
+
 
 if __name__ == '__main__':
     model = BaseHiddenMarkov(n_states=2)
-    model._init_params()
+    returns, true_regimes = simulate_2state_gaussian(plotting=False)  # Simulate some data from two normal distributions
+    model._init_params(returns)
 
     print(model.mu)
     print(model.std)
     print(model.T)
     print(model.delta)
+
+    model.stationary_dist = np.array([.5, .5])
+    print(model.sample(10))

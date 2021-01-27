@@ -13,25 +13,22 @@ from models.hmm_base import BaseHiddenMarkov
 
 
 ''' TODO:
-
-Add predict func -- USE Zuchinni
-add stationary distribution
  
 implement simulation and BAC to choose jump penalty.
 
 Z-score standardisation
-
 '''
 
 class JumpHMM(BaseHiddenMarkov):
 
-    def __init__(self, n_states: int = 2, jump_penalty: float = .2, init: str = 'kmeans++',
-                 max_iter: int = 30, tol: int = 1e-6,
+    def __init__(self, n_states: int = 2, jump_penalty: float = .2, window_len: int = 6,
+                 init: str = 'kmeans++', max_iter: int = 30, tol: int = 1e-6,
                  epochs: int = 10, random_state: int = 42):
         super().__init__(n_states, init, max_iter, tol, epochs, random_state)
 
         # Init parameters initial distribution, transition matrix and state-dependent distributions
         self.jump_penalty = jump_penalty
+        self.window_len = window_len
 
         self.best_objective_likelihood = np.inf
         self.old_objective_likelihood = np.inf
@@ -54,9 +51,9 @@ class JumpHMM(BaseHiddenMarkov):
         # Absolute changes
         #Y[1:, 1] = np.abs(np.diff(X))
         #Y[:-1, 2] = np.abs(np.diff(X))
+
         Z = df.dropna().to_numpy()
         self.n_features = Z.shape[1]
-        self.window_len = window_len
 
         return Z
 
@@ -86,11 +83,12 @@ class JumpHMM(BaseHiddenMarkov):
                 crit2 = np.abs(self.old_objective_likelihood - self.objective_likelihood)
                 if crit1 == True or crit2 < self.tol:
                     # If model is converged check if current epoch is the best
+                    # If current model is best all model params are updated
                     if self.objective_likelihood < self.best_objective_likelihood:
                         self.best_objective_likelihood = self.objective_likelihood
                         self.best_state_seq = self.state_seq
                         self.best_theta = self.theta
-                        self.get_hmm_params(Z, state_sequence=self.best_state_seq)
+                        self.get_params_from_seq(Z, state_sequence=self.best_state_seq)
 
                     print(f'Epoch {epoch} -- Iter {iter} -- likelihood {self.objective_likelihood} -- Theta {self.theta[0]} ')#Means: {self.mu} - STD {self.std} - Gamma {np.diag(self.T)} - Delta {self.delta}')
                     break
@@ -109,9 +107,9 @@ if __name__ == '__main__':
     Z = model.construct_features(returns, window_len=6)
 
     model.fit(Z)
-    #print(model.T)
-    model.stationary_dist = np.array([0.5, 0.5])
-    print(model.sample(10))
+
+    #model.stationary_dist = np.array([0.5, 0.5])
+    #print(model.sample(10))
 
     plotting = False
     if plotting == True:

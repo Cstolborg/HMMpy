@@ -89,7 +89,7 @@ if __name__ == '__main__':
     returns, true_regimes = simulate_2state_gaussian(plotting=False)  # Simulate some X in two states from normal distributions
 
     model.fit(returns, verbose=0)
-    states, posteriors = model.predict(returns)
+    states, posteriors = model.decode(returns)
 
     plotting = True
     if plotting == True:

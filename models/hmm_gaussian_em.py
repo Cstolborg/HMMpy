@@ -10,8 +10,10 @@ from models.hmm_cython import _log_forward_probs
 from models.hmm_base import BaseHiddenMarkov
 
 ''' TODO
+FIT method does not choose best epoch
+    - Implement same procedure as in hmm_jump.py
 
-Add kmeans++ init
+
 Move key algos into cython
 
 '''
@@ -39,35 +41,6 @@ class EMHiddenMarkov(BaseHiddenMarkov):
     def __init__(self, n_states: int = 2, init: str = 'random', max_iter: int = 100, tol: int = 1e-6,
                  epochs: int = 10, random_state: int = 42):
         super().__init__(n_states, init, max_iter, tol, epochs, random_state)
-
-    def _log_forward_probs(self, X: ndarray, emission_probs: ndarray):
-        """ Compute log forward probabilities in scaled form.
-
-        Forward probability is essentially the joint probability of observing
-        a state = i and observation sequences x^t=x_1...x_t, i.e. P(St=i , X^t=x^t).
-        Follows the method by Zucchini A.1.8 p 334.
-        """
-        T = len(X)
-        log_alphas = np.zeros((T, self.n_states))  # initialize matrix with zeros
-
-        # a0, compute first forward as dot product of initial dist and state-dependent dist
-        # Each element is scaled to sum to 1 in order to handle numerical underflow
-        alpha_t = self.delta * emission_probs[0, :]
-        sum_alpha_t = np.sum(alpha_t)
-        alpha_t_scaled = alpha_t / sum_alpha_t
-        llk = np.log(sum_alpha_t)  # Scalar to store the log likelihood
-        log_alphas[0, :] = llk + np.log(alpha_t_scaled)
-
-        # a1 to at, compute recursively
-        for t in range(1, T):
-            alpha_t = (alpha_t_scaled @ self.T) * emission_probs[t, :]  # Dot product of previous forward_prob, transition matrix and emmission probablitites
-            sum_alpha_t = np.sum(alpha_t)
-
-            alpha_t_scaled = alpha_t / sum_alpha_t  # Scale forward_probs to sum to 1
-            llk = llk + np.log(sum_alpha_t)  # Scalar to store likelihoods
-            log_alphas[t, :] = llk + np.log(alpha_t_scaled)  # TODO RESEARCH WHY YOU ADD THE PREVIOUS LIKELIHOOD
-
-        return log_alphas
 
     def _log_backward_probs(self, X: ndarray, emission_probs: ndarray):
         """ Compute the log of backward probabilities in scaled form.
@@ -186,7 +159,11 @@ if __name__ == '__main__':
     returns, true_regimes = simulate_2state_gaussian(plotting=False)  # Simulate some data from two normal distributions
 
     model.fit(returns)
-    states, posteriors = model.predict(returns)
+    states, posteriors = model.decode(returns)
+
+    print(model.predict_proba(returns, 5))
+
+
 
     '''
     #model.fit(returns, verbose=0)
