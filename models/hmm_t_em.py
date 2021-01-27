@@ -7,23 +7,19 @@ import matplotlib.pyplot as plt
 from typing import List
 
 from utils.simulate_returns import simulate_2state_gaussian
-from base_hmm import MLEHiddenMarkov
+from hmm_gaussian_em import EMHiddenMarkov
 
 
 
-class TDistHMM(MLEHiddenMarkov):
+class EMTHiddenMarkov(EMHiddenMarkov):
     """
     Class for estimating HMMs with a mixture of gaussian and students t distributions.
     """
 
     def __init__(self, n_states: int = 2, init: str = 'random', max_iter: int = 100, tol: int = 1e-6,
-                 epochs: int = 1, random_state: int = 42):
+                 epochs: int = 10, random_state: int = 42):
         super().__init__(n_states, init, max_iter, tol, epochs, random_state)
         self.dof = 2  # TODO how do we init this???
-
-        # Random init of state distributions
-        self.random_state = random_state
-        np.random.seed(self.random_state)
 
     def emission_probs(self, X: list):
         """ Compute all different log probabilities log(p(x)) given an observation sequence and n states
@@ -46,15 +42,7 @@ class TDistHMM(MLEHiddenMarkov):
 
         return probs, log_probs
 
-    def dof_estimator(dof):  # TODO research why Nystrup master p. 94 use exp(dof) rather than dof
-        term1 = 1 - digamma(0.5 * dof)
-        term2 = np.log(0.5 * dof)
-        term3 = digamma((dof + 1) / 2)
-        term4 = -np.log((dof + 1) / 2)
-        term5 = 1 / np.sum(u[:, j]) * np.sum(u[:, j] * (np.log(u_it) - u_it))
-        return term1 + term2 + term3 + term4 + term5
-
-    def _m_step(self, X: List[float], u, f, iterations: int = 2):
+    def _m_step(self, X , u, f, iterations: int = 2):
         ''' Given u and f do an m-step.
           Update degrees of freedom iteratively.
          Updates the model parameters delta, Transition matrix and state dependent distributions.
@@ -83,20 +71,25 @@ class TDistHMM(MLEHiddenMarkov):
                     self.u_it = np.square(self.std[j]) * (self.dof + 1) / ((np.square(self.std[j]) * self.dof) + np.square(X - self.mu[j]))
 
                     # Find root of some estimator function based on digammas and dof
+                    def dof_estimator(dof):  # TODO research why Nystrup master p. 94 use exp(dof) rather than dof
+                        term1 = 1 - digamma(0.5 * dof)
+                        term2 = np.log(0.5 * dof)
+                        term3 = digamma((dof + 1) / 2)
+                        term4 = -np.log((dof + 1) / 2)
+                        term5 = 1 / np.sum(u[:, j]) * np.sum(u[:, j] * (np.log(u_it) - u_it))
+                        return term1 + term2 + term3 + term4 + term5
+
                     self.dof = opt.root(fun=dof_estimator, x0=self.dof).x
 
-    def predict(self, X):
-        state_preds, posteriors = self._viterbi(X)
-        return state_preds, posteriors
+
 
 
 if __name__ == '__main__':
-
-    model = TDistHMM(n_states=2, epochs=5)
+    model = EMTHiddenMarkov(n_states=2, epochs=5)
     returns, true_regimes = simulate_2state_gaussian(plotting=False)  # Simulate some X in two states from normal distributions
 
     model.fit(returns, verbose=0)
-    states, posteriors = model.predict(returns)
+    states, posteriors = model.decode(returns)
 
     plotting = True
     if plotting == True:

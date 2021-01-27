@@ -7,10 +7,10 @@ import matplotlib.pyplot as plt
 from typing import List
 
 from utils import simulate_2state_gaussian
-from base_hmm import MLEHiddenMarkov
+from hmm_gaussian_em import EMHiddenMarkov
 
 
-class GradientMarkov(MLEHiddenMarkov):
+class GradientMarkov(EMHiddenMarkov):
 
     def __init__(self, n_states: int = 2, init: str = 'random', max_iter: int = 100, tol: int = 1e-4,
                  epochs: int = 1, random_state: int = 42):
