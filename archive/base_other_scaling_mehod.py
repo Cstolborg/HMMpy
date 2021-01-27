@@ -222,7 +222,7 @@ def state_dist(x, u_j):
     return mu, var
 
 def _likelihood(self, observations):
-    alphas = self._log_forward_probs(observations)
+    alphas = self._log_forward_proba(observations)
     wt = np.sum(alphas, axis=1)
     print(wt)
     lt = []

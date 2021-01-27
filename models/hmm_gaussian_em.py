@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 from typing import List
 
 from utils.simulate_returns import simulate_2state_gaussian
-from models.hmm_cython import _log_forward_probs
 from models.hmm_base import BaseHiddenMarkov
 
 ''' TODO
@@ -42,7 +41,7 @@ class EMHiddenMarkov(BaseHiddenMarkov):
                  epochs: int = 10, random_state: int = 42):
         super().__init__(n_states, init, max_iter, tol, epochs, random_state)
 
-    def _log_backward_probs(self, X: ndarray, emission_probs: ndarray):
+    def _log_backward_proba(self, X: ndarray, emission_probs: ndarray):
         """ Compute the log of backward probabilities in scaled form.
         Backward probabilities are the conditional probability of
         some observation at t+1 given the current state = i. Equivalent to P(X_t+1 = x_t+1 | S_t = i)
@@ -69,8 +68,8 @@ class EMHiddenMarkov(BaseHiddenMarkov):
         '''
         T = len(X)
         self.emission_probs_, self.log_emission_probs_ = self.emission_probs(X)
-        log_alphas = self._log_forward_probs(X, self.emission_probs_)
-        log_betas = self._log_backward_probs(X, self.emission_probs_)
+        log_alphas = self._log_forward_proba(X, self.emission_probs_)
+        log_betas = self._log_backward_proba(X, self.emission_probs_)
 
         # Compute scaled log-likelihood
         llk_scale_factor = np.max(log_alphas[-1, :])  # Max of the last vector in the matrix log_alpha
@@ -143,15 +142,14 @@ class EMHiddenMarkov(BaseHiddenMarkov):
                     self.aic_ = -2 * llk + 2 * num_independent_params
                     self.bic_ = -2 * llk + num_independent_params * np.log(len(X))
 
-                    print(f'Iteration {iter} - LLK {llk} - Means: {self.mu} - STD {self.std} - Gamma {np.diag(self.T)} - Delta {self.delta}')
+                    if verbose == 1:
+                        print(f'Iteration {iter} - LLK {llk} - Means: {self.mu} - STD {self.std} - Gamma {np.diag(self.T)} - Delta {self.delta}')
                     break
 
                 elif iter == self.max_iter - 1:
                     print(f'No convergence after {iter} iterations')
                 else:
                     self.old_llk = llk
-
-                if verbose == 1: print(f'Iteration {iter} - LLK {llk} - Means: {self.mu} - STD {self.std} - Gamma {np.diag(self.T)} - Delta {self.delta}')
 
 
 if __name__ == '__main__':

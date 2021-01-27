@@ -243,7 +243,7 @@ class BaseHiddenMarkov(BaseEstimator):
 
         return samples, sample_states
 
-    def _log_forward_probs(self, X: ndarray, emission_probs: ndarray):
+    def _log_forward_proba(self, X: ndarray, emission_probs: ndarray):
         """ Compute log forward probabilities in scaled form.
 
         Forward probability is essentially the joint probability of observing
@@ -268,7 +268,7 @@ class BaseHiddenMarkov(BaseEstimator):
 
             alpha_t_scaled = alpha_t / sum_alpha_t  # Scale forward_probs to sum to 1
             llk = llk + np.log(sum_alpha_t)  # Scalar to store likelihoods
-            log_alphas[t, :] = llk + np.log(alpha_t_scaled)  # TODO RESEARCH WHY YOU ADD THE PREVIOUS LIKELIHOOD
+            log_alphas[t, :] = llk + np.log(alpha_t_scaled)
 
         return log_alphas
 
@@ -286,7 +286,7 @@ class BaseHiddenMarkov(BaseEstimator):
         -------
         """
 
-        log_alphas = self._log_forward_probs(X, self.emission_probs_)
+        log_alphas = self._log_forward_proba(X, self.emission_probs_)
         # Compute scaled log-likelihood
         llk_scale_factor = np.max(log_alphas[-1, :])  # Max of the last vector in the matrix log_alpha
         llk = llk_scale_factor + np.log(
@@ -332,7 +332,7 @@ class BaseHiddenMarkov(BaseEstimator):
         self.mu = state_groupby['X'].mean().values.T  # transform mean back into 1darray
         self.std = state_groupby['X'].std().values.T
 
-    def get_stationary_dist(self):
+    def get_stationary_dist(self):  # TODO not finished
         ones = np.ones(shape=(self.n_states, self.n_states))
         identity = np.diag(ones)
         init_guess = np.ones(self.n_states) / self.n_states
@@ -345,7 +345,8 @@ class BaseHiddenMarkov(BaseEstimator):
 
         self.stationary_dist = stationary_dist
 
-    def _l2_norm_squared(self, z, theta): # z must always be a vector but theta can be either a vector or a matrix
+    def _l2_norm_squared(self, z, theta):  # TODO this function is called too many times can we rewrite it somehow?
+        # z must always be a vector but theta can be either a vector or a matrix
         # Subtract z from theta row-wise. Requires the transpose of the column matrix theta
         diff = (theta.T - z).T
         return np.square(np.linalg.norm(diff, axis=0))  # squared l2 norm.

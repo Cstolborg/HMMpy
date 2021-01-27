@@ -1047,16 +1047,6 @@ static CYTHON_INLINE PyObject *__Pyx_PyObject_GetItem(PyObject *obj, PyObject* k
 #define __Pyx_PyObject_GetItem(obj, key)  PyObject_GetItem(obj, key)
 #endif
 
-/* MatrixMultiply.proto */
-#if PY_VERSION_HEX >= 0x03050000
-  #define __Pyx_PyNumber_MatrixMultiply(x,y)         PyNumber_MatrixMultiply(x,y)
-  #define __Pyx_PyNumber_InPlaceMatrixMultiply(x,y)  PyNumber_InPlaceMatrixMultiply(x,y)
-#else
-#define __Pyx_PyNumber_MatrixMultiply(x,y)         __Pyx__PyNumber_MatrixMultiply(x, y, "@")
-static PyObject* __Pyx__PyNumber_MatrixMultiply(PyObject* x, PyObject* y, const char* op_name);
-static PyObject* __Pyx_PyNumber_InPlaceMatrixMultiply(PyObject* x, PyObject* y);
-#endif
-
 /* Import.proto */
 static PyObject *__Pyx_Import(PyObject *name, PyObject *from_list, int level);
 
@@ -1168,6 +1158,7 @@ static const char __pyx_k_n[] = "n";
 static const char __pyx_k_t[] = "t";
 static const char __pyx_k_np[] = "np";
 static const char __pyx_k_TPM[] = "TPM";
+static const char __pyx_k_dot[] = "dot";
 static const char __pyx_k_end[] = "end";
 static const char __pyx_k_fib[] = "fib";
 static const char __pyx_k_llk[] = "llk";
@@ -1182,18 +1173,15 @@ static const char __pyx_k_print[] = "print";
 static const char __pyx_k_range[] = "range";
 static const char __pyx_k_zeros[] = "zeros";
 static const char __pyx_k_import[] = "__import__";
-static const char __pyx_k_matmul[] = "__matmul__";
 static const char __pyx_k_alpha_t[] = "alpha_t";
-static const char __pyx_k_imatmul[] = "__imatmul__";
-static const char __pyx_k_rmatmul[] = "__rmatmul__";
 static const char __pyx_k_n_states[] = "n_states";
 static const char __pyx_k_log_alphas[] = "log_alphas";
 static const char __pyx_k_sum_alpha_t[] = "sum_alpha_t";
 static const char __pyx_k_alpha_t_scaled[] = "alpha_t_scaled";
 static const char __pyx_k_emission_probs[] = "emission_probs";
-static const char __pyx_k_log_forward_probs[] = "_log_forward_probs";
 static const char __pyx_k_models_hmm_cython[] = "models.hmm_cython";
 static const char __pyx_k_cline_in_traceback[] = "cline_in_traceback";
+static const char __pyx_k_log_forward_proba_c[] = "_log_forward_proba_c";
 static const char __pyx_k_models_hmm_cython_pyx[] = "models\\hmm_cython.pyx";
 static PyObject *__pyx_kp_s_;
 static PyObject *__pyx_n_s_T;
@@ -1205,17 +1193,16 @@ static PyObject *__pyx_n_s_alpha_t_scaled;
 static PyObject *__pyx_n_s_b;
 static PyObject *__pyx_n_s_cline_in_traceback;
 static PyObject *__pyx_n_s_delta;
+static PyObject *__pyx_n_s_dot;
 static PyObject *__pyx_n_s_emission_probs;
 static PyObject *__pyx_n_s_end;
 static PyObject *__pyx_n_s_fib;
-static PyObject *__pyx_n_s_imatmul;
 static PyObject *__pyx_n_s_import;
 static PyObject *__pyx_n_s_llk;
 static PyObject *__pyx_n_s_log;
 static PyObject *__pyx_n_s_log_alphas;
-static PyObject *__pyx_n_s_log_forward_probs;
+static PyObject *__pyx_n_s_log_forward_proba_c;
 static PyObject *__pyx_n_s_main;
-static PyObject *__pyx_n_s_matmul;
 static PyObject *__pyx_n_s_models_hmm_cython;
 static PyObject *__pyx_kp_s_models_hmm_cython_pyx;
 static PyObject *__pyx_n_s_n;
@@ -1225,14 +1212,13 @@ static PyObject *__pyx_n_s_np;
 static PyObject *__pyx_n_s_numpy;
 static PyObject *__pyx_n_s_print;
 static PyObject *__pyx_n_s_range;
-static PyObject *__pyx_n_s_rmatmul;
 static PyObject *__pyx_n_s_sum;
 static PyObject *__pyx_n_s_sum_alpha_t;
 static PyObject *__pyx_n_s_t;
 static PyObject *__pyx_n_s_test;
 static PyObject *__pyx_n_s_zeros;
 static PyObject *__pyx_pf_6models_10hmm_cython_fib(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_n); /* proto */
-static PyObject *__pyx_pf_6models_10hmm_cython_2_log_forward_probs(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_n_states, PyObject *__pyx_v_X, PyObject *__pyx_v_emission_probs, PyObject *__pyx_v_delta, PyObject *__pyx_v_TPM); /* proto */
+static PyObject *__pyx_pf_6models_10hmm_cython_2_log_forward_proba_c(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_n_states, PyObject *__pyx_v_X, PyObject *__pyx_v_emission_probs, PyObject *__pyx_v_delta, PyObject *__pyx_v_TPM); /* proto */
 static PyObject *__pyx_int_0;
 static PyObject *__pyx_int_1;
 static PyObject *__pyx_slice__2;
@@ -1383,18 +1369,18 @@ static PyObject *__pyx_pf_6models_10hmm_cython_fib(CYTHON_UNUSED PyObject *__pyx
   return __pyx_r;
 }
 
-/* "models/hmm_cython.pyx":15
+/* "models/hmm_cython.pyx":17
+ * import numpy as np
  * 
- * 
- * def _log_forward_probs(n_states, X, emission_probs, delta, TPM):             # <<<<<<<<<<<<<<
+ * def _log_forward_proba_c(n_states, X, emission_probs, delta, TPM):  # TODO not working yet             # <<<<<<<<<<<<<<
  *     T = len(X)
  *     log_alphas = np.zeros((T, n_states))  # initialize matrix with zeros
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_6models_10hmm_cython_3_log_forward_probs(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static PyMethodDef __pyx_mdef_6models_10hmm_cython_3_log_forward_probs = {"_log_forward_probs", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_6models_10hmm_cython_3_log_forward_probs, METH_VARARGS|METH_KEYWORDS, 0};
-static PyObject *__pyx_pw_6models_10hmm_cython_3_log_forward_probs(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+static PyObject *__pyx_pw_6models_10hmm_cython_3_log_forward_proba_c(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyMethodDef __pyx_mdef_6models_10hmm_cython_3_log_forward_proba_c = {"_log_forward_proba_c", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_6models_10hmm_cython_3_log_forward_proba_c, METH_VARARGS|METH_KEYWORDS, 0};
+static PyObject *__pyx_pw_6models_10hmm_cython_3_log_forward_proba_c(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   PyObject *__pyx_v_n_states = 0;
   PyObject *__pyx_v_X = 0;
   PyObject *__pyx_v_emission_probs = 0;
@@ -1405,7 +1391,7 @@ static PyObject *__pyx_pw_6models_10hmm_cython_3_log_forward_probs(PyObject *__p
   int __pyx_clineno = 0;
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
-  __Pyx_RefNannySetupContext("_log_forward_probs (wrapper)", 0);
+  __Pyx_RefNannySetupContext("_log_forward_proba_c (wrapper)", 0);
   {
     static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_n_states,&__pyx_n_s_X,&__pyx_n_s_emission_probs,&__pyx_n_s_delta,&__pyx_n_s_TPM,0};
     PyObject* values[5] = {0,0,0,0,0};
@@ -1435,29 +1421,29 @@ static PyObject *__pyx_pw_6models_10hmm_cython_3_log_forward_probs(PyObject *__p
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_X)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("_log_forward_probs", 1, 5, 5, 1); __PYX_ERR(0, 15, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("_log_forward_proba_c", 1, 5, 5, 1); __PYX_ERR(0, 17, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  2:
         if (likely((values[2] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_emission_probs)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("_log_forward_probs", 1, 5, 5, 2); __PYX_ERR(0, 15, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("_log_forward_proba_c", 1, 5, 5, 2); __PYX_ERR(0, 17, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  3:
         if (likely((values[3] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_delta)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("_log_forward_probs", 1, 5, 5, 3); __PYX_ERR(0, 15, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("_log_forward_proba_c", 1, 5, 5, 3); __PYX_ERR(0, 17, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  4:
         if (likely((values[4] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_TPM)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("_log_forward_probs", 1, 5, 5, 4); __PYX_ERR(0, 15, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("_log_forward_proba_c", 1, 5, 5, 4); __PYX_ERR(0, 17, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "_log_forward_probs") < 0)) __PYX_ERR(0, 15, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "_log_forward_proba_c") < 0)) __PYX_ERR(0, 17, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 5) {
       goto __pyx_L5_argtuple_error;
@@ -1476,20 +1462,20 @@ static PyObject *__pyx_pw_6models_10hmm_cython_3_log_forward_probs(PyObject *__p
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("_log_forward_probs", 1, 5, 5, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 15, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("_log_forward_proba_c", 1, 5, 5, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 17, __pyx_L3_error)
   __pyx_L3_error:;
-  __Pyx_AddTraceback("models.hmm_cython._log_forward_probs", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("models.hmm_cython._log_forward_proba_c", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_6models_10hmm_cython_2_log_forward_probs(__pyx_self, __pyx_v_n_states, __pyx_v_X, __pyx_v_emission_probs, __pyx_v_delta, __pyx_v_TPM);
+  __pyx_r = __pyx_pf_6models_10hmm_cython_2_log_forward_proba_c(__pyx_self, __pyx_v_n_states, __pyx_v_X, __pyx_v_emission_probs, __pyx_v_delta, __pyx_v_TPM);
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_6models_10hmm_cython_2_log_forward_probs(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_n_states, PyObject *__pyx_v_X, PyObject *__pyx_v_emission_probs, PyObject *__pyx_v_delta, PyObject *__pyx_v_TPM) {
+static PyObject *__pyx_pf_6models_10hmm_cython_2_log_forward_proba_c(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_n_states, PyObject *__pyx_v_X, PyObject *__pyx_v_emission_probs, PyObject *__pyx_v_delta, PyObject *__pyx_v_TPM) {
   Py_ssize_t __pyx_v_T;
   PyObject *__pyx_v_log_alphas = NULL;
   PyObject *__pyx_v_alpha_t = NULL;
@@ -1506,36 +1492,37 @@ static PyObject *__pyx_pf_6models_10hmm_cython_2_log_forward_probs(CYTHON_UNUSED
   PyObject *__pyx_t_5 = NULL;
   Py_ssize_t __pyx_t_6;
   Py_ssize_t __pyx_t_7;
+  int __pyx_t_8;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
-  __Pyx_RefNannySetupContext("_log_forward_probs", 0);
+  __Pyx_RefNannySetupContext("_log_forward_proba_c", 0);
 
-  /* "models/hmm_cython.pyx":16
+  /* "models/hmm_cython.pyx":18
  * 
- * def _log_forward_probs(n_states, X, emission_probs, delta, TPM):
+ * def _log_forward_proba_c(n_states, X, emission_probs, delta, TPM):  # TODO not working yet
  *     T = len(X)             # <<<<<<<<<<<<<<
  *     log_alphas = np.zeros((T, n_states))  # initialize matrix with zeros
  * 
  */
-  __pyx_t_1 = PyObject_Length(__pyx_v_X); if (unlikely(__pyx_t_1 == ((Py_ssize_t)-1))) __PYX_ERR(0, 16, __pyx_L1_error)
+  __pyx_t_1 = PyObject_Length(__pyx_v_X); if (unlikely(__pyx_t_1 == ((Py_ssize_t)-1))) __PYX_ERR(0, 18, __pyx_L1_error)
   __pyx_v_T = __pyx_t_1;
 
-  /* "models/hmm_cython.pyx":17
- * def _log_forward_probs(n_states, X, emission_probs, delta, TPM):
+  /* "models/hmm_cython.pyx":19
+ * def _log_forward_proba_c(n_states, X, emission_probs, delta, TPM):  # TODO not working yet
  *     T = len(X)
  *     log_alphas = np.zeros((T, n_states))  # initialize matrix with zeros             # <<<<<<<<<<<<<<
  * 
  *     # a0, compute first forward as dot product of initial dist and state-dependent dist
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 17, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 19, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_zeros); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 17, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_zeros); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 19, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = PyInt_FromSsize_t(__pyx_v_T); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 17, __pyx_L1_error)
+  __pyx_t_3 = PyInt_FromSsize_t(__pyx_v_T); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 19, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_5 = PyTuple_New(2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 17, __pyx_L1_error)
+  __pyx_t_5 = PyTuple_New(2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 19, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_GIVEREF(__pyx_t_3);
   PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_t_3);
@@ -1556,37 +1543,37 @@ static PyObject *__pyx_pf_6models_10hmm_cython_2_log_forward_probs(CYTHON_UNUSED
   __pyx_t_2 = (__pyx_t_3) ? __Pyx_PyObject_Call2Args(__pyx_t_4, __pyx_t_3, __pyx_t_5) : __Pyx_PyObject_CallOneArg(__pyx_t_4, __pyx_t_5);
   __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 17, __pyx_L1_error)
+  if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 19, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __pyx_v_log_alphas = __pyx_t_2;
   __pyx_t_2 = 0;
 
-  /* "models/hmm_cython.pyx":21
+  /* "models/hmm_cython.pyx":23
  *     # a0, compute first forward as dot product of initial dist and state-dependent dist
  *     # Each element is scaled to sum to 1 in order to handle numerical underflow
  *     alpha_t = delta * emission_probs[0, :]             # <<<<<<<<<<<<<<
  *     sum_alpha_t = np.sum(alpha_t)
  *     alpha_t_scaled = alpha_t / sum_alpha_t
  */
-  __pyx_t_2 = __Pyx_PyObject_GetItem(__pyx_v_emission_probs, __pyx_tuple__3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 21, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetItem(__pyx_v_emission_probs, __pyx_tuple__3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 23, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_4 = PyNumber_Multiply(__pyx_v_delta, __pyx_t_2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 21, __pyx_L1_error)
+  __pyx_t_4 = PyNumber_Multiply(__pyx_v_delta, __pyx_t_2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 23, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __pyx_v_alpha_t = __pyx_t_4;
   __pyx_t_4 = 0;
 
-  /* "models/hmm_cython.pyx":22
+  /* "models/hmm_cython.pyx":24
  *     # Each element is scaled to sum to 1 in order to handle numerical underflow
  *     alpha_t = delta * emission_probs[0, :]
  *     sum_alpha_t = np.sum(alpha_t)             # <<<<<<<<<<<<<<
  *     alpha_t_scaled = alpha_t / sum_alpha_t
  *     llk = np.log(sum_alpha_t)  # Scalar to store the log likelihood
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 22, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 24, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_sum); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 22, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_sum); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 24, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __pyx_t_2 = NULL;
@@ -1601,34 +1588,34 @@ static PyObject *__pyx_pf_6models_10hmm_cython_2_log_forward_probs(CYTHON_UNUSED
   }
   __pyx_t_4 = (__pyx_t_2) ? __Pyx_PyObject_Call2Args(__pyx_t_5, __pyx_t_2, __pyx_v_alpha_t) : __Pyx_PyObject_CallOneArg(__pyx_t_5, __pyx_v_alpha_t);
   __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 22, __pyx_L1_error)
+  if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 24, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __pyx_v_sum_alpha_t = __pyx_t_4;
   __pyx_t_4 = 0;
 
-  /* "models/hmm_cython.pyx":23
+  /* "models/hmm_cython.pyx":25
  *     alpha_t = delta * emission_probs[0, :]
  *     sum_alpha_t = np.sum(alpha_t)
  *     alpha_t_scaled = alpha_t / sum_alpha_t             # <<<<<<<<<<<<<<
  *     llk = np.log(sum_alpha_t)  # Scalar to store the log likelihood
  *     log_alphas[0, :] = llk + np.log(alpha_t_scaled)
  */
-  __pyx_t_4 = __Pyx_PyNumber_Divide(__pyx_v_alpha_t, __pyx_v_sum_alpha_t); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 23, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyNumber_Divide(__pyx_v_alpha_t, __pyx_v_sum_alpha_t); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 25, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __pyx_v_alpha_t_scaled = __pyx_t_4;
   __pyx_t_4 = 0;
 
-  /* "models/hmm_cython.pyx":24
+  /* "models/hmm_cython.pyx":26
  *     sum_alpha_t = np.sum(alpha_t)
  *     alpha_t_scaled = alpha_t / sum_alpha_t
  *     llk = np.log(sum_alpha_t)  # Scalar to store the log likelihood             # <<<<<<<<<<<<<<
  *     log_alphas[0, :] = llk + np.log(alpha_t_scaled)
  * 
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 24, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 26, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_log); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 24, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_log); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 26, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __pyx_t_5 = NULL;
@@ -1643,22 +1630,22 @@ static PyObject *__pyx_pf_6models_10hmm_cython_2_log_forward_probs(CYTHON_UNUSED
   }
   __pyx_t_4 = (__pyx_t_5) ? __Pyx_PyObject_Call2Args(__pyx_t_2, __pyx_t_5, __pyx_v_sum_alpha_t) : __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_v_sum_alpha_t);
   __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
-  if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 24, __pyx_L1_error)
+  if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 26, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __pyx_v_llk = __pyx_t_4;
   __pyx_t_4 = 0;
 
-  /* "models/hmm_cython.pyx":25
+  /* "models/hmm_cython.pyx":27
  *     alpha_t_scaled = alpha_t / sum_alpha_t
  *     llk = np.log(sum_alpha_t)  # Scalar to store the log likelihood
  *     log_alphas[0, :] = llk + np.log(alpha_t_scaled)             # <<<<<<<<<<<<<<
  * 
  *     # a1 to at, compute recursively
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 25, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 27, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_log); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 25, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_log); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 27, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __pyx_t_2 = NULL;
@@ -1673,20 +1660,20 @@ static PyObject *__pyx_pf_6models_10hmm_cython_2_log_forward_probs(CYTHON_UNUSED
   }
   __pyx_t_4 = (__pyx_t_2) ? __Pyx_PyObject_Call2Args(__pyx_t_5, __pyx_t_2, __pyx_v_alpha_t_scaled) : __Pyx_PyObject_CallOneArg(__pyx_t_5, __pyx_v_alpha_t_scaled);
   __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 25, __pyx_L1_error)
+  if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 27, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = PyNumber_Add(__pyx_v_llk, __pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 25, __pyx_L1_error)
+  __pyx_t_5 = PyNumber_Add(__pyx_v_llk, __pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 27, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (unlikely(PyObject_SetItem(__pyx_v_log_alphas, __pyx_tuple__3, __pyx_t_5) < 0)) __PYX_ERR(0, 25, __pyx_L1_error)
+  if (unlikely(PyObject_SetItem(__pyx_v_log_alphas, __pyx_tuple__3, __pyx_t_5) < 0)) __PYX_ERR(0, 27, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-  /* "models/hmm_cython.pyx":28
+  /* "models/hmm_cython.pyx":30
  * 
  *     # a1 to at, compute recursively
  *     for t in range(1, T):             # <<<<<<<<<<<<<<
- *         alpha_t = (alpha_t_scaled @ TPM) * emission_probs[t, :]  # Dot product of previous forward_prob, transition matrix and emmission probablitites
+ *         alpha_t = np.dot(alpha_t_scaled, TPM) * emission_probs[t, :]  # Dot product of previous forward_prob, transition matrix and emmission probablitites
  *         sum_alpha_t = np.sum(alpha_t)
  */
   __pyx_t_1 = __pyx_v_T;
@@ -1694,117 +1681,93 @@ static PyObject *__pyx_pf_6models_10hmm_cython_2_log_forward_probs(CYTHON_UNUSED
   for (__pyx_t_7 = 1; __pyx_t_7 < __pyx_t_6; __pyx_t_7+=1) {
     __pyx_v_t = __pyx_t_7;
 
-    /* "models/hmm_cython.pyx":29
+    /* "models/hmm_cython.pyx":31
  *     # a1 to at, compute recursively
  *     for t in range(1, T):
- *         alpha_t = (alpha_t_scaled @ TPM) * emission_probs[t, :]  # Dot product of previous forward_prob, transition matrix and emmission probablitites             # <<<<<<<<<<<<<<
+ *         alpha_t = np.dot(alpha_t_scaled, TPM) * emission_probs[t, :]  # Dot product of previous forward_prob, transition matrix and emmission probablitites             # <<<<<<<<<<<<<<
  *         sum_alpha_t = np.sum(alpha_t)
  * 
  */
-    __pyx_t_5 = __Pyx_PyNumber_MatrixMultiply(__pyx_v_alpha_t_scaled, __pyx_v_TPM); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 29, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_5);
-    __pyx_t_4 = PyInt_FromSsize_t(__pyx_v_t); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 29, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 31, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
-    __pyx_t_2 = PyTuple_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 29, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_dot); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 31, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    __Pyx_GIVEREF(__pyx_t_4);
-    PyTuple_SET_ITEM(__pyx_t_2, 0, __pyx_t_4);
+    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+    __pyx_t_4 = NULL;
+    __pyx_t_8 = 0;
+    if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_2))) {
+      __pyx_t_4 = PyMethod_GET_SELF(__pyx_t_2);
+      if (likely(__pyx_t_4)) {
+        PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_2);
+        __Pyx_INCREF(__pyx_t_4);
+        __Pyx_INCREF(function);
+        __Pyx_DECREF_SET(__pyx_t_2, function);
+        __pyx_t_8 = 1;
+      }
+    }
+    #if CYTHON_FAST_PYCALL
+    if (PyFunction_Check(__pyx_t_2)) {
+      PyObject *__pyx_temp[3] = {__pyx_t_4, __pyx_v_alpha_t_scaled, __pyx_v_TPM};
+      __pyx_t_5 = __Pyx_PyFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_8, 2+__pyx_t_8); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 31, __pyx_L1_error)
+      __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
+      __Pyx_GOTREF(__pyx_t_5);
+    } else
+    #endif
+    #if CYTHON_FAST_PYCCALL
+    if (__Pyx_PyFastCFunction_Check(__pyx_t_2)) {
+      PyObject *__pyx_temp[3] = {__pyx_t_4, __pyx_v_alpha_t_scaled, __pyx_v_TPM};
+      __pyx_t_5 = __Pyx_PyCFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_8, 2+__pyx_t_8); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 31, __pyx_L1_error)
+      __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
+      __Pyx_GOTREF(__pyx_t_5);
+    } else
+    #endif
+    {
+      __pyx_t_3 = PyTuple_New(2+__pyx_t_8); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 31, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_3);
+      if (__pyx_t_4) {
+        __Pyx_GIVEREF(__pyx_t_4); PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_4); __pyx_t_4 = NULL;
+      }
+      __Pyx_INCREF(__pyx_v_alpha_t_scaled);
+      __Pyx_GIVEREF(__pyx_v_alpha_t_scaled);
+      PyTuple_SET_ITEM(__pyx_t_3, 0+__pyx_t_8, __pyx_v_alpha_t_scaled);
+      __Pyx_INCREF(__pyx_v_TPM);
+      __Pyx_GIVEREF(__pyx_v_TPM);
+      PyTuple_SET_ITEM(__pyx_t_3, 1+__pyx_t_8, __pyx_v_TPM);
+      __pyx_t_5 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_3, NULL); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 31, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_5);
+      __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    }
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+    __pyx_t_2 = PyInt_FromSsize_t(__pyx_v_t); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 31, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __pyx_t_3 = PyTuple_New(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 31, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __Pyx_GIVEREF(__pyx_t_2);
+    PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_2);
     __Pyx_INCREF(__pyx_slice__2);
     __Pyx_GIVEREF(__pyx_slice__2);
-    PyTuple_SET_ITEM(__pyx_t_2, 1, __pyx_slice__2);
-    __pyx_t_4 = 0;
-    __pyx_t_4 = __Pyx_PyObject_GetItem(__pyx_v_emission_probs, __pyx_t_2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 29, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_4);
-    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __pyx_t_2 = PyNumber_Multiply(__pyx_t_5, __pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 29, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_2);
-    __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    __Pyx_DECREF_SET(__pyx_v_alpha_t, __pyx_t_2);
+    PyTuple_SET_ITEM(__pyx_t_3, 1, __pyx_slice__2);
     __pyx_t_2 = 0;
+    __pyx_t_2 = __Pyx_PyObject_GetItem(__pyx_v_emission_probs, __pyx_t_3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 31, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    __pyx_t_3 = PyNumber_Multiply(__pyx_t_5, __pyx_t_2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 31, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+    __Pyx_DECREF_SET(__pyx_v_alpha_t, __pyx_t_3);
+    __pyx_t_3 = 0;
 
-    /* "models/hmm_cython.pyx":30
+    /* "models/hmm_cython.pyx":32
  *     for t in range(1, T):
- *         alpha_t = (alpha_t_scaled @ TPM) * emission_probs[t, :]  # Dot product of previous forward_prob, transition matrix and emmission probablitites
+ *         alpha_t = np.dot(alpha_t_scaled, TPM) * emission_probs[t, :]  # Dot product of previous forward_prob, transition matrix and emmission probablitites
  *         sum_alpha_t = np.sum(alpha_t)             # <<<<<<<<<<<<<<
  * 
  *         alpha_t_scaled = alpha_t / sum_alpha_t  # Scale forward_probs to sum to 1
  */
-    __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 30, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_4);
-    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_sum); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 30, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_5);
-    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    __pyx_t_4 = NULL;
-    if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_5))) {
-      __pyx_t_4 = PyMethod_GET_SELF(__pyx_t_5);
-      if (likely(__pyx_t_4)) {
-        PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_5);
-        __Pyx_INCREF(__pyx_t_4);
-        __Pyx_INCREF(function);
-        __Pyx_DECREF_SET(__pyx_t_5, function);
-      }
-    }
-    __pyx_t_2 = (__pyx_t_4) ? __Pyx_PyObject_Call2Args(__pyx_t_5, __pyx_t_4, __pyx_v_alpha_t) : __Pyx_PyObject_CallOneArg(__pyx_t_5, __pyx_v_alpha_t);
-    __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-    if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 30, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 32, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-    __Pyx_DECREF_SET(__pyx_v_sum_alpha_t, __pyx_t_2);
-    __pyx_t_2 = 0;
-
-    /* "models/hmm_cython.pyx":32
- *         sum_alpha_t = np.sum(alpha_t)
- * 
- *         alpha_t_scaled = alpha_t / sum_alpha_t  # Scale forward_probs to sum to 1             # <<<<<<<<<<<<<<
- *         llk = llk + np.log(sum_alpha_t)  # Scalar to store likelihoods
- *         log_alphas[t, :] = llk + np.log(alpha_t_scaled)  # TODO RESEARCH WHY YOU ADD THE PREVIOUS LIKELIHOOD
- */
-    __pyx_t_2 = __Pyx_PyNumber_Divide(__pyx_v_alpha_t, __pyx_v_sum_alpha_t); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 32, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_2);
-    __Pyx_DECREF_SET(__pyx_v_alpha_t_scaled, __pyx_t_2);
-    __pyx_t_2 = 0;
-
-    /* "models/hmm_cython.pyx":33
- * 
- *         alpha_t_scaled = alpha_t / sum_alpha_t  # Scale forward_probs to sum to 1
- *         llk = llk + np.log(sum_alpha_t)  # Scalar to store likelihoods             # <<<<<<<<<<<<<<
- *         log_alphas[t, :] = llk + np.log(alpha_t_scaled)  # TODO RESEARCH WHY YOU ADD THE PREVIOUS LIKELIHOOD
- */
-    __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 33, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_5);
-    __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_log); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 33, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_4);
-    __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-    __pyx_t_5 = NULL;
-    if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_4))) {
-      __pyx_t_5 = PyMethod_GET_SELF(__pyx_t_4);
-      if (likely(__pyx_t_5)) {
-        PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_4);
-        __Pyx_INCREF(__pyx_t_5);
-        __Pyx_INCREF(function);
-        __Pyx_DECREF_SET(__pyx_t_4, function);
-      }
-    }
-    __pyx_t_2 = (__pyx_t_5) ? __Pyx_PyObject_Call2Args(__pyx_t_4, __pyx_t_5, __pyx_v_sum_alpha_t) : __Pyx_PyObject_CallOneArg(__pyx_t_4, __pyx_v_sum_alpha_t);
-    __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
-    if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 33, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_2);
-    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    __pyx_t_4 = PyNumber_Add(__pyx_v_llk, __pyx_t_2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 33, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_4);
-    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __Pyx_DECREF_SET(__pyx_v_llk, __pyx_t_4);
-    __pyx_t_4 = 0;
-
-    /* "models/hmm_cython.pyx":34
- *         alpha_t_scaled = alpha_t / sum_alpha_t  # Scale forward_probs to sum to 1
- *         llk = llk + np.log(sum_alpha_t)  # Scalar to store likelihoods
- *         log_alphas[t, :] = llk + np.log(alpha_t_scaled)  # TODO RESEARCH WHY YOU ADD THE PREVIOUS LIKELIHOOD             # <<<<<<<<<<<<<<
- */
-    __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 34, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_log); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 34, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_sum); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 32, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     __pyx_t_2 = NULL;
@@ -1817,46 +1780,129 @@ static PyObject *__pyx_pf_6models_10hmm_cython_2_log_forward_probs(CYTHON_UNUSED
         __Pyx_DECREF_SET(__pyx_t_5, function);
       }
     }
-    __pyx_t_4 = (__pyx_t_2) ? __Pyx_PyObject_Call2Args(__pyx_t_5, __pyx_t_2, __pyx_v_alpha_t_scaled) : __Pyx_PyObject_CallOneArg(__pyx_t_5, __pyx_v_alpha_t_scaled);
+    __pyx_t_3 = (__pyx_t_2) ? __Pyx_PyObject_Call2Args(__pyx_t_5, __pyx_t_2, __pyx_v_alpha_t) : __Pyx_PyObject_CallOneArg(__pyx_t_5, __pyx_v_alpha_t);
     __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
-    if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 34, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_4);
+    if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 32, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-    __pyx_t_5 = PyNumber_Add(__pyx_v_llk, __pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 34, __pyx_L1_error)
+    __Pyx_DECREF_SET(__pyx_v_sum_alpha_t, __pyx_t_3);
+    __pyx_t_3 = 0;
+
+    /* "models/hmm_cython.pyx":34
+ *         sum_alpha_t = np.sum(alpha_t)
+ * 
+ *         alpha_t_scaled = alpha_t / sum_alpha_t  # Scale forward_probs to sum to 1             # <<<<<<<<<<<<<<
+ *         llk = llk + np.log(sum_alpha_t)  # Scalar to store likelihoods
+ *         log_alphas[t, :] = llk + np.log(alpha_t_scaled)
+ */
+    __pyx_t_3 = __Pyx_PyNumber_Divide(__pyx_v_alpha_t, __pyx_v_sum_alpha_t); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 34, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __Pyx_DECREF_SET(__pyx_v_alpha_t_scaled, __pyx_t_3);
+    __pyx_t_3 = 0;
+
+    /* "models/hmm_cython.pyx":35
+ * 
+ *         alpha_t_scaled = alpha_t / sum_alpha_t  # Scale forward_probs to sum to 1
+ *         llk = llk + np.log(sum_alpha_t)  # Scalar to store likelihoods             # <<<<<<<<<<<<<<
+ *         log_alphas[t, :] = llk + np.log(alpha_t_scaled)
+ * 
+ */
+    __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 35, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
-    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    __pyx_t_4 = PyInt_FromSsize_t(__pyx_v_t); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 34, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_4);
-    __pyx_t_2 = PyTuple_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 34, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_log); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 35, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    __Pyx_GIVEREF(__pyx_t_4);
-    PyTuple_SET_ITEM(__pyx_t_2, 0, __pyx_t_4);
+    __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+    __pyx_t_5 = NULL;
+    if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_2))) {
+      __pyx_t_5 = PyMethod_GET_SELF(__pyx_t_2);
+      if (likely(__pyx_t_5)) {
+        PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_2);
+        __Pyx_INCREF(__pyx_t_5);
+        __Pyx_INCREF(function);
+        __Pyx_DECREF_SET(__pyx_t_2, function);
+      }
+    }
+    __pyx_t_3 = (__pyx_t_5) ? __Pyx_PyObject_Call2Args(__pyx_t_2, __pyx_t_5, __pyx_v_sum_alpha_t) : __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_v_sum_alpha_t);
+    __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
+    if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 35, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+    __pyx_t_2 = PyNumber_Add(__pyx_v_llk, __pyx_t_3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 35, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    __Pyx_DECREF_SET(__pyx_v_llk, __pyx_t_2);
+    __pyx_t_2 = 0;
+
+    /* "models/hmm_cython.pyx":36
+ *         alpha_t_scaled = alpha_t / sum_alpha_t  # Scale forward_probs to sum to 1
+ *         llk = llk + np.log(sum_alpha_t)  # Scalar to store likelihoods
+ *         log_alphas[t, :] = llk + np.log(alpha_t_scaled)             # <<<<<<<<<<<<<<
+ * 
+ *     return log_alphas
+ */
+    __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 36, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_log); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 36, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_5);
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    __pyx_t_3 = NULL;
+    if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_5))) {
+      __pyx_t_3 = PyMethod_GET_SELF(__pyx_t_5);
+      if (likely(__pyx_t_3)) {
+        PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_5);
+        __Pyx_INCREF(__pyx_t_3);
+        __Pyx_INCREF(function);
+        __Pyx_DECREF_SET(__pyx_t_5, function);
+      }
+    }
+    __pyx_t_2 = (__pyx_t_3) ? __Pyx_PyObject_Call2Args(__pyx_t_5, __pyx_t_3, __pyx_v_alpha_t_scaled) : __Pyx_PyObject_CallOneArg(__pyx_t_5, __pyx_v_alpha_t_scaled);
+    __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
+    if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 36, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+    __pyx_t_5 = PyNumber_Add(__pyx_v_llk, __pyx_t_2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 36, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_5);
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+    __pyx_t_2 = PyInt_FromSsize_t(__pyx_v_t); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 36, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __pyx_t_3 = PyTuple_New(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 36, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __Pyx_GIVEREF(__pyx_t_2);
+    PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_2);
     __Pyx_INCREF(__pyx_slice__2);
     __Pyx_GIVEREF(__pyx_slice__2);
-    PyTuple_SET_ITEM(__pyx_t_2, 1, __pyx_slice__2);
-    __pyx_t_4 = 0;
-    if (unlikely(PyObject_SetItem(__pyx_v_log_alphas, __pyx_t_2, __pyx_t_5) < 0)) __PYX_ERR(0, 34, __pyx_L1_error)
-    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+    PyTuple_SET_ITEM(__pyx_t_3, 1, __pyx_slice__2);
+    __pyx_t_2 = 0;
+    if (unlikely(PyObject_SetItem(__pyx_v_log_alphas, __pyx_t_3, __pyx_t_5) < 0)) __PYX_ERR(0, 36, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   }
 
-  /* "models/hmm_cython.pyx":15
+  /* "models/hmm_cython.pyx":38
+ *         log_alphas[t, :] = llk + np.log(alpha_t_scaled)
  * 
+ *     return log_alphas             # <<<<<<<<<<<<<<
+ */
+  __Pyx_XDECREF(__pyx_r);
+  __Pyx_INCREF(__pyx_v_log_alphas);
+  __pyx_r = __pyx_v_log_alphas;
+  goto __pyx_L0;
+
+  /* "models/hmm_cython.pyx":17
+ * import numpy as np
  * 
- * def _log_forward_probs(n_states, X, emission_probs, delta, TPM):             # <<<<<<<<<<<<<<
+ * def _log_forward_proba_c(n_states, X, emission_probs, delta, TPM):  # TODO not working yet             # <<<<<<<<<<<<<<
  *     T = len(X)
  *     log_alphas = np.zeros((T, n_states))  # initialize matrix with zeros
  */
 
   /* function exit code */
-  __pyx_r = Py_None; __Pyx_INCREF(Py_None);
-  goto __pyx_L0;
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_2);
   __Pyx_XDECREF(__pyx_t_3);
   __Pyx_XDECREF(__pyx_t_4);
   __Pyx_XDECREF(__pyx_t_5);
-  __Pyx_AddTraceback("models.hmm_cython._log_forward_probs", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("models.hmm_cython._log_forward_proba_c", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XDECREF(__pyx_v_log_alphas);
@@ -1925,17 +1971,16 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_b, __pyx_k_b, sizeof(__pyx_k_b), 0, 0, 1, 1},
   {&__pyx_n_s_cline_in_traceback, __pyx_k_cline_in_traceback, sizeof(__pyx_k_cline_in_traceback), 0, 0, 1, 1},
   {&__pyx_n_s_delta, __pyx_k_delta, sizeof(__pyx_k_delta), 0, 0, 1, 1},
+  {&__pyx_n_s_dot, __pyx_k_dot, sizeof(__pyx_k_dot), 0, 0, 1, 1},
   {&__pyx_n_s_emission_probs, __pyx_k_emission_probs, sizeof(__pyx_k_emission_probs), 0, 0, 1, 1},
   {&__pyx_n_s_end, __pyx_k_end, sizeof(__pyx_k_end), 0, 0, 1, 1},
   {&__pyx_n_s_fib, __pyx_k_fib, sizeof(__pyx_k_fib), 0, 0, 1, 1},
-  {&__pyx_n_s_imatmul, __pyx_k_imatmul, sizeof(__pyx_k_imatmul), 0, 0, 1, 1},
   {&__pyx_n_s_import, __pyx_k_import, sizeof(__pyx_k_import), 0, 0, 1, 1},
   {&__pyx_n_s_llk, __pyx_k_llk, sizeof(__pyx_k_llk), 0, 0, 1, 1},
   {&__pyx_n_s_log, __pyx_k_log, sizeof(__pyx_k_log), 0, 0, 1, 1},
   {&__pyx_n_s_log_alphas, __pyx_k_log_alphas, sizeof(__pyx_k_log_alphas), 0, 0, 1, 1},
-  {&__pyx_n_s_log_forward_probs, __pyx_k_log_forward_probs, sizeof(__pyx_k_log_forward_probs), 0, 0, 1, 1},
+  {&__pyx_n_s_log_forward_proba_c, __pyx_k_log_forward_proba_c, sizeof(__pyx_k_log_forward_proba_c), 0, 0, 1, 1},
   {&__pyx_n_s_main, __pyx_k_main, sizeof(__pyx_k_main), 0, 0, 1, 1},
-  {&__pyx_n_s_matmul, __pyx_k_matmul, sizeof(__pyx_k_matmul), 0, 0, 1, 1},
   {&__pyx_n_s_models_hmm_cython, __pyx_k_models_hmm_cython, sizeof(__pyx_k_models_hmm_cython), 0, 0, 1, 1},
   {&__pyx_kp_s_models_hmm_cython_pyx, __pyx_k_models_hmm_cython_pyx, sizeof(__pyx_k_models_hmm_cython_pyx), 0, 0, 1, 0},
   {&__pyx_n_s_n, __pyx_k_n, sizeof(__pyx_k_n), 0, 0, 1, 1},
@@ -1945,7 +1990,6 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_numpy, __pyx_k_numpy, sizeof(__pyx_k_numpy), 0, 0, 1, 1},
   {&__pyx_n_s_print, __pyx_k_print, sizeof(__pyx_k_print), 0, 0, 1, 1},
   {&__pyx_n_s_range, __pyx_k_range, sizeof(__pyx_k_range), 0, 0, 1, 1},
-  {&__pyx_n_s_rmatmul, __pyx_k_rmatmul, sizeof(__pyx_k_rmatmul), 0, 0, 1, 1},
   {&__pyx_n_s_sum, __pyx_k_sum, sizeof(__pyx_k_sum), 0, 0, 1, 1},
   {&__pyx_n_s_sum_alpha_t, __pyx_k_sum_alpha_t, sizeof(__pyx_k_sum_alpha_t), 0, 0, 1, 1},
   {&__pyx_n_s_t, __pyx_k_t, sizeof(__pyx_k_t), 0, 0, 1, 1},
@@ -1955,7 +1999,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
 };
 static CYTHON_SMALL_CODE int __Pyx_InitCachedBuiltins(void) {
   __pyx_builtin_print = __Pyx_GetBuiltinName(__pyx_n_s_print); if (!__pyx_builtin_print) __PYX_ERR(0, 9, __pyx_L1_error)
-  __pyx_builtin_range = __Pyx_GetBuiltinName(__pyx_n_s_range); if (!__pyx_builtin_range) __PYX_ERR(0, 28, __pyx_L1_error)
+  __pyx_builtin_range = __Pyx_GetBuiltinName(__pyx_n_s_range); if (!__pyx_builtin_range) __PYX_ERR(0, 30, __pyx_L1_error)
   return 0;
   __pyx_L1_error:;
   return -1;
@@ -1965,17 +2009,17 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__Pyx_InitCachedConstants", 0);
 
-  /* "models/hmm_cython.pyx":21
+  /* "models/hmm_cython.pyx":23
  *     # a0, compute first forward as dot product of initial dist and state-dependent dist
  *     # Each element is scaled to sum to 1 in order to handle numerical underflow
  *     alpha_t = delta * emission_probs[0, :]             # <<<<<<<<<<<<<<
  *     sum_alpha_t = np.sum(alpha_t)
  *     alpha_t_scaled = alpha_t / sum_alpha_t
  */
-  __pyx_slice__2 = PySlice_New(Py_None, Py_None, Py_None); if (unlikely(!__pyx_slice__2)) __PYX_ERR(0, 21, __pyx_L1_error)
+  __pyx_slice__2 = PySlice_New(Py_None, Py_None, Py_None); if (unlikely(!__pyx_slice__2)) __PYX_ERR(0, 23, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_slice__2);
   __Pyx_GIVEREF(__pyx_slice__2);
-  __pyx_tuple__3 = PyTuple_Pack(2, __pyx_int_0, __pyx_slice__2); if (unlikely(!__pyx_tuple__3)) __PYX_ERR(0, 21, __pyx_L1_error)
+  __pyx_tuple__3 = PyTuple_Pack(2, __pyx_int_0, __pyx_slice__2); if (unlikely(!__pyx_tuple__3)) __PYX_ERR(0, 23, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__3);
   __Pyx_GIVEREF(__pyx_tuple__3);
 
@@ -1991,17 +2035,17 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __Pyx_GIVEREF(__pyx_tuple__4);
   __pyx_codeobj__5 = (PyObject*)__Pyx_PyCode_New(1, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__4, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_models_hmm_cython_pyx, __pyx_n_s_fib, 5, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__5)) __PYX_ERR(0, 5, __pyx_L1_error)
 
-  /* "models/hmm_cython.pyx":15
+  /* "models/hmm_cython.pyx":17
+ * import numpy as np
  * 
- * 
- * def _log_forward_probs(n_states, X, emission_probs, delta, TPM):             # <<<<<<<<<<<<<<
+ * def _log_forward_proba_c(n_states, X, emission_probs, delta, TPM):  # TODO not working yet             # <<<<<<<<<<<<<<
  *     T = len(X)
  *     log_alphas = np.zeros((T, n_states))  # initialize matrix with zeros
  */
-  __pyx_tuple__6 = PyTuple_Pack(12, __pyx_n_s_n_states, __pyx_n_s_X, __pyx_n_s_emission_probs, __pyx_n_s_delta, __pyx_n_s_TPM, __pyx_n_s_T, __pyx_n_s_log_alphas, __pyx_n_s_alpha_t, __pyx_n_s_sum_alpha_t, __pyx_n_s_alpha_t_scaled, __pyx_n_s_llk, __pyx_n_s_t); if (unlikely(!__pyx_tuple__6)) __PYX_ERR(0, 15, __pyx_L1_error)
+  __pyx_tuple__6 = PyTuple_Pack(12, __pyx_n_s_n_states, __pyx_n_s_X, __pyx_n_s_emission_probs, __pyx_n_s_delta, __pyx_n_s_TPM, __pyx_n_s_T, __pyx_n_s_log_alphas, __pyx_n_s_alpha_t, __pyx_n_s_sum_alpha_t, __pyx_n_s_alpha_t_scaled, __pyx_n_s_llk, __pyx_n_s_t); if (unlikely(!__pyx_tuple__6)) __PYX_ERR(0, 17, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__6);
   __Pyx_GIVEREF(__pyx_tuple__6);
-  __pyx_codeobj__7 = (PyObject*)__Pyx_PyCode_New(5, 0, 12, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__6, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_models_hmm_cython_pyx, __pyx_n_s_log_forward_probs, 15, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__7)) __PYX_ERR(0, 15, __pyx_L1_error)
+  __pyx_codeobj__7 = (PyObject*)__Pyx_PyCode_New(5, 0, 12, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__6, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_models_hmm_cython_pyx, __pyx_n_s_log_forward_proba_c, 17, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__7)) __PYX_ERR(0, 17, __pyx_L1_error)
   __Pyx_RefNannyFinishContext();
   return 0;
   __pyx_L1_error:;
@@ -2311,13 +2355,25 @@ if (!__Pyx_RefNanny) {
   /* "models/hmm_cython.pyx":15
  * 
  * 
- * def _log_forward_probs(n_states, X, emission_probs, delta, TPM):             # <<<<<<<<<<<<<<
+ * import numpy as np             # <<<<<<<<<<<<<<
+ * 
+ * def _log_forward_proba_c(n_states, X, emission_probs, delta, TPM):  # TODO not working yet
+ */
+  __pyx_t_1 = __Pyx_Import(__pyx_n_s_numpy, 0, -1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 15, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_np, __pyx_t_1) < 0) __PYX_ERR(0, 15, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+
+  /* "models/hmm_cython.pyx":17
+ * import numpy as np
+ * 
+ * def _log_forward_proba_c(n_states, X, emission_probs, delta, TPM):  # TODO not working yet             # <<<<<<<<<<<<<<
  *     T = len(X)
  *     log_alphas = np.zeros((T, n_states))  # initialize matrix with zeros
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_6models_10hmm_cython_3_log_forward_probs, NULL, __pyx_n_s_models_hmm_cython); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 15, __pyx_L1_error)
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_6models_10hmm_cython_3_log_forward_proba_c, NULL, __pyx_n_s_models_hmm_cython); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 17, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_log_forward_probs, __pyx_t_1) < 0) __PYX_ERR(0, 15, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_log_forward_proba_c, __pyx_t_1) < 0) __PYX_ERR(0, 17, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   /* "models/hmm_cython.pyx":1
@@ -2990,88 +3046,6 @@ static PyObject *__Pyx_PyObject_GetItem(PyObject *obj, PyObject* key) {
     }
     return __Pyx_PyObject_GetIndex(obj, key);
 }
-#endif
-
-/* MatrixMultiply */
-#if PY_VERSION_HEX < 0x03050000
-static PyObject* __Pyx_PyObject_CallMatrixMethod(PyObject* method, PyObject* arg) {
-    PyObject *result = NULL;
-#if CYTHON_UNPACK_METHODS
-    if (likely(PyMethod_Check(method))) {
-        PyObject *self = PyMethod_GET_SELF(method);
-        if (likely(self)) {
-            PyObject *args;
-            PyObject *function = PyMethod_GET_FUNCTION(method);
-            #if CYTHON_FAST_PYCALL
-            if (PyFunction_Check(function)) {
-                PyObject *args[2] = {self, arg};
-                result = __Pyx_PyFunction_FastCall(function, args, 2);
-                goto done;
-            }
-            #endif
-            #if CYTHON_FAST_PYCCALL
-            if (__Pyx_PyFastCFunction_Check(function)) {
-                PyObject *args[2] = {self, arg};
-                result = __Pyx_PyCFunction_FastCall(function, args, 2);
-                goto done;
-            }
-            #endif
-            args = PyTuple_New(2);
-            if (unlikely(!args)) goto done;
-            Py_INCREF(self);
-            PyTuple_SET_ITEM(args, 0, self);
-            Py_INCREF(arg);
-            PyTuple_SET_ITEM(args, 1, arg);
-            Py_INCREF(function);
-            Py_DECREF(method); method = NULL;
-            result = __Pyx_PyObject_Call(function, args, NULL);
-            Py_DECREF(args);
-            Py_DECREF(function);
-            return result;
-        }
-    }
-#endif
-    result = __Pyx_PyObject_CallOneArg(method, arg);
-done:
-    Py_DECREF(method);
-    return result;
-}
-#define __Pyx_TryMatrixMethod(x, y, py_method_name) {\
-    PyObject *func = __Pyx_PyObject_GetAttrStr(x, py_method_name);\
-    if (func) {\
-        PyObject *result = __Pyx_PyObject_CallMatrixMethod(func, y);\
-        if (result != Py_NotImplemented)\
-            return result;\
-        Py_DECREF(result);\
-    } else {\
-        if (!PyErr_ExceptionMatches(PyExc_AttributeError))\
-            return NULL;\
-        PyErr_Clear();\
-    }\
-}
-static PyObject* __Pyx__PyNumber_MatrixMultiply(PyObject* x, PyObject* y, const char* op_name) {
-    int right_is_subtype = PyObject_IsSubclass((PyObject*)Py_TYPE(y), (PyObject*)Py_TYPE(x));
-    if (unlikely(right_is_subtype == -1))
-        return NULL;
-    if (right_is_subtype) {
-        __Pyx_TryMatrixMethod(y, x, __pyx_n_s_rmatmul)
-    }
-    __Pyx_TryMatrixMethod(x, y, __pyx_n_s_matmul)
-    if (!right_is_subtype) {
-        __Pyx_TryMatrixMethod(y, x, __pyx_n_s_rmatmul)
-    }
-    PyErr_Format(PyExc_TypeError,
-                 "unsupported operand type(s) for %.2s: '%.100s' and '%.100s'",
-                 op_name,
-                 Py_TYPE(x)->tp_name,
-                 Py_TYPE(y)->tp_name);
-    return NULL;
-}
-static PyObject* __Pyx_PyNumber_InPlaceMatrixMultiply(PyObject* x, PyObject* y) {
-    __Pyx_TryMatrixMethod(x, y, __pyx_n_s_imatmul)
-    return __Pyx__PyNumber_MatrixMultiply(x, y, "@=");
-}
-#undef __Pyx_TryMatrixMethod
 #endif
 
 /* Import */

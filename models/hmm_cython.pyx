@@ -12,7 +12,9 @@ def fib(n):
     print()
 
 
-def _log_forward_probs(n_states, X, emission_probs, delta, TPM):  # TODO not working yet
+import numpy as np
+
+def _log_forward_proba_c(n_states, X, emission_probs, delta, TPM):  # TODO not working yet
     T = len(X)
     log_alphas = np.zeros((T, n_states))  # initialize matrix with zeros
 
@@ -26,11 +28,11 @@ def _log_forward_probs(n_states, X, emission_probs, delta, TPM):  # TODO not wor
 
     # a1 to at, compute recursively
     for t in range(1, T):
-        alpha_t = (alpha_t_scaled @ TPM) * emission_probs[t, :]  # Dot product of previous forward_prob, transition matrix and emmission probablitites
+        alpha_t = np.dot(alpha_t_scaled, TPM) * emission_probs[t, :]  # Dot product of previous forward_prob, transition matrix and emmission probablitites
         sum_alpha_t = np.sum(alpha_t)
 
         alpha_t_scaled = alpha_t / sum_alpha_t  # Scale forward_probs to sum to 1
         llk = llk + np.log(sum_alpha_t)  # Scalar to store likelihoods
-        log_alphas[t, :] = llk + np.log(alpha_t_scaled)  # TODO RESEARCH WHY YOU ADD THE PREVIOUS LIKELIHOOD
+        log_alphas[t, :] = llk + np.log(alpha_t_scaled)
 
     return log_alphas
