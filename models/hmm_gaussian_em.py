@@ -25,15 +25,23 @@ class EMHiddenMarkov(BaseHiddenMarkov):
 
     Parameters
     ----------
-    n_states : Number of hidden states
+    n_states : int, default=2
+            Number of hidden states
     max_iter : Maximum number of iterations to perform during expectation-maximization
     tol : Criterion for early stopping
     init: str
             Set to 'random' for random initialization.
             Set to None for deterministic init.
 
-    Returns
+
+    Attributes
+    ---------- #Alle de ting der kan printes self.T, self.Delta etc.
+
+    Methods
     ----------
+
+
+
     Can be used to fit HMM parameters or to decode hidden states.
 
     """

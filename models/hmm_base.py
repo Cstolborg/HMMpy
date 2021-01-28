@@ -10,7 +10,6 @@ import matplotlib.pyplot as plt
 from typing import List
 
 from utils.simulate_returns import simulate_2state_gaussian
-from models.hmm_cython import _log_forward_probs
 
 ''' TODO:
 
@@ -32,9 +31,46 @@ class BaseHiddenMarkov(BaseEstimator):
     2. Methods that assumes an HMM is fitted and are used for sampling, prediction etc.
 
     To fit HMMs refer to the respective child classes
+
+    Parameters
+    ----------
+    n_states : int, default=2
+            Number of hidden states
+    max_iter : int, default=100
+            Maximum number of iterations to perform during expectation-maximization
+    tol : float, default=1e-6
+            Criterion for early stopping
+    epochs : int, default=1
+            Number of complete passes through the data to improve fit
+    random_state : int, default = 42
+            Parameter set to recreate output
+
+    init: str
+            Set to 'random' for random initialization.
+            Set to None for deterministic init.
+
+
+    Attributes
+
+    mu : float
+        Fitted means for each state
+    std : float
+        Fitted std for each state
+    T : float
+        Matrix of transition probabilities between states (NxN)
+    delta : float
+        Initial state occupation distribution
+
+
+
+    ---------- #Alle de ting der kan printes self.T, self.Delta etc.
+
+    Methods
+    ----------
+
     """
 
-    def __init__(self, n_states: int = 2, init: str = 'random', max_iter: int = 100, tol: int = 1e-6,
+    def __init__(self, n_states: int = 2, init: str = 'random', max_iter: int = 100, tol: float = 1e-6,
                  epochs: int = 1, random_state: int = 42):
         self.window_len = None
         self.n_states = n_states
@@ -265,7 +301,6 @@ class BaseHiddenMarkov(BaseEstimator):
         for t in range(1, T):
             alpha_t = (alpha_t_scaled @ self.T) * emission_probs[t, :]  # Dot product of previous forward_prob, transition matrix and emmission probablitites
             sum_alpha_t = np.sum(alpha_t)
-
             alpha_t_scaled = alpha_t / sum_alpha_t  # Scale forward_probs to sum to 1
             llk = llk + np.log(sum_alpha_t)  # Scalar to store likelihoods
             log_alphas[t, :] = llk + np.log(alpha_t_scaled)  # TODO RESEARCH WHY YOU ADD THE PREVIOUS LIKELIHOOD
@@ -356,10 +391,12 @@ if __name__ == '__main__':
     returns, true_regimes = simulate_2state_gaussian(plotting=False)  # Simulate some data from two normal distributions
     model._init_params(returns)
 
-    print(model.mu)
-    print(model.std)
+
     print(model.T)
     print(model.delta)
+    #print(model.T)
+    #print(model.delta)
+
 
     model.stationary_dist = np.array([.5, .5])
     print(model.sample(10))
