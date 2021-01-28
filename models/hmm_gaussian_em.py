@@ -79,29 +79,136 @@ class EMHiddenMarkov(BaseHiddenMarkov):
         fwdlattice = np.zeros((n_samples, n_components))
         forward(n_samples, n_components,
                             work_buffer,
-                            self.delta,
-                            self.T,
-                            self.emission_probs_, fwdlattice)
+                            np.log(self.delta),
+                            np.log(self.T),
+                            self.log_emission_probs_, fwdlattice)
         with np.errstate(under="ignore"):
-            return fwdlattice
+            return logsumexp(fwdlattice[-1]), fwdlattice
 
     def _do_backward_pass(self):
         n_samples, n_components = self.emission_probs_.shape
         work_buffer = np.zeros(self.n_states)
         bwdlattice = np.zeros((n_samples, n_components))
-        forward(n_samples, n_components,
+        backward(n_samples, n_components,
                             work_buffer,
-                            self.delta,
-                            self.T,
-                            self.emission_probs_, bwdlattice)
+                            np.log(self.delta),
+                            np.log(self.T),
+                            self.log_emission_probs_, bwdlattice)
         with np.errstate(under="ignore"):
             return bwdlattice
 
     def compute_gamma(self, log_alphas, log_betas):
+        """
+        Expectation of being in state j given observations, P(S_t = j | x^T).
+
+        Parameters
+        ----------
+        log_alphas
+        log_betas
+
+        Returns
+        -------
+
+        """
         gamma = log_alphas + log_betas
         normalizer = logsumexp(gamma, axis=1, keepdims=True)
         gamma -= normalizer
         return np.exp(gamma)
+
+    def _e_step1(self, X: ndarray):
+        ''' Do a single e-step in Baum-Welch algorithm
+
+        '''
+        T = len(X)
+        self.emission_probs_, self.log_emission_probs_ = self.emission_probs(X)
+        llk, log_alphas = self._do_forward_pass()
+        log_betas = self._do_backward_pass()
+
+        u = self.compute_gamma(log_alphas, log_betas)
+
+        # Initialize matrix of shape j X j
+        # We skip computing vhat and head straight to fhat for computational reasons
+        f = np.zeros(shape=(self.n_states, self.n_states))  # TODO FIND BETTER VARIABLE NAME
+        for j in range(self.n_states):
+            for k in range(self.n_states):
+                f[j, k] = self.T[j, k] * np.sum(
+                    np.exp(log_alphas[:-1, j] + log_betas[1:, k] + self.log_emission_probs_[1:, k] - llk))
+
+        return u, f, llk
+
+    def _m_step1(self, X: ndarray, u, f):
+        ''' Given u and f do an m-step.
+
+         Updates the model parameters delta, Transition matrix and state dependent distributions.
+         '''
+        X = np.array(X)
+
+        # Update transition matrix and initial probs
+        self.T = f / np.sum(f, axis=1).reshape((-1, 1))  # Check if this actually sums correct and to 1 on rows
+        self.delta = u[0, :] / np.sum(u[0, :])
+
+        # Update state-dependent distributions
+        for j in range(self.n_states):
+            self.mu[j] = np.sum(u[:, j] * X) / np.sum(u[:, j])
+            self.std[j] = np.sqrt(np.sum(u[:, j] * np.square(X - self.mu[j])) / np.sum(u[:, j]))
+
+    def fit1(self, X: ndarray, verbose=0):
+        """
+        Iterates through the e-step and the m-step.
+        Parameters
+        ----------
+        X
+        verbose
+
+        Returns
+        -------
+
+        """
+        # Init parameters initial distribution, transition matrix and state-dependent distributions
+        self._init_params(X, output_hmm_params=True)
+        self.old_llk = -np.inf  # Used to check model convergence
+        self.best_epoch = -np.inf
+
+        for epoch in range(self.epochs):
+            # Do multiple random runs
+            if epoch > 1: self._init_params(X, output_hmm_params=True)
+            # print(f'Epoch {epoch} - Means: {self.mu} - STD {self.std} - Gamma {np.diag(self.T)} - Delta {self.delta}')
+
+            for iter in range(self.max_iter):
+                # Do e- and m-step
+                u, f, llk = self._e_step1(X)
+                self._m_step1(X, u, f)
+
+                # Check convergence criterion
+                crit = np.abs(llk - self.old_llk)  # Improvement in log likelihood
+                if crit < self.tol:
+                    if llk > self.best_epoch:
+                        # Compute AIC and BIC and print model results
+                        # AIC & BIC computed as shown on
+                        # https://rdrr.io/cran/HMMpa/man/AIC_HMM.html
+                        num_independent_params = self.n_states ** 2 + 2 * self.n_states - 1  # True for normal distributions
+                        self.aic_ = -2 * llk + 2 * num_independent_params
+                        self.bic_ = -2 * llk + num_independent_params * np.log(len(X))
+                        self.best_T = self.T
+                        self.best_delta = self.delta
+                        self.best_mu = self.mu
+                        self.best_std = self.std
+
+                    if verbose == 1:
+                        print(
+                            f'Iteration {iter} - LLK {llk} - Means: {self.mu} - STD {self.std} - Gamma {np.diag(self.T)} - Delta {self.delta}')
+                    break
+
+                elif iter == self.max_iter - 1:
+                    print(f'No convergence after {iter} iterations')
+                else:
+                    self.old_llk = llk
+        self.T = self.best_T
+        self.delta = self.best_delta
+        self.mu = self.best_mu
+        self.std = self.best_std
+
+        return iter
 
     def _e_step(self, X: ndarray):
         ''' Do a single e-step in Baum-Welch algorithm
@@ -131,7 +238,7 @@ class EMHiddenMarkov(BaseHiddenMarkov):
 
         return u, f, llk
 
-    def _m_step(self, X: ndarray, u, f, iterations: int = None):
+    def _m_step(self, X: ndarray, u, f):
         ''' Given u and f do an m-step.
 
          Updates the model parameters delta, Transition matrix and state dependent distributions.
@@ -162,6 +269,7 @@ class EMHiddenMarkov(BaseHiddenMarkov):
         # Init parameters initial distribution, transition matrix and state-dependent distributions
         self._init_params(X, output_hmm_params=True)
         self.old_llk = -np.inf  # Used to check model convergence
+        self.best_epoch = -np.inf
 
         for epoch in range(self.epochs):
             # Do multiple random runs
@@ -176,12 +284,18 @@ class EMHiddenMarkov(BaseHiddenMarkov):
                 # Check convergence criterion
                 crit = np.abs(llk - self.old_llk)  # Improvement in log likelihood
                 if crit < self.tol:
-                    # Compute AIC and BIC and print model results
-                    # AIC & BIC computed as shown on
-                    # https://rdrr.io/cran/HMMpa/man/AIC_HMM.html
-                    num_independent_params = self.n_states**2 + 2*self.n_states - 1  # True for normal distributions
-                    self.aic_ = -2 * llk + 2 * num_independent_params
-                    self.bic_ = -2 * llk + num_independent_params * np.log(len(X))
+                    if llk > self.best_epoch:
+                        # Compute AIC and BIC and print model results
+                        # AIC & BIC computed as shown on
+                        # https://rdrr.io/cran/HMMpa/man/AIC_HMM.html
+                        num_independent_params = self.n_states**2 + 2*self.n_states - 1  # True for normal distributions
+                        self.aic_ = -2 * llk + 2 * num_independent_params
+                        self.bic_ = -2 * llk + num_independent_params * np.log(len(X))
+                        self.best_T = self.T
+                        self.best_delta = self.delta
+                        self.best_mu = self.mu
+                        self.best_std = self.std
+
 
                     if verbose == 1:
                         print(f'Iteration {iter} - LLK {llk} - Means: {self.mu} - STD {self.std} - Gamma {np.diag(self.T)} - Delta {self.delta}')
@@ -191,21 +305,43 @@ class EMHiddenMarkov(BaseHiddenMarkov):
                     print(f'No convergence after {iter} iterations')
                 else:
                     self.old_llk = llk
+        self.T = self.best_T
+        self.delta = self.best_delta
+        self.mu = self.best_mu
+        self.std = self.best_std
+
+        return iter
 
 
 if __name__ == '__main__':
-    model = EMHiddenMarkov(n_states=2, init="random", random_state=42)
+    model = EMHiddenMarkov(n_states=2, init="random", random_state=42, epochs=1, max_iter=100)
     returns, true_regimes = simulate_2state_gaussian(plotting=False)  # Simulate some data from two normal distributions
 
-    model.fit(returns, verbose=0)
-    states, posteriors = model.decode(returns)
+    #model._init_params(returns)
+    #u,f,llk = model._e_step1(returns)
+    #model._m_step1(returns, u, f)
 
-    log_alphas = model._do_forward_pass()
+    iter1 = []
+    iter2 = []
+    for i in range(100):
+        iter1.append(model.fit1(returns, verbose=0))
+        iter2.append(model.fit(returns, verbose=0))
+
+    print(np.mean(iter1))
+    print(np.mean(iter2))
+    plt.hist(iter1, label="new method")
+    plt.hist(iter2)
+    plt.legend()
+    plt.show()
+
+
+
+    llk, log_alphas = model._do_forward_pass()
     log_betas = model._do_backward_pass()
-    print(model.compute_gamma(log_alphas, log_betas))
+    #print(model.compute_gamma(log_alphas, log_betas))
 
-    u,f,llk = model._e_step(returns)
-    print(u)
+    #u,f,llk = model._e_step(returns)
+    #print(u)
 
 
 
