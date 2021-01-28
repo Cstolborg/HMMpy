@@ -1,38 +1,66 @@
-from __future__ import print_function
+# cython: language_level = 3
+cimport cython
+from cython cimport view
 
-import numpy as np
+from libc.math cimport exp, log # 40x speedup using this instead of np.exp, np.log which result in python numpy calls
 
-def fib(n):
-    """Print the Fibonacci series up to n."""
-    a, b = 0, 1
-    while b < n:
-        print(b, end=' ')
-        a, b = b, a + b
+ctypedef double dtype_t
 
-    print()
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef inline dtype_t lse_cython(dtype_t[:] a, int n_states) nogil:
+    cdef int i
+    cdef double result = 0.0
+    cdef double largest_in_a = a[0]
+    for i in range(1, n_states):
+        if (a[i] > largest_in_a):
+            largest_in_a = a[i]
+    for i in range(n_states):
+        result += exp(a[i] - largest_in_a)
+    return largest_in_a + log(result)
 
 
-import numpy as np
+def forward(int n_samples, int n_components,
+             dtype_t[:] work_buffer,
+             dtype_t[:] log_startprob,
+             dtype_t[:, :] log_transmat,
+             dtype_t[:, :] framelogprob,
+             dtype_t[:, :] fwdlattice):
 
-def _log_forward_proba_c(n_states, X, emission_probs, delta, TPM):  # TODO not working yet
-    T = len(X)
-    log_alphas = np.zeros((T, n_states))  # initialize matrix with zeros
+    cdef int t, i, j
+    #cdef dtype_t[::view.contiguous] work_buffer = np.zeros(n_components)
 
-    # a0, compute first forward as dot product of initial dist and state-dependent dist
-    # Each element is scaled to sum to 1 in order to handle numerical underflow
-    alpha_t = delta * emission_probs[0, :]
-    sum_alpha_t = np.sum(alpha_t)
-    alpha_t_scaled = alpha_t / sum_alpha_t
-    llk = np.log(sum_alpha_t)  # Scalar to store the log likelihood
-    log_alphas[0, :] = llk + np.log(alpha_t_scaled)
+    with nogil:
+        for i in range(n_components):
+            fwdlattice[0, i] = log_startprob[i] + framelogprob[0, i]
 
-    # a1 to at, compute recursively
-    for t in range(1, T):
-        alpha_t = np.dot(alpha_t_scaled, TPM) * emission_probs[t, :]  # Dot product of previous forward_prob, transition matrix and emmission probablitites
-        sum_alpha_t = np.sum(alpha_t)
+        for t in range(1, n_samples):
+            for j in range(n_components):
+                for i in range(n_components):
+                    work_buffer[i] = fwdlattice[t - 1, i] + log_transmat[i, j]
 
-        alpha_t_scaled = alpha_t / sum_alpha_t  # Scale forward_probs to sum to 1
-        llk = llk + np.log(sum_alpha_t)  # Scalar to store likelihoods
-        log_alphas[t, :] = llk + np.log(alpha_t_scaled)
+                fwdlattice[t, j] = lse_cython(work_buffer, n_components) + framelogprob[t, j]
 
-    return log_alphas
+
+def backward(int n_samples, int n_components,
+              dtype_t[:] work_buffer,
+              dtype_t[:] log_startprob,
+              dtype_t[:, :] log_transmat,
+              dtype_t[:, :] framelogprob,
+              dtype_t[:, :] bwdlattice):
+
+    cdef int t, i, j
+    #cdef dtype_t[::view.contiguous] work_buffer = np.zeros(n_components)
+
+    with nogil:
+        for i in range(n_components):
+            bwdlattice[n_samples - 1, i] = 0.0
+
+        for t in range(n_samples - 2, -1, -1):
+            for i in range(n_components):
+                for j in range(n_components):
+                    work_buffer[j] = (log_transmat[i, j]
+                                      + framelogprob[t + 1, j]
+                                      + bwdlattice[t + 1, j])
+
+                bwdlattice[t, i] = lse_cython(work_buffer, n_components)

@@ -1,5 +1,6 @@
 import numpy as np
 from numpy import ndarray
+from scipy.special import logsumexp
 from scipy import stats
 import matplotlib.pyplot as plt
 
@@ -7,6 +8,9 @@ from typing import List
 
 from utils.simulate_returns import simulate_2state_gaussian
 from models.hmm_base import BaseHiddenMarkov
+
+import pyximport; pyximport.install()
+from models.hmm_cython import forward, backward
 
 ''' TODO
 FIT method does not choose best epoch
@@ -24,15 +28,22 @@ class EMHiddenMarkov(BaseHiddenMarkov):
 
     Parameters
     ----------
-    n_states : Number of hidden states
+    n_states : int, default=2
+            Number of hidden states
     max_iter : Maximum number of iterations to perform during expectation-maximization
     tol : Criterion for early stopping
     init: str
             Set to 'random' for random initialization.
             Set to None for deterministic init.
 
-    Returns
+   Attributes
     ----------
+
+    Methods
+    -------
+    fit
+
+
     Can be used to fit HMM parameters or to decode hidden states.
 
     """
@@ -61,6 +72,36 @@ class EMHiddenMarkov(BaseHiddenMarkov):
             llk = llk + np.log(sum_beta_t)
 
         return log_betas
+
+    def _do_forward_pass(self):
+        n_samples, n_components = self.emission_probs_.shape
+        work_buffer = np.zeros(self.n_states)
+        fwdlattice = np.zeros((n_samples, n_components))
+        forward(n_samples, n_components,
+                            work_buffer,
+                            self.delta,
+                            self.T,
+                            self.emission_probs_, fwdlattice)
+        with np.errstate(under="ignore"):
+            return fwdlattice
+
+    def _do_backward_pass(self):
+        n_samples, n_components = self.emission_probs_.shape
+        work_buffer = np.zeros(self.n_states)
+        bwdlattice = np.zeros((n_samples, n_components))
+        forward(n_samples, n_components,
+                            work_buffer,
+                            self.delta,
+                            self.T,
+                            self.emission_probs_, bwdlattice)
+        with np.errstate(under="ignore"):
+            return bwdlattice
+
+    def compute_gamma(self, log_alphas, log_betas):
+        gamma = log_alphas + log_betas
+        normalizer = logsumexp(gamma, axis=1, keepdims=True)
+        gamma -= normalizer
+        return np.exp(gamma)
 
     def _e_step(self, X: ndarray):
         ''' Do a single e-step in Baum-Welch algorithm
@@ -156,10 +197,19 @@ if __name__ == '__main__':
     model = EMHiddenMarkov(n_states=2, init="random", random_state=42)
     returns, true_regimes = simulate_2state_gaussian(plotting=False)  # Simulate some data from two normal distributions
 
-    model.fit(returns)
+    model.fit(returns, verbose=0)
     states, posteriors = model.decode(returns)
 
-    print(model.predict_proba(returns, 5))
+    log_alphas = model._do_forward_pass()
+    log_betas = model._do_backward_pass()
+    print(model.compute_gamma(log_alphas, log_betas))
+
+    u,f,llk = model._e_step(returns)
+    print(u)
+
+
+
+    #print(model._log_forward_proba(returns, model.emission_probs_))
 
 
 

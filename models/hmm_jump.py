@@ -8,6 +8,7 @@ from sklearn.cluster._kmeans import kmeans_plusplus
 
 import matplotlib.pyplot as plt
 
+
 from utils.simulate_returns import simulate_2state_gaussian
 from models.hmm_base import BaseHiddenMarkov
 
