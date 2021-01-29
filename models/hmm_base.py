@@ -228,8 +228,9 @@ class BaseHiddenMarkov(BaseEstimator):
         Attributes
         ----------
         probs : float
-            Output the probability of pulling from a specific probability distribution p(x) given an observation sequence X
+            Output the probability for the possible observations for a given state # TODO vend lige med CS ang. notation.
         """
+
         T = len(X)
         log_probs = np.zeros((T, self.n_states))  # Init T X N matrix
         probs = np.zeros((T, self.n_states))
@@ -274,16 +275,17 @@ class BaseHiddenMarkov(BaseEstimator):
 
     def sample(self, n_samples: int):
         '''
-        Sample from a fitted hmm.
+        Function samples states from a fitted Hidden Markov Model.
 
         Parameters
         ----------
         n_samples: int
-                Amount of samples to generate
+            Amount of samples to generate
 
-        Returns
+        Attributes
         -------
-        Sample of same size n_samples
+        samples : int
+            Outputs the generated samples of size n_samples
         '''
 
         state_index = np.arange(start=0, stop=self.n_states, step=1, dtype=int)  # Array of possible states
@@ -329,19 +331,22 @@ class BaseHiddenMarkov(BaseEstimator):
     def predict_proba(self, X, n_preds=1):
         """
         Compute the probability P(St+h = i | X^T = x^T).
-        Calculates the probability of being in state i at future time step h.
+        Calculates the probability of being in state i at future time step h given a specific observation sequence up untill time T.
 
         Parameters
         ----------
-        X
-        n_preds
+        X : float
+            Time series of data
+        n_preds : int, default=1
+            Number of time steps to look forward from current time
 
-        Returns
-        -------
+        Attributes
+        ----------
+        state_preds : int
+            Output the probability of being in state i at time t+h i.e. the function returns a Nxh matrix
         """
 
-        log_alphas = self._log_forward_probs(X, self.emission_probs_)
-        # Compute scaled log-likelihood
+        log_alphas = self._log_forward_probs(X, self.emission_probs_) # Compute scaled log-likelihood
         llk_scale_factor = np.max(log_alphas[-1, :])  # Max of the last vector in the matrix log_alpha
         llk = llk_scale_factor + np.log(
             np.sum(np.exp(log_alphas[-1, :] - llk_scale_factor)))  # Scale log-likelihood by c
@@ -355,6 +360,18 @@ class BaseHiddenMarkov(BaseEstimator):
         return state_preds
 
     def get_params_from_seq(self, X: ndarray, state_sequence: ndarray):  # TODO remove forward-looking params and slice X accordingly
+        """
+        Stores and outputs the model parameters
+
+        Parameters
+        ----------
+        X : float
+            Time series of data
+
+        state_sequence : int
+            State sequence for a given observation sequence
+        """
+
         # Slice data
         if X.ndim == 1:  # Makes function compatible on higher dimensions
             X = X[(self.window_len - 1): -self.window_len]
@@ -387,6 +404,9 @@ class BaseHiddenMarkov(BaseEstimator):
         self.std = state_groupby['X'].std().values.T
 
     def get_stationary_dist(self):
+        """
+        Outputs the stationary distribution of the fitted model
+        """
         ones = np.ones(shape=(self.n_states, self.n_states))
         identity = np.diag(ones)
         init_guess = np.ones(self.n_states) / self.n_states
@@ -407,17 +427,19 @@ class BaseHiddenMarkov(BaseEstimator):
 
 if __name__ == '__main__':
     X = np.arange(1,1000)
+
     model = BaseHiddenMarkov(n_states=2)
     returns, true_regimes = simulate_2state_gaussian(plotting=False)  # Simulate some data from two normal distributions
     model._init_params(returns)
 
-
     #print(model._viterbi(X))
-    print(model.)
-
+    #model.emission_probs_, _ = model.emission_probs(X)
+    #print(model.get_params_from_seq(X, state_sequence))
     #print(model.T)
     #print(model.delta)
+    print(model.get_stationary_dist())
+
 
 
     #model.stationary_dist = np.array([.5, .5])
-    #print(model.sample(10))
+    #print(model.sample(n_samples=10))
