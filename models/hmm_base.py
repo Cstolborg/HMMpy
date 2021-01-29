@@ -51,7 +51,7 @@ class BaseHiddenMarkov(BaseEstimator):
 
 
     Attributes
-
+    ----------
     mu : float
         Fitted means for each state
     std : float
@@ -60,13 +60,6 @@ class BaseHiddenMarkov(BaseEstimator):
         Matrix of transition probabilities between states (NxN)
     delta : float
         Initial state occupation distribution
-
-
-
-    ---------- #Alle de ting der kan printes self.T, self.Delta etc.
-
-    Methods
-    ----------
 
     """
 
@@ -95,7 +88,7 @@ class BaseHiddenMarkov(BaseEstimator):
         diag_uniform_dist: 1D-array
             The lower and upper bounds of uniform distribution to sample init from.
 
-        Returns
+        Attributes
         -------
         self.T: N X N matrix of transition probabilities
         self.delta: 1 X N vector of initial probabilities
@@ -203,13 +196,39 @@ class BaseHiddenMarkov(BaseEstimator):
         self.state_seq = state_preds
 
     def decode(self, X):
+        """
+        Function to output the most likely sequence of states given an observation sequence.
+
+        Parameters
+        ----------
+        X : float
+            Time series of data
+
+        Attributes
+        ----------
+        state_preds : int
+            Predicted sequence of states with length of the inputted time series
+        posteriors : int
+            Computes the most likely state at each time-step, however, the state might not be valid (non-Viterbi) # TODO confirm with CS
+
+        """
         state_preds, posteriors = self._viterbi(X)
         return state_preds, posteriors
 
     def emission_probs(self, X):
-        """ Compute all different probabilities p(x) given an observation sequence and n states
+        """
+        Computes the probability distribution p(x) given an observation sequence X
+        The calculation will return a T X N matrix
 
-        Returns: T X N matrix
+        Parameters
+        ----------
+        X : float
+            Time series of data
+
+        Attributes
+        ----------
+        probs : float
+            Output the probability of pulling from a specific probability distribution p(x) given an observation sequence X
         """
         T = len(X)
         log_probs = np.zeros((T, self.n_states))  # Init T X N matrix
@@ -387,16 +406,18 @@ class BaseHiddenMarkov(BaseEstimator):
 
 
 if __name__ == '__main__':
+    X = np.arange(1,1000)
     model = BaseHiddenMarkov(n_states=2)
     returns, true_regimes = simulate_2state_gaussian(plotting=False)  # Simulate some data from two normal distributions
     model._init_params(returns)
 
 
-    print(model.T)
-    print(model.delta)
+    #print(model._viterbi(X))
+    print(model.)
+
     #print(model.T)
     #print(model.delta)
 
 
-    model.stationary_dist = np.array([.5, .5])
-    print(model.sample(10))
+    #model.stationary_dist = np.array([.5, .5])
+    #print(model.sample(10))
