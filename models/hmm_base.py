@@ -33,7 +33,7 @@ class BaseHiddenMarkov(BaseEstimator):
     To fit HMMs refer to the respective child classes
     """
 
-    def __init__(self, n_states: int = 2, init: str = 'random', max_iter: int = 100, tol: int = 1e-6,
+    def __init__(self, n_states: int = 2, init: str = 'random', max_iter: int = 100, tol: float = 1e-6,
                  epochs: int = 1, random_state: int = 42):
         self.window_len = None
         self.n_states = n_states
@@ -242,35 +242,6 @@ class BaseHiddenMarkov(BaseEstimator):
 
         return samples, sample_states
 
-    def _log_forward_proba(self, X: ndarray, emission_probs: ndarray):
-        """ Compute log forward probabilities in scaled form.
-
-        Forward probability is essentially the joint probability of observing
-        a state = i and observation sequences x^t=x_1...x_t, i.e. P(St=i , X^t=x^t).
-        Follows the method by Zucchini A.1.8 p 334.
-        """
-        T = len(X)
-        log_alphas = np.zeros((T, self.n_states))  # initialize matrix with zeros
-
-        # a0, compute first forward as dot product of initial dist and state-dependent dist
-        # Each element is scaled to sum to 1 in order to handle numerical underflow
-        alpha_t = self.delta * emission_probs[0, :]
-        sum_alpha_t = np.sum(alpha_t)
-        alpha_t_scaled = alpha_t / sum_alpha_t
-        llk = np.log(sum_alpha_t)  # Scalar to store the log likelihood
-        log_alphas[0, :] = llk + np.log(alpha_t_scaled)
-
-        # a1 to at, compute recursively
-        for t in range(1, T):
-            alpha_t = (alpha_t_scaled @ self.T) * emission_probs[t, :]  # Dot product of previous forward_prob, transition matrix and emmission probablitites
-            sum_alpha_t = np.sum(alpha_t)
-
-            alpha_t_scaled = alpha_t / sum_alpha_t  # Scale forward_probs to sum to 1
-            llk = llk + np.log(sum_alpha_t)  # Scalar to store likelihoods
-            log_alphas[t, :] = llk + np.log(alpha_t_scaled)
-
-        return log_alphas
-
     def predict_proba(self, X, n_preds=1):
         """
         Compute the probability P(St+h = i | X^T = x^T).
@@ -285,7 +256,7 @@ class BaseHiddenMarkov(BaseEstimator):
         -------
         """
 
-        log_alphas = self._log_forward_proba(X, self.emission_probs_)
+        log_alphas = self._log_forward_probs(X, self.emission_probs_)
         # Compute scaled log-likelihood
         llk_scale_factor = np.max(log_alphas[-1, :])  # Max of the last vector in the matrix log_alpha
         llk = llk_scale_factor + np.log(
@@ -349,6 +320,57 @@ class BaseHiddenMarkov(BaseEstimator):
         # Subtract z from theta row-wise. Requires the transpose of the column matrix theta
         diff = (theta.T - z).T
         return np.square(np.linalg.norm(diff, axis=0))  # squared l2 norm.
+
+    def _log_forward_probs(self, X: ndarray, emission_probs: ndarray):  # TODO deprecate
+        """ Compute log forward probabilities in scaled form.
+
+        Forward probability is essentially the joint probability of observing
+        a state = i and observation sequences x^t=x_1...x_t, i.e. P(St=i , X^t=x^t).
+        Follows the method by Zucchini A.1.8 p 334.
+        """
+        T = len(X)
+        log_alphas = np.zeros((T, self.n_states))  # initialize matrix with zeros
+
+        # a0, compute first forward as dot product of initial dist and state-dependent dist
+        # Each element is scaled to sum to 1 in order to handle numerical underflow
+        alpha_t = self.delta * emission_probs[0, :]
+        sum_alpha_t = np.sum(alpha_t)
+        alpha_t_scaled = alpha_t / sum_alpha_t
+        llk = np.log(sum_alpha_t)  # Scalar to store the log likelihood
+        log_alphas[0, :] = llk + np.log(alpha_t_scaled)
+
+        # a1 to at, compute recursively
+        for t in range(1, T):
+            alpha_t = (alpha_t_scaled @ self.T) * emission_probs[t,
+                                                  :]  # Dot product of previous forward_prob, transition matrix and emmission probablitites
+            sum_alpha_t = np.sum(alpha_t)
+
+            alpha_t_scaled = alpha_t / sum_alpha_t  # Scale forward_probs to sum to 1
+            llk = llk + np.log(sum_alpha_t)  # Scalar to store likelihoods
+            log_alphas[t, :] = llk + np.log(alpha_t_scaled)
+
+        return log_alphas
+
+    def _log_backward_probs(self, X: ndarray, emission_probs: ndarray):  # TODO deprecate
+        """ Compute the log of backward probabilities in scaled form.
+        Backward probabilities are the conditional probability of
+        some observation at t+1 given the current state = i. Equivalent to P(X_t+1 = x_t+1 | S_t = i)
+        """
+        T = len(X)
+        log_betas = np.zeros((T, self.n_states))  # initialize matrix with zeros
+
+        beta_t = np.ones(self.n_states) * 1 / self.n_states  # TODO CHECK WHY WE USE 1/M rather than ones
+        llk = np.log(self.n_states)
+        log_betas[-1, :] = np.log(np.ones(self.n_states))  # Last result is 0 since log(1)=0
+
+        for t in range(T - 2, -1, -1):  # Count backwards
+            beta_t = (self.T * emission_probs[t + 1, :]) @ beta_t
+            log_betas[t, :] = llk + np.log(beta_t)
+            sum_beta_t = np.sum(beta_t)
+            beta_t = beta_t / sum_beta_t  # Scale rows to sum to 1
+            llk = llk + np.log(sum_beta_t)
+
+        return log_betas
 
 
 if __name__ == '__main__':
