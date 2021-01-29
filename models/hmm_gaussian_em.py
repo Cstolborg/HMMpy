@@ -18,31 +18,37 @@ Move key algos into cython
 
 '''
 
-
-
 class EMHiddenMarkov(BaseHiddenMarkov):
-    """ Class for computing HMM's using the EM algorithm.
+    """"
+    Class for computing HMM's using the EM algorithm.
+    Can be used to fit HMM parameters or to decode hidden states.
 
     Parameters
     ----------
     n_states : int, default=2
-            Number of hidden states
-    max_iter : Maximum number of iterations to perform during expectation-maximization
-    tol : Criterion for early stopping
+        Number of hidden states
+    max_iter : int, default=100
+        Maximum number of iterations to perform during expectation-maximization
+    tol : float, default=1e-6
+        Criterion for early stopping
+    epochs : int, default=1
+        Number of complete passes through the data to improve fit
+    random_state : int, default = 42
+        Parameter set to recreate output
     init: str
-            Set to 'random' for random initialization.
-            Set to None for deterministic init.
-
+        Set to 'random' for random initialization.
+        Set to None for deterministic init.
 
     Attributes
-    ---------- #Alle de ting der kan printes self.T, self.Delta etc.
-
-    Methods
     ----------
-
-
-
-    Can be used to fit HMM parameters or to decode hidden states.
+    mu : float
+        Fitted means for each state
+    std : float
+        Fitted std for each state
+    T : float
+        Matrix of transition probabilities between states (NxN)
+    delta : float
+        Initial state occupation distribution
 
     """
 
@@ -116,17 +122,22 @@ class EMHiddenMarkov(BaseHiddenMarkov):
             self.std[j] = np.sqrt(np.sum(u[:, j] * np.square(X - self.mu[j])) / np.sum(u[:, j]))
 
     def fit(self, X: ndarray, verbose=0):
-        """
-        Iterates through the e-step and the m-step.
+        '''
+        Function iterates through the e-step and the m-step recursively to find the optimal model parameters.
+
         Parameters
         ----------
-        X
-        verbose
+        X : float
+            Time series of data
 
-        Returns
-        -------
+        Verbose : boolean
+            False / True for extra information regarding the function.
 
-        """
+        Attributes
+        ----------
+        Derives the optimal model parameters
+        '''
+
         # Init parameters initial distribution, transition matrix and state-dependent distributions
         self._init_params(X, output_hmm_params=True)
         self.old_llk = -np.inf  # Used to check model convergence
