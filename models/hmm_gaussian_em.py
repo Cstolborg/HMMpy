@@ -85,7 +85,6 @@ class EMHiddenMarkov(BaseHiddenMarkov):
         '''
         Do a single e-step in Baum-Welch algorithm (Derives Xi and Gamma w.r.t. traditional HMM syntax)
         '''
-        T = len(X)
         self.emission_probs(X)
         llk, log_alphas = self._log_forward_proba()
         log_betas = self._log_backward_proba()
@@ -107,8 +106,6 @@ class EMHiddenMarkov(BaseHiddenMarkov):
         Given u and f do an m-step.
         Updates the model parameters delta, Transition matrix and state dependent distributions.
          '''
-        X = np.array(X)
-
         # Update transition matrix and initial probs
         self.T = xi / np.sum(xi, axis=1).reshape((-1, 1))  # Check if this actually sums correct and to 1 on rows
         self.delta = gamma[0, :] / np.sum(gamma[0, :])
@@ -157,6 +154,8 @@ class EMHiddenMarkov(BaseHiddenMarkov):
                         num_independent_params = self.n_states ** 2 + 2 * self.n_states - 1  # True for normal distributions
                         self.aic_ = -2 * llk + 2 * num_independent_params
                         self.bic_ = -2 * llk + num_independent_params * np.log(len(X))
+                        self.stationary_dist = self.get_stationary_dist()
+
                         self.best_T = self.T
                         self.best_delta = self.delta
                         self.best_mu = self.mu
@@ -183,21 +182,7 @@ if __name__ == '__main__':
     model = EMHiddenMarkov(n_states=2, init="random", random_state=1, epochs=1, max_iter=100)
     returns, true_regimes = simulate_2state_gaussian(plotting=False)  # Simulate some data from two normal distributions
 
-
-    model.fit(returns, verbose=1)
-
-    states = model.decode()
-    #states, posteriors = model.decode(returns)
-
-    llk, log_alphas = model._log_forward_proba()
-    log_betas = model._log_backward_proba()
-
-    posteriors = model.compute_posteriors(log_alphas, log_betas)
-
-    print(posteriors)
-    #plot_posteriors_states(posteriors, states, true_regimes)
-    
-
+    model.fit(returns)
 
 
     check_hmmlearn = False

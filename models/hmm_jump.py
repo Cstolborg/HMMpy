@@ -58,6 +58,12 @@ class JumpHMM(BaseHiddenMarkov):
 
         return Z
 
+    def _l2_norm_squared(self, z, theta):  # TODO this function is called too many times can we rewrite it somehow?
+        # z must always be a vector but theta can be either a vector or a matrix
+        # Subtract z from theta row-wise. Requires the transpose of the column matrix theta
+        diff = (theta.T - z).T
+        return np.square(np.linalg.norm(diff, axis=0))  # squared l2 norm.
+
     def _fit_theta(self, Z):
         for j in range(self.n_states):
             state_slicer = self.state_seq == j  # Boolean array of True/False
@@ -65,6 +71,56 @@ class JumpHMM(BaseHiddenMarkov):
             N_j = sum(state_slicer)  # Number of terms in state j
             z = Z[state_slicer].sum(axis=0)  # Sum each feature across time
             self.theta[:, j] = 1 / N_j * z
+
+    def _fit_state_seq(self, X: ndarray):
+        """
+        Fit a state sequence based on current theta estimates.
+        Used in jump model fitting.
+
+        Parameters
+        ----------
+        X : ndarray of shape (n_samples, n_features)
+            Set of standardized times series features
+
+        Returns
+        -------
+        fitted state sequence
+        """
+        T = len(X)
+
+        losses = np.zeros(shape=(T, self.n_states))  # Init T X N matrix
+        losses[-1, :] = self._l2_norm_squared(X[-1], self.theta)  # loss corresponding to last state
+
+        # Do a backward recursion to get losses
+        for t in range(T - 2, -1, -1):  # Count backwards
+            current_loss = self._l2_norm_squared(X[t], self.theta)  # n-state vector of current losses
+            last_loss = self._l2_norm_squared(X[t + 1], self.theta)  # n-state vector of last losses
+
+            for j in range(self.n_states):  # TODO redefine this as a matrix problem and get rid of loop
+                state_change_penalty = np.ones(self.n_states) * self.jump_penalty  # Init jump penalty
+                state_change_penalty[j] = 0  # And remove it for all but current state
+                losses[t, j] = current_loss[j] + np.min(last_loss + state_change_penalty)
+
+        # From losses get the most likely sequence of states i
+        state_preds = np.zeros(T).astype(int)  # Vector of length N
+        state_preds[0] = np.argmin(losses[0])  # First most likely state is the index position
+
+        # Do a forward recursion to calculate most likely state sequence
+        for t in range(1, T):  # Count backwards
+            last_state = state_preds[t - 1]
+
+            state_change_penalty = np.ones(self.n_states) * self.jump_penalty  # Init jump penalty
+            state_change_penalty[last_state] = 0  # And remove it for all but current state
+
+            state_preds[t] = np.argmin(losses[t] + state_change_penalty)
+
+        # Finally compute score of objective function
+        all_likelihoods = losses[np.arange(len(losses)), state_preds].sum()
+        state_changes = np.diff(state_preds) != 0  # True/False array showing state changes
+        jump_penalty = (state_changes * self.jump_penalty).sum()  # Multiply all True values with penalty
+
+        self.objective_likelihood = all_likelihoods + jump_penalty  # Float
+        self.state_seq = state_preds
 
     def fit(self, Z: ndarray, verbose=0):
         # init params
@@ -99,6 +155,53 @@ class JumpHMM(BaseHiddenMarkov):
                 else:
                     self.old_state_seq = self.state_seq
                     self.old_objective_likelihood = self.objective_likelihood
+
+    def get_params_from_seq(self, X: ndarray, state_sequence: ndarray):  # TODO remove forward-looking params and slice X accordingly
+        """
+        Stores and outputs the model parameters
+
+        Parameters
+        ----------
+        X : ndarray of shape (n_samples,)
+            Time series of data
+
+        state_sequence : ndarray of shape (n_samples)
+            State sequence for a given observation sequence
+        """
+
+        # Slice data
+        if X.ndim == 1:  # Makes function compatible on higher dimensions
+            X = X[(self.window_len - 1): -self.window_len]
+        elif X.ndim > 1:
+            X = X[:, 0]
+
+        # group by states
+        diff = np.diff(state_sequence)
+        df_states = pd.DataFrame({'state_seq': state_sequence,
+                                  'X': X,
+                                  'state_sojourns': np.append([False], diff == 0),
+                                  'state_changes': np.append([False], diff != 0)})
+
+        state_groupby = df_states.groupby('state_seq')
+
+        # Transition probabilities
+        # TODO only works for a 2-state HMM
+        self.T = np.diag(state_groupby['state_sojourns'].sum())
+        state_changes = state_groupby['state_changes'].sum()
+        self.T[0, 1] = state_changes[0]
+        self.T[1, 0] = state_changes[1]
+        self.T = self.T / self.T.sum(axis=1).reshape(-1, 1)  # make rows sum to 1
+
+        # init dist and stationary dist
+        self.delta = np.zeros(self.n_states)
+        self.delta[state_sequence[0]] = 1.
+
+        # Conditional distributions
+        self.mu = state_groupby['X'].mean().values.T  # transform mean back into 1darray
+        self.std = state_groupby['X'].std().values.T
+
+        # Stationary distributiin
+        self.stationary_dist = self.get_stationary_dist()
 
 
 if __name__ == '__main__':

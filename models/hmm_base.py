@@ -1,9 +1,7 @@
 import numpy as np
-from numpy import ndarray
-import pandas as pd
+from numpy.core._multiarray_umath import ndarray
 from scipy import stats
 from scipy.special import logsumexp
-import scipy.optimize as opt
 from sklearn.base import BaseEstimator
 from sklearn.cluster._kmeans import kmeans_plusplus
 import matplotlib.pyplot as plt
@@ -48,6 +46,7 @@ class BaseHiddenMarkov(BaseEstimator):
     random_state : int, default = 42
             Parameter set to recreate output
     init : str
+            Set to 'kmeans++' to use that init method - only supported for jump models.
             Set to 'random' for random initialization.
             Set to None for deterministic init.
     Attributes
@@ -64,15 +63,13 @@ class BaseHiddenMarkov(BaseEstimator):
 
     def __init__(self, n_states: int = 2, init: str = 'random', max_iter: int = 100, tol: float = 1e-6,
                  epochs: int = 1, random_state: int = 42):
-        self.window_len = None
         self.n_states = n_states
         self.random_state = random_state
         self.max_iter = max_iter  # Max iterations to fit model
         self.epochs = epochs  # Set number of random inits used in model fitting
         self.tol = tol
         self.init = init
-
-        self.jump_penalty = 0.2  # TODO figure out better integration between kmeans++ init and jump
+        self.stationary_dist = None
 
         # Init parameters initial distribution, transition matrix and state-dependent distributions from function
         np.random.seed(self.random_state)
@@ -157,42 +154,129 @@ class BaseHiddenMarkov(BaseEstimator):
             self.mu = mu
             self.std = std
 
-    def _fit_state_seq(self, X: ndarray):
+    def emission_probs(self, X):
+        """
+        Computes the probability distribution p(x) given an observation sequence X
+        The calculation will return a T X N matrix
+
+        Parameters
+        ----------
+        X : ndarray of shape (n_samples,)
+            Time series of data
+
+        Returns
+        ----------
+        probs : ndarray of shape (n_samples, n_states)
+            Output the probability for sampling from a particular state distribution  # TODO vend lige med CS ang. notation.
+        """
+
         T = len(X)
+        log_probs = np.zeros((T, self.n_states))  # Init T X N matrix
+        probs = np.zeros((T, self.n_states))
 
-        losses = np.zeros(shape=(T, self.n_states))  # Init T X N matrix
-        losses[-1, :] = self._l2_norm_squared(X[-1], self.theta)  # loss corresponding to last state
+        # For all states evaluate the density function
+        for j in range(self.n_states):
+            log_probs[:, j] = stats.norm.logpdf(X, loc=self.mu[j], scale=self.std[j])
 
-        # Do a backward recursion to get losses
-        for t in range(T - 2, -1, -1):  # Count backwards
-            current_loss = self._l2_norm_squared(X[t], self.theta)  # n-state vector of current losses
-            last_loss = self._l2_norm_squared(X[t + 1], self.theta)  # n-state vector of last losses
+        probs = np.exp(log_probs)
 
-            for j in range(self.n_states):  # TODO redefine this as a matrix problem and get rid of loop
-                state_change_penalty = np.ones(self.n_states) * self.jump_penalty  # Init jump penalty
-                state_change_penalty[j] = 0  # And remove it for all but current state
-                losses[t, j] = current_loss[j] + np.min(last_loss + state_change_penalty)
+        self.emission_probs_ = probs
+        self.log_emission_probs_ = log_probs
 
-        # From losses get the most likely sequence of states i
-        state_preds = np.zeros(T).astype(int)  # Vector of length N
-        state_preds[0] = np.argmin(losses[0])  # First most likely state is the index position
+        return probs, log_probs
 
-        # Do a forward recursion to calculate most likely state sequence
-        for t in range(1, T):  # Count backwards
-            last_state = state_preds[t-1]
+    def sample(self, n_samples: int):
+        '''
+        Sample states from a fitted Hidden Markov Model.
 
-            state_change_penalty = np.ones(self.n_states) * self.jump_penalty  # Init jump penalty
-            state_change_penalty[last_state] = 0  # And remove it for all but current state
+        Parameters
+        ----------
+        n_samples: ndarray of shape (n_samples,)
+            Amount of samples to generate
 
-            state_preds[t] = np.argmin(losses[t] + state_change_penalty)
+        Returns
+        -------
+        samples : ndarray of shape (n_samples,)
+            Outputs the generated samples of size n_samples
+        '''
 
-        # Finally compute score of objective function
-        all_likelihoods = losses[np.arange(len(losses)), state_preds].sum()
-        state_changes = np.diff(state_preds) != 0   # True/False array showing state changes
-        jump_penalty = (state_changes * self.jump_penalty).sum()  # Multiply all True values with penalty
+        state_index = np.arange(start=0, stop=self.n_states, step=1, dtype=int)  # Array of possible states
+        sample_states = np.zeros(n_samples).astype(int)  # Init sample vector
+        sample_states[0] = np.random.choice(a=state_index, size=1, p=self.stationary_dist)
 
-        self.objective_likelihood = all_likelihoods + jump_penalty  # Float
-        self.state_seq = state_preds
+        for t in range(1, n_samples):
+            # Each new state is chosen using the transition probs corresponding to the previous state sojourn.
+            sample_states[t] = np.random.choice(a=state_index, size=1, p=self.T[sample_states[t - 1], :])
+
+        samples = stats.norm.rvs(loc=self.mu[sample_states], scale=self.std[sample_states], size=n_samples)
+
+        return samples, sample_states
+
+    def decode(self):
+        """
+        Function to output the most likely sequence of states given an observation sequence.
+
+        Parameters
+        ----------
+        X : ndarray of shape (n_samples,)
+            Times series of data
+
+        Returns
+        ----------
+        state_preds : ndarray of shape (n_samples,)
+            Predicted sequence of states with length of the inputted time series.
+        posteriors : ndarray of shape (n_samples, n_states)
+            Computes the most likely state at each time-step, however, the state might not be valid (non-Viterbi) # TODO confirm with CS
+        """
+        state_preds = self._viterbi()
+        return state_preds
+
+    def predict_proba(self, n_preds=1):
+        """
+        Compute the probability P(St+h = i | X^T = x^T).
+        Calculates the probability of being in state i at future time step h given a specific observation sequence up untill time T.
+
+        Parameters
+        ----------
+        n_preds : int, default=1
+            Number of time steps to look forward from current time
+
+        Returns
+        ----------
+        state_preds : ndarray of shape (n_states, n_preds)
+            Output the probability of being in state i at time t+h
+        """
+
+        llk, log_alphas = self._log_forward_proba() # Compute scaled log-likelihood
+        state_pred_t = np.exp(log_alphas[-1, :] - llk)
+
+        state_preds = np.zeros(shape=(n_preds, self.n_states))  # Init matrix of predictions
+        for t in range(n_preds):
+            state_pred_t = state_pred_t @ self.T
+            state_preds[t] = state_pred_t
+
+        return state_preds
+
+    def get_stationary_dist(self):
+        """
+        Outputs the stationary distribution of the fitted model.
+
+        The stationary distributions corresponds to the largest eigenvector of the
+        transition probability matrix. Since all values in the TPM are bounded between 0 and 1,
+        we know that the largest eigenvalue is 1, and that the eigenvectors will all be defined by real numbers.
+
+        Computed by taking the eigenvector corresponding to the largest eigenvalue and scaling it to sum to 1.
+
+        Returns
+        -------
+        stationary_dist: ndarray of shape (n_states,)
+        """
+        # Computes right eigenvectors, thus transposing the TPM is necessary.
+        eigvals, eigvecs = np.linalg.eig(self.T.T)
+        eigvec = eigvecs[:, np.argmax(eigvals)]  # Get the eigenvector corresponding to largest eigenvalue
+
+        stationary_dist = eigvec / eigvec.sum()
+        return stationary_dist
 
     def _log_forward_proba(self):
         """
@@ -237,37 +321,6 @@ class BaseHiddenMarkov(BaseEstimator):
                                   self.log_emission_probs_, log_betas)
         return log_betas
 
-    def emission_probs(self, X):
-        """
-        Computes the probability distribution p(x) given an observation sequence X
-        The calculation will return a T X N matrix
-
-        Parameters
-        ----------
-        X : ndarray of shape (n_samples,)
-            Time series of data
-
-        Returns
-        ----------
-        probs : ndarray of shape (n_samples, n_states)
-            Output the probability for sampling from a particular state distribution  # TODO vend lige med CS ang. notation.
-        """
-
-        T = len(X)
-        log_probs = np.zeros((T, self.n_states))  # Init T X N matrix
-        probs = np.zeros((T, self.n_states))
-
-        # For all states evaluate the density function
-        for j in range(self.n_states):
-            log_probs[:, j] = stats.norm.logpdf(X, loc=self.mu[j], scale=self.std[j])
-
-        probs = np.exp(log_probs)
-
-        self.emission_probs_ = probs
-        self.log_emission_probs_ = log_probs
-
-        return probs, log_probs
-
     def _viterbi(self):
         n_obs, n_states = self.log_emission_probs_.shape
         log_alphas = np.zeros((n_obs, n_states))
@@ -276,146 +329,6 @@ class BaseHiddenMarkov(BaseEstimator):
                                                         np.log(self.T),
                                                         self.log_emission_probs_)
         return state_sequence
-
-    def sample(self, n_samples: int):
-        '''
-        Function samples states from a fitted Hidden Markov Model.
-
-        Parameters
-        ----------
-        n_samples: ndarray of shape (n_samples,)
-            Amount of samples to generate
-
-        Returns
-        -------
-        samples : ndarray of shape (n_samples,)
-            Outputs the generated samples of size n_samples
-        '''
-
-        state_index = np.arange(start=0, stop=self.n_states, step=1, dtype=int)  # Array of possible states
-        sample_states = np.zeros(n_samples).astype(int)  # Init sample vector
-        sample_states[0] = np.random.choice(a=state_index, size=1, p=self.stationary_dist)  # First state is determined by initial dist
-
-        for t in range(1, n_samples):
-            # Each new state is chosen using the transition probs corresponding to the previous state sojourn.
-            sample_states[t] = np.random.choice(a=state_index, size=1, p=self.T[sample_states[t - 1], :])
-
-        samples = stats.norm.rvs(loc=self.mu[sample_states], scale=self.std[sample_states], size=n_samples)
-
-        return samples, sample_states
-
-    def decode(self):
-        """
-        Function to output the most likely sequence of states given an observation sequence.
-
-        Parameters
-        ----------
-        X : ndarray of shape (n_samples,)
-            Times series of data
-
-        Returns
-        ----------
-        state_preds : ndarray of shape (n_samples,)
-            Predicted sequence of states with length of the inputted time series.
-        posteriors : ndarray of shape (n_samples, n_states)
-            Computes the most likely state at each time-step, however, the state might not be valid (non-Viterbi) # TODO confirm with CS
-        """
-        state_preds = self._viterbi()
-        return state_preds
-
-    def predict_proba(self, X, n_preds=1):
-        """
-        Compute the probability P(St+h = i | X^T = x^T).
-        Calculates the probability of being in state i at future time step h given a specific observation sequence up untill time T.
-
-        Parameters
-        ----------
-        X : ndarray of shape (n_samples,)
-            Time series of data
-        n_preds : int, default=1
-            Number of time steps to look forward from current time
-
-        Returns
-        ----------
-        state_preds : ndarray of shape (n_states, n_preds)
-            Output the probability of being in state i at time t+h
-        """
-
-        llk, log_alphas = self._log_forward_proba() # Compute scaled log-likelihood
-        state_pred_t = np.exp(log_alphas[-1, :] - llk)
-
-        state_preds = np.zeros(shape=(n_preds, self.n_states))  # Init matrix of predictions
-        for t in range(n_preds):
-            state_pred_t = state_pred_t @ self.T
-            state_preds[t] = state_pred_t
-
-        return state_preds
-
-    def get_params_from_seq(self, X: ndarray, state_sequence: ndarray):  # TODO remove forward-looking params and slice X accordingly
-        """
-        Stores and outputs the model parameters
-
-        Parameters
-        ----------
-        X : ndarray of shape (n_samples,)
-            Time series of data
-
-        state_sequence : ndarray of shape (n_samples)
-            State sequence for a given observation sequence
-        """
-
-        # Slice data
-        if X.ndim == 1:  # Makes function compatible on higher dimensions
-            X = X[(self.window_len - 1): -self.window_len]
-        elif X.ndim > 1:
-            X = X[:, 0]
-
-        # group by states
-        diff = np.diff(state_sequence)
-        df_states = pd.DataFrame({'state_seq': state_sequence,
-                                  'X': X,
-                                  'state_sojourns': np.append([False], diff == 0),
-                                  'state_changes': np.append([False], diff != 0)})
-
-        state_groupby = df_states.groupby('state_seq')
-
-        # Transition probabilities
-        # TODO only works for a 2-state HMM
-        self.T = np.diag(state_groupby['state_sojourns'].sum())
-        state_changes = state_groupby['state_changes'].sum()
-        self.T[0, 1] = state_changes[0]
-        self.T[1, 0] = state_changes[1]
-        self.T = self.T / self.T.sum(axis=1).reshape(-1, 1)  # make rows sum to 1
-
-        # init dist and stationary dist
-        self.delta = np.zeros(self.n_states)
-        self.delta[state_sequence[0]] = 1.
-
-        # Conditional distributions
-        self.mu = state_groupby['X'].mean().values.T  # transform mean back into 1darray
-        self.std = state_groupby['X'].std().values.T
-
-    def get_stationary_dist(self):  # TODO not finished
-        """
-        Outputs the stationary distribution of the fitted model
-        """
-        ones = np.ones(shape=(self.n_states, self.n_states))
-        identity = np.diag(ones)
-        init_guess = np.ones(self.n_states) / self.n_states
-
-        def solve_stationary(stationary_dist):
-            return (stationary_dist @ (identity - self.T + ones)) - np.ones(self.n_states)
-
-        stationary_dist = opt.root(solve_stationary, x0=init_guess)
-        print(stationary_dist)
-
-        self.stationary_dist = stationary_dist
-
-    def _l2_norm_squared(self, z, theta):  # TODO this function is called too many times can we rewrite it somehow?
-        # z must always be a vector but theta can be either a vector or a matrix
-        # Subtract z from theta row-wise. Requires the transpose of the column matrix theta
-        diff = (theta.T - z).T
-        return np.square(np.linalg.norm(diff, axis=0))  # squared l2 norm.
 
 
 if __name__ == '__main__':
