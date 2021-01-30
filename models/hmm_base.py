@@ -12,18 +12,6 @@ from utils.simulate_returns import simulate_2state_gaussian
 import pyximport; pyximport.install()  # TODO can only be active during development -- must be done through setup.py
 from models import hmm_cython
 
-''' TODO:
-
-Very bad integration of kmeans++ init for EM algos.
- -   Consider moving entirely into jump models
- -   OR make a better version
-
-
-add stationary distribution - use it in sample function
-
-'''
-
-
 class BaseHiddenMarkov(BaseEstimator):
     """
     Parent class for Hidden Markov methods with gaussian distributions.
@@ -48,16 +36,16 @@ class BaseHiddenMarkov(BaseEstimator):
     init : str
             Set to 'kmeans++' to use that init method - only supported for jump models.
             Set to 'random' for random initialization.
-            Set to None for deterministic init.
+            Set to "deterministic" for deterministic init.
     Attributes
     ----------
     mu : ndarray of shape (n_states,)
         Fitted means for each state
     std : ndarray of shape (n_states,)
         Fitted std for each state
-    T : ndarray of shape (n_states, n_states)
-        Matrix of transition probabilities between states
-    delta : ndarray of shape (n_states,)
+    tpm : ndarray of shape (n_states, n_states)
+        Transition probability matrix between states
+    start_proba : ndarray of shape (n_states,)
         Initial state occupation distribution
     """
 
@@ -69,7 +57,12 @@ class BaseHiddenMarkov(BaseEstimator):
         self.epochs = epochs  # Set number of random inits used in model fitting
         self.tol = tol
         self.init = init
+
         self.stationary_dist = None
+        self.tpm = None
+        self.start_proba = None
+        self.mu = None
+        self.std = None
 
         # Init parameters initial distribution, transition matrix and state-dependent distributions from function
         np.random.seed(self.random_state)
@@ -92,24 +85,7 @@ class BaseHiddenMarkov(BaseEstimator):
         self.std: 1 X N vector of state dependent STDs
 
         """
-
-        if self.init == "kmeans++":
-            if not isinstance(X, np.ndarray):
-                raise Exception("To initialize with kmeans++ a sequence of data must be provided in an ndarray")
-            if X.ndim == 1:
-                X = X.reshape(-1, 1)  # Compatible with sklearn
-
-            # Theta - only used in jump models and are discarded in EM models
-            centroids, _ = kmeans_plusplus(X, self.n_states)  # Use sklearns kmeans++ algorithm
-            self.theta = centroids.T  # Transpose to get shape: N_features X N_states
-
-            # State sequence
-            self._fit_state_seq(X)  # this function implicitly updates self.state_seq
-
-            if output_hmm_params == True: # output all hmm parameters from state sequence
-                self.get_params_from_seq(X, state_sequence=self.state_seq)
-
-        elif self.init == 'random':
+        if self.init == 'random':
             # Transition probabilities
             trans_prob = np.diag(np.random.uniform(low=diag_uniform_dist[0], high=diag_uniform_dist[1],
                                                    size=self.n_states))  # Sample diag as uniform dist
@@ -128,12 +104,12 @@ class BaseHiddenMarkov(BaseEstimator):
             mu = np.random.uniform(low=-0.05, high=0.15, size=self.n_states)  # np.random.rand(self.n_states)
             std = np.random.uniform(low=0.01, high=0.3, size=self.n_states)  # np.random.rand(self.n_states) #
 
-            self.T = trans_prob
-            self.delta = init_dist
+            self.tpm = trans_prob
+            self.start_proba = init_dist
             self.mu = mu
             self.std = std
 
-        else:
+        elif self.init == "deterministic":
             # Init theta as zeros and sample state seq from uniform dist
             self.theta = np.zeros(shape=(self.n_features, self.n_states))  # Init as empty matrix
             state_index = np.arange(start=0, stop=self.n_states, step=1, dtype=int)  # Array of possible states
@@ -149,8 +125,8 @@ class BaseHiddenMarkov(BaseEstimator):
             mu = [-0.05, 0.1]
             std = [0.2, 0.1]
 
-            self.T = trans_prob
-            self.delta = init_dist
+            self.tpm = trans_prob
+            self.start_proba = init_dist
             self.mu = mu
             self.std = std
 
@@ -206,7 +182,7 @@ class BaseHiddenMarkov(BaseEstimator):
 
         for t in range(1, n_samples):
             # Each new state is chosen using the transition probs corresponding to the previous state sojourn.
-            sample_states[t] = np.random.choice(a=state_index, size=1, p=self.T[sample_states[t - 1], :])
+            sample_states[t] = np.random.choice(a=state_index, size=1, p=self.tpm[sample_states[t - 1], :])
 
         samples = stats.norm.rvs(loc=self.mu[sample_states], scale=self.std[sample_states], size=n_samples)
 
@@ -252,7 +228,7 @@ class BaseHiddenMarkov(BaseEstimator):
 
         state_preds = np.zeros(shape=(n_preds, self.n_states))  # Init matrix of predictions
         for t in range(n_preds):
-            state_pred_t = state_pred_t @ self.T
+            state_pred_t = state_pred_t @ self.tpm
             state_preds[t] = state_pred_t
 
         return state_preds
@@ -272,7 +248,7 @@ class BaseHiddenMarkov(BaseEstimator):
         stationary_dist: ndarray of shape (n_states,)
         """
         # Computes right eigenvectors, thus transposing the TPM is necessary.
-        eigvals, eigvecs = np.linalg.eig(self.T.T)
+        eigvals, eigvecs = np.linalg.eig(self.tpm.T)
         eigvec = eigvecs[:, np.argmax(eigvals)]  # Get the eigenvector corresponding to largest eigenvalue
 
         stationary_dist = eigvec / eigvec.sum()
@@ -297,9 +273,9 @@ class BaseHiddenMarkov(BaseEstimator):
 
         # Do the pass in cython
         hmm_cython.forward_proba(n_obs, n_states,
-                      np.log(self.delta),
-                      np.log(self.T),
-                      self.log_emission_probs_, log_alphas)
+                                 np.log(self.start_proba),
+                                 np.log(self.tpm),
+                                 self.log_emission_probs_, log_alphas)
         return logsumexp(log_alphas[-1]), log_alphas  # log-likelihood and forward probabilities
 
     def _log_backward_proba(self):
@@ -316,8 +292,8 @@ class BaseHiddenMarkov(BaseEstimator):
 
         # Do the pass in cython
         hmm_cython.backward_proba(n_obs, n_states,
-                                  np.log(self.delta),
-                                  np.log(self.T),
+                                  np.log(self.start_proba),
+                                  np.log(self.tpm),
                                   self.log_emission_probs_, log_betas)
         return log_betas
 
@@ -325,9 +301,9 @@ class BaseHiddenMarkov(BaseEstimator):
         n_obs, n_states = self.log_emission_probs_.shape
         log_alphas = np.zeros((n_obs, n_states))
         state_sequence = hmm_cython.viterbi(n_obs, n_states,
-                                                        np.log(self.delta),
-                                                        np.log(self.T),
-                                                        self.log_emission_probs_)
+                                            np.log(self.start_proba),
+                                            np.log(self.tpm),
+                                            self.log_emission_probs_)
         return state_sequence
 
 

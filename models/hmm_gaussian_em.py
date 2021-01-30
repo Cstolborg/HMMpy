@@ -12,11 +12,6 @@ from models.hmm_base import BaseHiddenMarkov
 import pyximport; pyximport.install()  # TODO can only be active during development -- must be done through setup.py
 from models import hmm_cython
 
-''' TODO
-Write code clean
-    - Many methods take X as input but only use it to get length
-
-'''
 
 class EMHiddenMarkov(BaseHiddenMarkov):
     """"
@@ -46,9 +41,9 @@ class EMHiddenMarkov(BaseHiddenMarkov):
         Fitted means for each state
     std : ndarray of shape (n_states,)
         Fitted std for each state
-    T : ndarray of shape (n_states, n_states)
+    tpm : ndarray of shape (n_states, n_states)
         Matrix of transition probabilities between states
-    delta : ndarray of shape (n_states,)
+    start_proba : ndarray of shape (n_states,)
         Initial state occupation distribution
     gamma : ndarray of shape (n_states,)
         Entails the probability of being in a state at time t knowing all the observations that has come and all the observations to come. (Its a bowtie)
@@ -96,7 +91,7 @@ class EMHiddenMarkov(BaseHiddenMarkov):
         xi = np.zeros(shape=(self.n_states, self.n_states))
         for j in range(self.n_states):
             for k in range(self.n_states):
-                xi[j, k] = self.T[j, k] * np.sum(
+                xi[j, k] = self.tpm[j, k] * np.sum(
                     np.exp(log_alphas[:-1, j] + log_betas[1:, k] + self.log_emission_probs_[1:, k] - llk))
 
         return gamma, xi, llk
@@ -107,8 +102,8 @@ class EMHiddenMarkov(BaseHiddenMarkov):
         Updates the model parameters delta, Transition matrix and state dependent distributions.
          '''
         # Update transition matrix and initial probs
-        self.T = xi / np.sum(xi, axis=1).reshape((-1, 1))  # Check if this actually sums correct and to 1 on rows
-        self.delta = gamma[0, :] / np.sum(gamma[0, :])
+        self.tpm = xi / np.sum(xi, axis=1).reshape((-1, 1))  # Check if this actually sums correct and to 1 on rows
+        self.start_proba = gamma[0, :] / np.sum(gamma[0, :])
 
         # Update state-dependent distributions
         for j in range(self.n_states):
@@ -156,14 +151,14 @@ class EMHiddenMarkov(BaseHiddenMarkov):
                         self.bic_ = -2 * llk + num_independent_params * np.log(len(X))
                         self.stationary_dist = self.get_stationary_dist()
 
-                        self.best_T = self.T
-                        self.best_delta = self.delta
+                        self.best_T = self.tpm
+                        self.best_delta = self.start_proba
                         self.best_mu = self.mu
                         self.best_std = self.std
 
                     if verbose == 1:
                         print(
-                            f'Iteration {iter} - LLK {llk} - Means: {self.mu} - STD {self.std} - Gamma {np.diag(self.T)} - Delta {self.delta}')
+                            f'Iteration {iter} - LLK {llk} - Means: {self.mu} - STD {self.std} - Gamma {np.diag(self.tpm)} - Delta {self.start_proba}')
                     break
 
                 elif iter == self.max_iter - 1:
@@ -171,8 +166,8 @@ class EMHiddenMarkov(BaseHiddenMarkov):
                 else:
                     self.old_llk = llk
 
-        self.T = self.best_T
-        self.delta = self.best_delta
+        self.tpm = self.best_T
+        self.start_proba = self.best_delta
         self.mu = self.best_mu
         self.std = self.best_std
 
@@ -183,6 +178,9 @@ if __name__ == '__main__':
     returns, true_regimes = simulate_2state_gaussian(plotting=False)  # Simulate some data from two normal distributions
 
     model.fit(returns)
+    model.sample(2)
+    model.decode()
+    model.predict_proba(5)
 
 
     check_hmmlearn = False

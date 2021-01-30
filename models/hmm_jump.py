@@ -34,6 +34,25 @@ class JumpHMM(BaseHiddenMarkov):
         self.best_objective_likelihood = np.inf
         self.old_objective_likelihood = np.inf
 
+    def _init_params(self, X=None, diag_uniform_dist = (.7, .99), output_hmm_params=True):
+        super()._init_params()
+
+        if self.init == "kmeans++":
+            if not isinstance(X, np.ndarray):
+                raise Exception("To initialize with kmeans++ a sequence of data must be provided in an ndarray")
+            if X.ndim == 1:
+                X = X.reshape(-1, 1)  # Compatible with sklearn
+
+            # Theta - only used in jump models and are discarded in EM models
+            centroids, _ = kmeans_plusplus(X, self.n_states)  # Use sklearns kmeans++ algorithm
+            self.theta = centroids.T  # Transpose to get shape: N_features X N_states
+
+            # State sequence
+            self._fit_state_seq(X)  # this function implicitly updates self.state_seq
+
+            if output_hmm_params == True: # output all hmm parameters from state sequence
+                self.get_params_from_seq(X, state_sequence=self.state_seq)
+
     def construct_features(self, X: ndarray, window_len: int):  # TODO remove forward-looking params and slice X accordingly
         N = len(X)
         df = pd.DataFrame(X)
@@ -186,15 +205,15 @@ class JumpHMM(BaseHiddenMarkov):
 
         # Transition probabilities
         # TODO only works for a 2-state HMM
-        self.T = np.diag(state_groupby['state_sojourns'].sum())
+        self.tpm = np.diag(state_groupby['state_sojourns'].sum())
         state_changes = state_groupby['state_changes'].sum()
-        self.T[0, 1] = state_changes[0]
-        self.T[1, 0] = state_changes[1]
-        self.T = self.T / self.T.sum(axis=1).reshape(-1, 1)  # make rows sum to 1
+        self.tpm[0, 1] = state_changes[0]
+        self.tpm[1, 0] = state_changes[1]
+        self.tpm = self.tpm / self.tpm.sum(axis=1).reshape(-1, 1)  # make rows sum to 1
 
         # init dist and stationary dist
-        self.delta = np.zeros(self.n_states)
-        self.delta[state_sequence[0]] = 1.
+        self.start_proba = np.zeros(self.n_states)
+        self.start_proba[state_sequence[0]] = 1.
 
         # Conditional distributions
         self.mu = state_groupby['X'].mean().values.T  # transform mean back into 1darray
