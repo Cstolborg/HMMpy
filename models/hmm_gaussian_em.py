@@ -6,25 +6,17 @@ import matplotlib.pyplot as plt
 
 from typing import List
 
-from utils.simulate_returns import simulate_2state_gaussian
+from utils.simulate_returns import simulate_2state_gaussian, plot_posteriors_states
 from models.hmm_base import BaseHiddenMarkov
 
 import pyximport; pyximport.install()  # TODO can only be active during development -- must be done through setup.py
 from models import hmm_cython
 
 ''' TODO
-
-Different convergence with cython code - still acceptable
-
 Write code clean
     - Many methods take X as input but only use it to get length
 
-Expand to viterbi and then to jump models
-
-
 '''
-
-
 
 class EMHiddenMarkov(BaseHiddenMarkov):
     """ Class for computing HMM's using the EM algorithm.
@@ -41,12 +33,6 @@ class EMHiddenMarkov(BaseHiddenMarkov):
 
    Attributes
     ----------
-
-    Methods
-    -------
-    fit
-
-
     Can be used to fit HMM parameters or to decode hidden states.
 
     """
@@ -77,9 +63,10 @@ class EMHiddenMarkov(BaseHiddenMarkov):
                                   self.log_emission_probs_, log_betas)
         return log_betas
 
-    def compute_gamma(self, log_alphas, log_betas):
+    def compute_posteriors(self, log_alphas, log_betas):
         """
-        Expectation of being in state j given observations, P(S_t = j | x^T).
+        Expectation of being in state j at time t given observations, P(S_t = j | x^T).
+        Note to self: Same as gamma in Rabiners notation.
 
         Parameters
         ----------
@@ -88,7 +75,7 @@ class EMHiddenMarkov(BaseHiddenMarkov):
 
         Returns
         -------
-
+        ndarray
         """
         gamma = log_alphas + log_betas
         normalizer = logsumexp(gamma, axis=1, keepdims=True)
@@ -104,11 +91,11 @@ class EMHiddenMarkov(BaseHiddenMarkov):
         llk, log_alphas = self._log_forward_proba()
         log_betas = self._log_backward_proba()
 
-        gamma = self.compute_gamma(log_alphas, log_betas)
+        gamma = self.compute_posteriors(log_alphas, log_betas)
 
         # Initialize matrix of shape j X j
         # Number of expected transitions from state i to j
-        xi = np.zeros(shape=(self.n_states, self.n_states))  # TODO FIND BETTER VARIABLE NAME
+        xi = np.zeros(shape=(self.n_states, self.n_states))
         for j in range(self.n_states):
             for k in range(self.n_states):
                 xi[j, k] = self.T[j, k] * np.sum(
@@ -281,27 +268,16 @@ if __name__ == '__main__':
 
     model.fit(returns, verbose=1)
 
+    states = model.decode()
+    #states, posteriors = model.decode(returns)
+
     llk, log_alphas = model._log_forward_proba()
     log_betas = model._log_backward_proba()
 
+    posteriors = model.compute_posteriors(log_alphas, log_betas)
 
-    '''
-    #model.fit(returns, verbose=0)
-    #states, posteriors = model._viterbi(returns)
-
-    n_states = model.n_states
-    emission_probs = model.emission_probs(returns)
-    delta = model.delta
-    TPM = model.T
-
-
-    #print(_log_forward_probs(n_states, returns, emission_probs, delta, TPM) )
-    '''
-
-
-
-
-
+    print(posteriors)
+    plot_posteriors_states(posteriors, states, true_regimes)
 
 
     check_hmmlearn = False

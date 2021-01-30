@@ -11,6 +11,9 @@ from typing import List
 
 from utils.simulate_returns import simulate_2state_gaussian
 
+import pyximport; pyximport.install()  # TODO can only be active during development -- must be done through setup.py
+from models import hmm_cython
+
 ''' TODO:
 
 Very bad integration of kmeans++ init for EM algos.
@@ -165,10 +168,6 @@ class BaseHiddenMarkov(BaseEstimator):
         self.objective_likelihood = all_likelihoods + jump_penalty  # Float
         self.state_seq = state_preds
 
-    def decode(self, X):
-        state_preds, posteriors = self._viterbi(X)
-        return state_preds, posteriors
-
     def emission_probs(self, X):
         """ Compute all different probabilities p(x) given an observation sequence and n states
 
@@ -186,7 +185,16 @@ class BaseHiddenMarkov(BaseEstimator):
 
         return probs, log_probs
 
-    def _viterbi(self, X):
+    def _viterbi(self):
+        n_obs, n_states = self.log_emission_probs_.shape
+        log_alphas = np.zeros((n_obs, n_states))
+        state_sequence = hmm_cython.viterbi(n_obs, n_states,
+                                                        np.log(self.delta),
+                                                        np.log(self.T),
+                                                        self.log_emission_probs_)
+        return state_sequence
+
+    def _viterbi1(self, X):
         """ Compute the most likely sequence of states given the observations
          To reduce CPU time consider storing each sequence --> will save T*m function evaluations
 
@@ -206,7 +214,7 @@ class BaseHiddenMarkov(BaseEstimator):
             posteriors[t, :] = posterior_temp / np.sum(posterior_temp)  # Scale rows to sum to 1
 
         # From posteriors get the the most likeley sequence of states i
-        state_preds = np.zeros(T).astype(int)  # Vector of length N
+        state_preds = np.zeros(T, dtype=int)  # Vector of length N
         state_preds[-1] = np.argmax(posteriors[-1, :])  # Last most likely state is the index position
 
         # Do a backward recursion to calculate most likely state sequence
@@ -241,6 +249,14 @@ class BaseHiddenMarkov(BaseEstimator):
         samples = stats.norm.rvs(loc=self.mu[sample_states], scale=self.std[sample_states], size=n_samples)
 
         return samples, sample_states
+
+    def decode1(self, X):
+        state_preds, posteriors = self._viterbi1(X)
+        return state_preds, posteriors
+
+    def decode(self):
+        state_preds = self._viterbi()
+        return state_preds
 
     def predict_proba(self, X, n_preds=1):
         """

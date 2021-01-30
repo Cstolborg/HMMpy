@@ -11,7 +11,7 @@ Need a sampling function that is easily adapted to N states and any conditional 
 
 """
 
-def plot_posteriors_states(posteriors, states):
+def plot_posteriors_states(posteriors, states, true_regimes):
     fig, ax = plt.subplots(nrows=2, ncols=1)
     ax[0].plot(posteriors[:, 0], label='Posteriors state 1', )
     ax[0].plot(posteriors[:, 1], label='Posteriors state 2', )
