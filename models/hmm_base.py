@@ -44,23 +44,19 @@ class BaseHiddenMarkov(BaseEstimator):
             Number of complete passes through the data to improve fit
     random_state : int, default = 42
             Parameter set to recreate output
-
-    init: str
+    init : str
             Set to 'random' for random initialization.
             Set to None for deterministic init.
-
-
     Attributes
     ----------
-    mu : float
+    mu : ndarray of shape (n_states,)
         Fitted means for each state
-    std : float
+    std : ndarray of shape (n_states,)
         Fitted std for each state
-    T : float
-        Matrix of transition probabilities between states (NxN)
+    T : ndarray of shape (n_states, n_states)
+        Matrix of transition probabilities between states
     delta : float
         Initial state occupation distribution
-
     """
 
     def __init__(self, n_states: int = 2, init: str = 'random', max_iter: int = 100, tol: float = 1e-6,
@@ -201,16 +197,15 @@ class BaseHiddenMarkov(BaseEstimator):
 
         Parameters
         ----------
-        X : float
+        X : ndarray of shape (n_samples,)
             Time series of data
 
-        Attributes
+        Returns
         ----------
-        state_preds : int
-            Predicted sequence of states with length of the inputted time series
-        posteriors : int
+        state_preds : ndarray of shape (n_samples,)
+            Predicted sequence of states with length of the inputted time series.
+        posteriors : ndarray of shape (n_samples, n_states)
             Computes the most likely state at each time-step, however, the state might not be valid (non-Viterbi) # TODO confirm with CS
-
         """
         state_preds, posteriors = self._viterbi(X)
         return state_preds, posteriors
@@ -222,13 +217,13 @@ class BaseHiddenMarkov(BaseEstimator):
 
         Parameters
         ----------
-        X : float
+        X : ndarray of shape (n_samples,)
             Time series of data
 
-        Attributes
+        Returns
         ----------
-        probs : float
-            Output the probability for the possible observations for a given state # TODO vend lige med CS ang. notation.
+        probs : ndarray of shape (n_samples, n_states)
+            Output the probability for sampling from a particular state distribution  # TODO vend lige med CS ang. notation.
         """
 
         T = len(X)
@@ -279,12 +274,12 @@ class BaseHiddenMarkov(BaseEstimator):
 
         Parameters
         ----------
-        n_samples: int
+        n_samples: ndarray of shape (n_samples,)
             Amount of samples to generate
 
-        Attributes
+        Returns
         -------
-        samples : int
+        samples : ndarray of shape (n_samples,)
             Outputs the generated samples of size n_samples
         '''
 
@@ -335,12 +330,12 @@ class BaseHiddenMarkov(BaseEstimator):
 
         Parameters
         ----------
-        X : float
+        X : ndarray of shape (n_samples,)
             Time series of data
         n_preds : int, default=1
             Number of time steps to look forward from current time
 
-        Attributes
+        Returns
         ----------
         state_preds : int
             Output the probability of being in state i at time t+h i.e. the function returns a Nxh matrix

@@ -50,6 +50,7 @@ class EMHiddenMarkov(BaseHiddenMarkov):
     delta : float
         Initial state occupation distribution
 
+    ###TO INclude Aic, Bic etc... for fitted model.
     """
 
     def __init__(self, n_states: int = 2, init: str = 'random', max_iter: int = 100, tol: int = 1e-6,
@@ -78,7 +79,7 @@ class EMHiddenMarkov(BaseHiddenMarkov):
         return log_betas
 
     def _e_step(self, X: ndarray):
-        ''' Do a single e-step in Baum-Welch algorithm
+        ''' Do a single e-step in Baum-Welch algorithm (Derives Xi and Gamma w.r.t. traditional HMM syntax)
 
         '''
         T = len(X)
