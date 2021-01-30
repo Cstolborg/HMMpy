@@ -10,7 +10,6 @@ import matplotlib.pyplot as plt
 from typing import List
 
 from utils.simulate_returns import simulate_2state_gaussian
-from models.hmm_cython import _log_forward_probs
 
 ''' TODO:
 
@@ -32,9 +31,35 @@ class BaseHiddenMarkov(BaseEstimator):
     2. Methods that assumes an HMM is fitted and are used for sampling, prediction etc.
 
     To fit HMMs refer to the respective child classes
+
+    Parameters
+    ----------
+    n_states : int, default=2
+            Number of hidden states
+    max_iter : int, default=100
+            Maximum number of iterations to perform during expectation-maximization
+    tol : float, default=1e-6
+            Criterion for early stopping
+    epochs : int, default=1
+            Number of complete passes through the data to improve fit
+    random_state : int, default = 42
+            Parameter set to recreate output
+    init : str
+            Set to 'random' for random initialization.
+            Set to None for deterministic init.
+    Attributes
+    ----------
+    mu : ndarray of shape (n_states,)
+        Fitted means for each state
+    std : ndarray of shape (n_states,)
+        Fitted std for each state
+    T : ndarray of shape (n_states, n_states)
+        Matrix of transition probabilities between states
+    delta : ndarray of shape (n_states,)
+        Initial state occupation distribution
     """
 
-    def __init__(self, n_states: int = 2, init: str = 'random', max_iter: int = 100, tol: int = 1e-6,
+    def __init__(self, n_states: int = 2, init: str = 'random', max_iter: int = 100, tol: float = 1e-6,
                  epochs: int = 1, random_state: int = 42):
         self.window_len = None
         self.n_states = n_states
@@ -59,7 +84,7 @@ class BaseHiddenMarkov(BaseEstimator):
         diag_uniform_dist: 1D-array
             The lower and upper bounds of uniform distribution to sample init from.
 
-        Returns
+        Attributes
         -------
         self.T: N X N matrix of transition probabilities
         self.delta: 1 X N vector of initial probabilities
@@ -167,14 +192,40 @@ class BaseHiddenMarkov(BaseEstimator):
         self.state_seq = state_preds
 
     def decode(self, X):
+        """
+        Function to output the most likely sequence of states given an observation sequence.
+
+        Parameters
+        ----------
+        X : ndarray of shape (n_samples,)
+            Time series of data
+
+        Returns
+        ----------
+        state_preds : ndarray of shape (n_samples,)
+            Predicted sequence of states with length of the inputted time series.
+        posteriors : ndarray of shape (n_samples, n_states)
+            Computes the most likely state at each time-step, however, the state might not be valid (non-Viterbi) # TODO confirm with CS
+        """
         state_preds, posteriors = self._viterbi(X)
         return state_preds, posteriors
 
     def emission_probs(self, X):
-        """ Compute all different probabilities p(x) given an observation sequence and n states
-
-        Returns: T X N matrix
         """
+        Computes the probability distribution p(x) given an observation sequence X
+        The calculation will return a T X N matrix
+
+        Parameters
+        ----------
+        X : ndarray of shape (n_samples,)
+            Time series of data
+
+        Returns
+        ----------
+        probs : ndarray of shape (n_samples, n_states)
+            Output the probability for sampling from a particular state distribution  # TODO vend lige med CS ang. notation.
+        """
+
         T = len(X)
         log_probs = np.zeros((T, self.n_states))  # Init T X N matrix
         probs = np.zeros((T, self.n_states))
@@ -219,16 +270,17 @@ class BaseHiddenMarkov(BaseEstimator):
 
     def sample(self, n_samples: int):
         '''
-        Sample from a fitted hmm.
+        Function samples states from a fitted Hidden Markov Model.
 
         Parameters
         ----------
-        n_samples: int
-                Amount of samples to generate
+        n_samples: ndarray of shape (n_samples,)
+            Amount of samples to generate
 
         Returns
         -------
-        Sample of same size n_samples
+        samples : ndarray of shape (n_samples,)
+            Outputs the generated samples of size n_samples
         '''
 
         state_index = np.arange(start=0, stop=self.n_states, step=1, dtype=int)  # Array of possible states
@@ -265,7 +317,6 @@ class BaseHiddenMarkov(BaseEstimator):
         for t in range(1, T):
             alpha_t = (alpha_t_scaled @ self.T) * emission_probs[t, :]  # Dot product of previous forward_prob, transition matrix and emmission probablitites
             sum_alpha_t = np.sum(alpha_t)
-
             alpha_t_scaled = alpha_t / sum_alpha_t  # Scale forward_probs to sum to 1
             llk = llk + np.log(sum_alpha_t)  # Scalar to store likelihoods
             log_alphas[t, :] = llk + np.log(alpha_t_scaled)  # TODO RESEARCH WHY YOU ADD THE PREVIOUS LIKELIHOOD
@@ -275,19 +326,22 @@ class BaseHiddenMarkov(BaseEstimator):
     def predict_proba(self, X, n_preds=1):
         """
         Compute the probability P(St+h = i | X^T = x^T).
-        Calculates the probability of being in state i at future time step h.
+        Calculates the probability of being in state i at future time step h given a specific observation sequence up untill time T.
 
         Parameters
         ----------
-        X
-        n_preds
+        X : ndarray of shape (n_samples,)
+            Time series of data
+        n_preds : int, default=1
+            Number of time steps to look forward from current time
 
         Returns
-        -------
+        ----------
+        state_preds : ndarray of shape (n_states, n_preds)
+            Output the probability of being in state i at time t+h
         """
 
-        log_alphas = self._log_forward_probs(X, self.emission_probs_)
-        # Compute scaled log-likelihood
+        log_alphas = self._log_forward_probs(X, self.emission_probs_) # Compute scaled log-likelihood
         llk_scale_factor = np.max(log_alphas[-1, :])  # Max of the last vector in the matrix log_alpha
         llk = llk_scale_factor + np.log(
             np.sum(np.exp(log_alphas[-1, :] - llk_scale_factor)))  # Scale log-likelihood by c
@@ -301,6 +355,18 @@ class BaseHiddenMarkov(BaseEstimator):
         return state_preds
 
     def get_params_from_seq(self, X: ndarray, state_sequence: ndarray):  # TODO remove forward-looking params and slice X accordingly
+        """
+        Stores and outputs the model parameters
+
+        Parameters
+        ----------
+        X : ndarray of shape (n_samples,)
+            Time series of data
+
+        state_sequence : ndarray of shape (n_samples)
+            State sequence for a given observation sequence
+        """
+
         # Slice data
         if X.ndim == 1:  # Makes function compatible on higher dimensions
             X = X[(self.window_len - 1): -self.window_len]
@@ -333,6 +399,9 @@ class BaseHiddenMarkov(BaseEstimator):
         self.std = state_groupby['X'].std().values.T
 
     def get_stationary_dist(self):
+        """
+        Outputs the stationary distribution of the fitted model
+        """
         ones = np.ones(shape=(self.n_states, self.n_states))
         identity = np.diag(ones)
         init_guess = np.ones(self.n_states) / self.n_states
@@ -352,14 +421,20 @@ class BaseHiddenMarkov(BaseEstimator):
 
 
 if __name__ == '__main__':
+    X = np.arange(1,1000)
+
     model = BaseHiddenMarkov(n_states=2)
     returns, true_regimes = simulate_2state_gaussian(plotting=False)  # Simulate some data from two normal distributions
     model._init_params(returns)
 
-    print(model.mu)
-    print(model.std)
-    print(model.T)
-    print(model.delta)
+    #print(model._viterbi(X))
+    #model.emission_probs_, _ = model.emission_probs(X)
+    #print(model.get_params_from_seq(X, state_sequence))
+    #print(model.T)
+    #print(model.delta)
+    print(model.predict_proba(X,n_preds=1))
 
-    model.stationary_dist = np.array([.5, .5])
-    print(model.sample(10))
+
+
+    #model.stationary_dist = np.array([.5, .5])
+    #print(model.sample(n_samples=10))
