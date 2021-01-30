@@ -62,28 +62,6 @@ class EMHiddenMarkov(BaseHiddenMarkov):
                  epochs: int = 10, random_state: int = 42):
         super().__init__(n_states, init, max_iter, tol, epochs, random_state)
 
-    def _log_forward_proba(self):
-        n_obs, n_states = self.log_emission_probs_.shape
-        log_alphas = np.zeros((n_obs, n_states))
-
-        # Do the pass in cython
-        hmm_cython.forward_proba(n_obs, n_states,
-                      np.log(self.delta),
-                      np.log(self.T),
-                      self.log_emission_probs_, log_alphas)
-        return logsumexp(log_alphas[-1]), log_alphas  # log-likelihood and forward probabilities
-
-    def _log_backward_proba(self):
-        n_obs, n_states = self.log_emission_probs_.shape
-        log_betas = np.zeros((n_obs, n_states))
-
-        # Do the pass in cython
-        hmm_cython.backward_proba(n_obs, n_states,
-                                  np.log(self.delta),
-                                  np.log(self.T),
-                                  self.log_emission_probs_, log_betas)
-        return log_betas
-
     def compute_posteriors(self, log_alphas, log_betas):
         """
         Expectation of being in state j at time t given observations, P(S_t = j | x^T).
@@ -105,10 +83,10 @@ class EMHiddenMarkov(BaseHiddenMarkov):
 
     def _e_step(self, X: ndarray):
         '''
-        Do a single e-step in Baum-Welch algorithm
+        Do a single e-step in Baum-Welch algorithm (Derives Xi and Gamma w.r.t. traditional HMM syntax)
         '''
         T = len(X)
-        self.emission_probs_, self.log_emission_probs_ = self.emission_probs(X)
+        self.emission_probs(X)
         llk, log_alphas = self._log_forward_proba()
         log_betas = self._log_backward_proba()
 
@@ -199,95 +177,6 @@ class EMHiddenMarkov(BaseHiddenMarkov):
         self.mu = self.best_mu
         self.std = self.best_std
 
-    def _e_step1(self, X: ndarray):
-        ''' 
-        Do a single e-step in Baum-Welch algorithm (Derives Xi and Gamma w.r.t. traditional HMM syntax)
-        '''
-        T = len(X)
-        self.emission_probs_, self.log_emission_probs_ = self.emission_probs(X)
-        log_alphas = self._log_forward_probs(X, self.emission_probs_)
-        log_betas = self._log_backward_probs(X, self.emission_probs_)
-
-        # Compute scaled log-likelihood
-        llk_scale_factor = np.max(log_alphas[-1, :])  # Max of the last vector in the matrix log_alpha
-        llk = llk_scale_factor + np.log(
-            np.sum(np.exp(log_alphas[-1, :] - llk_scale_factor)))  # Scale log-likelihood by c
-
-        # Expectation of being in state j given a sequence x^T
-        # P(S_t = j | x^T)
-        u = np.exp(log_alphas + log_betas - llk)  # TODO FIND BETTER VARIABLE NAME
-
-        # Initialize matrix of shape j X j
-        # We skip computing vhat and head straight to fhat for computational reasons
-        f = np.zeros(shape=(self.n_states, self.n_states))  # TODO FIND BETTER VARIABLE NAME
-        for j in range(self.n_states):
-            for k in range(self.n_states):
-                f[j, k] = self.T[j, k] * np.sum(
-                    np.exp(log_alphas[:-1, j] + log_betas[1:, k] + self.log_emission_probs_[1:, k] - llk))
-
-        return u, f, llk
-
-    def fit1(self, X: ndarray, verbose=0):
-        '''
-        Function iterates through the e-step and the m-step recursively to find the optimal model parameters.
-
-        Parameters
-        ----------
-        X : ndarray of shape (n_samples,)
-            Time series of data
-        Verbose : boolean
-            False / True for extra information regarding the function.
-
-        Returns
-        ----------
-        Derives the optimal model parameters
-        '''
-
-        # Init parameters initial distribution, transition matrix and state-dependent distributions
-        self._init_params(X, output_hmm_params=True)
-        self.old_llk = -np.inf  # Used to check model convergence
-        self.best_epoch = -np.inf
-
-        for epoch in range(self.epochs):
-            # Do multiple random runs
-            if epoch > 1: self._init_params(X, output_hmm_params=True)
-            #print(f'Epoch {epoch} - Means: {self.mu} - STD {self.std} - Gamma {np.diag(self.T)} - Delta {self.delta}')
-
-            for iter in range(self.max_iter):
-                # Do e- and m-step
-                u, f, llk = self._e_step1(X)
-                self._m_step(X, u, f)
-
-                # Check convergence criterion
-                crit = np.abs(llk - self.old_llk)  # Improvement in log likelihood
-                if crit < self.tol:
-                    if llk > self.best_epoch:
-                        # Compute AIC and BIC and print model results
-                        # AIC & BIC computed as shown on
-                        # https://rdrr.io/cran/HMMpa/man/AIC_HMM.html
-                        num_independent_params = self.n_states**2 + 2*self.n_states - 1  # True for normal distributions
-                        self.aic_ = -2 * llk + 2 * num_independent_params
-                        self.bic_ = -2 * llk + num_independent_params * np.log(len(X))
-                        self.best_T = self.T
-                        self.best_delta = self.delta
-                        self.best_mu = self.mu
-                        self.best_std = self.std
-
-
-                    if verbose == 1:
-                        print(f'Iteration {iter} - LLK {llk} - Means: {self.mu} - STD {self.std} - Gamma {np.diag(self.T)} - Delta {self.delta}')
-                    break
-
-                elif iter == self.max_iter - 1:
-                    print(f'No convergence after {iter} iterations')
-                else:
-                    self.old_llk = llk
-        self.T = self.best_T
-        self.delta = self.best_delta
-        self.mu = self.best_mu
-        self.std = self.best_std
-
-        return iter
 
 
 if __name__ == '__main__':
@@ -306,8 +195,10 @@ if __name__ == '__main__':
     posteriors = model.compute_posteriors(log_alphas, log_betas)
 
     print(posteriors)
-    plot_posteriors_states(posteriors, states, true_regimes)
+    #plot_posteriors_states(posteriors, states, true_regimes)
     
+
+
 
     check_hmmlearn = False
     if check_hmmlearn == True:
