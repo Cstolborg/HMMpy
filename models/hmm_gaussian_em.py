@@ -19,22 +19,43 @@ Write code clean
 '''
 
 class EMHiddenMarkov(BaseHiddenMarkov):
-    """ Class for computing HMM's using the EM algorithm.
+    """"
+    Class for computing HMM's using the EM algorithm.
+    Can be used to fit HMM parameters or to decode hidden states.
 
     Parameters
     ----------
     n_states : int, default=2
-            Number of hidden states
-    max_iter : Maximum number of iterations to perform during expectation-maximization
-    tol : Criterion for early stopping
+        Number of hidden states
+    max_iter : int, default=100
+        Maximum number of iterations to perform during expectation-maximization
+    tol : float, default=1e-6
+        Criterion for early stopping
+    epochs : int, default=1
+        Number of complete passes through the data to improve fit
+    random_state : int, default = 42
+        Parameter set to recreate output
     init: str
-            Set to 'random' for random initialization.
-            Set to None for deterministic init.
+        Set to 'random' for random initialization.
+        Set to None for deterministic init.
 
-   Attributes
+
+    Attributes
     ----------
-    Can be used to fit HMM parameters or to decode hidden states.
-
+    mu : ndarray of shape (n_states,)
+        Fitted means for each state
+    std : ndarray of shape (n_states,)
+        Fitted std for each state
+    T : ndarray of shape (n_states, n_states)
+        Matrix of transition probabilities between states
+    delta : ndarray of shape (n_states,)
+        Initial state occupation distribution
+    gamma : ndarray of shape (n_states,)
+        Entails the probability of being in a state at time t knowing all the observations that has come and all the observations to come. (Its a bowtie)
+    AIC : float
+        Measurement to select the best fitted model
+    BIC : float
+        Measurement to select the best fitted model
     """
 
     def __init__(self, n_states: int = 2, init: str = 'random', max_iter: int = 100, tol: float = 1e-6,
@@ -104,9 +125,9 @@ class EMHiddenMarkov(BaseHiddenMarkov):
         return gamma, xi, llk
 
     def _m_step(self, X: ndarray, gamma, xi):
-        ''' Given u and f do an m-step.
-
-         Updates the model parameters delta, Transition matrix and state dependent distributions.
+        ''' 
+        Given u and f do an m-step.
+        Updates the model parameters delta, Transition matrix and state dependent distributions.
          '''
         X = np.array(X)
 
@@ -121,15 +142,18 @@ class EMHiddenMarkov(BaseHiddenMarkov):
 
     def fit(self, X: ndarray, verbose=0):
         """
-        Iterates through the e-step and the m-step.
+        Function iterates through the e-step and the m-step recursively to find the optimal model parameters.
+
         Parameters
         ----------
-        X
-        verbose
+        X : ndarray of shape (n_samples,)
+            Time series of data
+        Verbose : boolean
+            False / True for extra information regarding the function.
 
         Returns
-        -------
-
+        ----------
+        Derives the optimal model parameters
         """
         # Init parameters initial distribution, transition matrix and state-dependent distributions
         self._init_params(X, output_hmm_params=True)
@@ -176,8 +200,8 @@ class EMHiddenMarkov(BaseHiddenMarkov):
         self.std = self.best_std
 
     def _e_step1(self, X: ndarray):
-        ''' Do a single e-step in Baum-Welch algorithm
-
+        ''' 
+        Do a single e-step in Baum-Welch algorithm (Derives Xi and Gamma w.r.t. traditional HMM syntax)
         '''
         T = len(X)
         self.emission_probs_, self.log_emission_probs_ = self.emission_probs(X)
@@ -204,17 +228,21 @@ class EMHiddenMarkov(BaseHiddenMarkov):
         return u, f, llk
 
     def fit1(self, X: ndarray, verbose=0):
-        """
-        Iterates through the e-step and the m-step.
+        '''
+        Function iterates through the e-step and the m-step recursively to find the optimal model parameters.
+
         Parameters
         ----------
-        X
-        verbose
+        X : ndarray of shape (n_samples,)
+            Time series of data
+        Verbose : boolean
+            False / True for extra information regarding the function.
 
         Returns
-        -------
+        ----------
+        Derives the optimal model parameters
+        '''
 
-        """
         # Init parameters initial distribution, transition matrix and state-dependent distributions
         self._init_params(X, output_hmm_params=True)
         self.old_llk = -np.inf  # Used to check model convergence
@@ -266,6 +294,7 @@ if __name__ == '__main__':
     model = EMHiddenMarkov(n_states=2, init="random", random_state=1, epochs=1, max_iter=100)
     returns, true_regimes = simulate_2state_gaussian(plotting=False)  # Simulate some data from two normal distributions
 
+
     model.fit(returns, verbose=1)
 
     states = model.decode()
@@ -278,7 +307,7 @@ if __name__ == '__main__':
 
     print(posteriors)
     plot_posteriors_states(posteriors, states, true_regimes)
-
+    
 
     check_hmmlearn = False
     if check_hmmlearn == True:
