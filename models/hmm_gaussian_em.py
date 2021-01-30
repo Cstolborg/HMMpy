@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from typing import List
 
 from utils.simulate_returns import simulate_2state_gaussian
-from models.hmm_cython import _log_forward_probs
+#from models.hmm_cython import _log_forward_probs
 from models.hmm_base import BaseHiddenMarkov
 
 ''' TODO
@@ -41,16 +41,20 @@ class EMHiddenMarkov(BaseHiddenMarkov):
 
     Attributes
     ----------
-    mu : float
+    mu : ndarray of shape (n_states,)
         Fitted means for each state
-    std : float
+    std : ndarray of shape (n_states,)
         Fitted std for each state
-    T : float
-        Matrix of transition probabilities between states (NxN)
-    delta : float
+    T : ndarray of shape (n_states, n_states)
+        Matrix of transition probabilities between states
+    delta : ndarray of shape (n_states,)
         Initial state occupation distribution
-
-    ###TO INclude Aic, Bic etc... for fitted model.
+    gamma : ndarray of shape (n_states,)
+        Entails the probability of being in a state at time t knowing all the observations that has come and all the observations to come. (Its a bowtie)
+    AIC : float
+        Measurement to select the best fitted model
+    BIC : float
+        Measurement to select the best fitted model
     """
 
     def __init__(self, n_states: int = 2, init: str = 'random', max_iter: int = 100, tol: int = 1e-6,
@@ -128,13 +132,12 @@ class EMHiddenMarkov(BaseHiddenMarkov):
 
         Parameters
         ----------
-        X : float
+        X : ndarray of shape (n_samples,)
             Time series of data
-
         Verbose : boolean
             False / True for extra information regarding the function.
 
-        Attributes
+        Returns
         ----------
         Derives the optimal model parameters
         '''
@@ -185,20 +188,23 @@ if __name__ == '__main__':
 
 
 
-    '''
-    #model.fit(returns, verbose=0)
-    #states, posteriors = model._viterbi(returns)
+    model.fit(returns, verbose=0)
+    states, posteriors = model._viterbi(returns)
 
     n_states = model.n_states
     emission_probs = model.emission_probs(returns)
     delta = model.delta
     TPM = model.T
+    AIC = model.aic_
+    BIC = model.bic_
 
 
-    #print(_log_forward_probs(n_states, returns, emission_probs, delta, TPM) )
-    '''
 
+    #print(n_states, returns, emission_probs, delta, TPM)
+    print('BIC =', BIC)
+    print('AIC = ', AIC)
 
+    """"
     plotting = False
     if plotting == True:
         fig, ax = plt.subplots(nrows=2, ncols=1)
@@ -209,7 +215,7 @@ if __name__ == '__main__':
 
         plt.legend()
         plt.show()
-
+    """
 
 
 

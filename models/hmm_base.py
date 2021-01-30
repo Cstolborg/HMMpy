@@ -55,7 +55,7 @@ class BaseHiddenMarkov(BaseEstimator):
         Fitted std for each state
     T : ndarray of shape (n_states, n_states)
         Matrix of transition probabilities between states
-    delta : float
+    delta : ndarray of shape (n_states,)
         Initial state occupation distribution
     """
 
@@ -337,8 +337,8 @@ class BaseHiddenMarkov(BaseEstimator):
 
         Returns
         ----------
-        state_preds : int
-            Output the probability of being in state i at time t+h i.e. the function returns a Nxh matrix
+        state_preds : ndarray of shape (n_states, n_preds)
+            Output the probability of being in state i at time t+h
         """
 
         log_alphas = self._log_forward_probs(X, self.emission_probs_) # Compute scaled log-likelihood
@@ -360,10 +360,10 @@ class BaseHiddenMarkov(BaseEstimator):
 
         Parameters
         ----------
-        X : float
+        X : ndarray of shape (n_samples,)
             Time series of data
 
-        state_sequence : int
+        state_sequence : ndarray of shape (n_samples)
             State sequence for a given observation sequence
         """
 
@@ -432,7 +432,7 @@ if __name__ == '__main__':
     #print(model.get_params_from_seq(X, state_sequence))
     #print(model.T)
     #print(model.delta)
-    print(model.get_stationary_dist())
+    print(model.predict_proba(X,n_preds=1))
 
 
 
