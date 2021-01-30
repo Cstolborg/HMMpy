@@ -11,6 +11,9 @@ from typing import List
 
 from utils.simulate_returns import simulate_2state_gaussian
 
+import pyximport; pyximport.install()  # TODO can only be active during development -- must be done through setup.py
+from models import hmm_cython
+
 ''' TODO:
 
 Very bad integration of kmeans++ init for EM algos.
@@ -238,7 +241,16 @@ class BaseHiddenMarkov(BaseEstimator):
 
         return probs, log_probs
 
-    def _viterbi(self, X):
+    def _viterbi(self):
+        n_obs, n_states = self.log_emission_probs_.shape
+        log_alphas = np.zeros((n_obs, n_states))
+        state_sequence = hmm_cython.viterbi(n_obs, n_states,
+                                                        np.log(self.delta),
+                                                        np.log(self.T),
+                                                        self.log_emission_probs_)
+        return state_sequence
+
+    def _viterbi1(self, X):
         """ Compute the most likely sequence of states given the observations
          To reduce CPU time consider storing each sequence --> will save T*m function evaluations
 
@@ -258,7 +270,7 @@ class BaseHiddenMarkov(BaseEstimator):
             posteriors[t, :] = posterior_temp / np.sum(posterior_temp)  # Scale rows to sum to 1
 
         # From posteriors get the the most likeley sequence of states i
-        state_preds = np.zeros(T).astype(int)  # Vector of length N
+        state_preds = np.zeros(T, dtype=int)  # Vector of length N
         state_preds[-1] = np.argmax(posteriors[-1, :])  # Last most likely state is the index position
 
         # Do a backward recursion to calculate most likely state sequence
@@ -295,6 +307,10 @@ class BaseHiddenMarkov(BaseEstimator):
 
         return samples, sample_states
 
+    def decode1(self, X):
+        state_preds, posteriors = self._viterbi1(X)
+        return state_preds, posteriors
+
     def _log_forward_probs(self, X: ndarray, emission_probs: ndarray):
         """ Compute log forward probabilities in scaled form.
 
@@ -321,7 +337,9 @@ class BaseHiddenMarkov(BaseEstimator):
             llk = llk + np.log(sum_alpha_t)  # Scalar to store likelihoods
             log_alphas[t, :] = llk + np.log(alpha_t_scaled)  # TODO RESEARCH WHY YOU ADD THE PREVIOUS LIKELIHOOD
 
-        return log_alphas
+    def decode(self):
+        state_preds = self._viterbi()
+        return state_preds
 
     def predict_proba(self, X, n_preds=1):
         """
@@ -398,7 +416,8 @@ class BaseHiddenMarkov(BaseEstimator):
         self.mu = state_groupby['X'].mean().values.T  # transform mean back into 1darray
         self.std = state_groupby['X'].std().values.T
 
-    def get_stationary_dist(self):
+
+    def get_stationary_dist(self):  # TODO not finished
         """
         Outputs the stationary distribution of the fitted model
         """
@@ -414,10 +433,62 @@ class BaseHiddenMarkov(BaseEstimator):
 
         self.stationary_dist = stationary_dist
 
-    def _l2_norm_squared(self, z, theta): # z must always be a vector but theta can be either a vector or a matrix
+    def _l2_norm_squared(self, z, theta):  # TODO this function is called too many times can we rewrite it somehow?
+        # z must always be a vector but theta can be either a vector or a matrix
         # Subtract z from theta row-wise. Requires the transpose of the column matrix theta
         diff = (theta.T - z).T
         return np.square(np.linalg.norm(diff, axis=0))  # squared l2 norm.
+
+    def _log_forward_probs(self, X: ndarray, emission_probs: ndarray):  # TODO deprecate
+        """ Compute log forward probabilities in scaled form.
+
+        Forward probability is essentially the joint probability of observing
+        a state = i and observation sequences x^t=x_1...x_t, i.e. P(St=i , X^t=x^t).
+        Follows the method by Zucchini A.1.8 p 334.
+        """
+        T = len(X)
+        log_alphas = np.zeros((T, self.n_states))  # initialize matrix with zeros
+
+        # a0, compute first forward as dot product of initial dist and state-dependent dist
+        # Each element is scaled to sum to 1 in order to handle numerical underflow
+        alpha_t = self.delta * emission_probs[0, :]
+        sum_alpha_t = np.sum(alpha_t)
+        alpha_t_scaled = alpha_t / sum_alpha_t
+        llk = np.log(sum_alpha_t)  # Scalar to store the log likelihood
+        log_alphas[0, :] = llk + np.log(alpha_t_scaled)
+
+        # a1 to at, compute recursively
+        for t in range(1, T):
+            alpha_t = (alpha_t_scaled @ self.T) * emission_probs[t,
+                                                  :]  # Dot product of previous forward_prob, transition matrix and emmission probablitites
+            sum_alpha_t = np.sum(alpha_t)
+
+            alpha_t_scaled = alpha_t / sum_alpha_t  # Scale forward_probs to sum to 1
+            llk = llk + np.log(sum_alpha_t)  # Scalar to store likelihoods
+            log_alphas[t, :] = llk + np.log(alpha_t_scaled)
+
+        return log_alphas
+
+    def _log_backward_probs(self, X: ndarray, emission_probs: ndarray):  # TODO deprecate
+        """ Compute the log of backward probabilities in scaled form.
+        Backward probabilities are the conditional probability of
+        some observation at t+1 given the current state = i. Equivalent to P(X_t+1 = x_t+1 | S_t = i)
+        """
+        T = len(X)
+        log_betas = np.zeros((T, self.n_states))  # initialize matrix with zeros
+
+        beta_t = np.ones(self.n_states) * 1 / self.n_states  # TODO CHECK WHY WE USE 1/M rather than ones
+        llk = np.log(self.n_states)
+        log_betas[-1, :] = np.log(np.ones(self.n_states))  # Last result is 0 since log(1)=0
+
+        for t in range(T - 2, -1, -1):  # Count backwards
+            beta_t = (self.T * emission_probs[t + 1, :]) @ beta_t
+            log_betas[t, :] = llk + np.log(beta_t)
+            sum_beta_t = np.sum(beta_t)
+            beta_t = beta_t / sum_beta_t  # Scale rows to sum to 1
+            llk = llk + np.log(sum_beta_t)
+
+        return log_betas
 
 
 if __name__ == '__main__':
@@ -434,7 +505,6 @@ if __name__ == '__main__':
     #print(model.delta)
     print(model.predict_proba(X,n_preds=1))
 
+    model.stationary_dist = np.array([.5, .5])
+    print(model.sample(10))
 
-
-    #model.stationary_dist = np.array([.5, .5])
-    #print(model.sample(n_samples=10))

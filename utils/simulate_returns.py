@@ -11,6 +11,16 @@ Need a sampling function that is easily adapted to N states and any conditional 
 
 """
 
+def plot_posteriors_states(posteriors, states, true_regimes):
+    fig, ax = plt.subplots(nrows=2, ncols=1)
+    ax[0].plot(posteriors[:, 0], label='Posteriors state 1', )
+    ax[0].plot(posteriors[:, 1], label='Posteriors state 2', )
+    ax[1].plot(states, label='Predicted states', ls='dotted')
+    ax[1].plot(true_regimes, label='True states', ls='dashed')
+
+    plt.legend()
+    plt.show()
+
 def simulate_2state_gaussian(N=200, means=None, std=None, plotting=False, random_state=42):
     '''Simulate data for bull and bear market using Normal distribution
 
