@@ -17,11 +17,11 @@ from models import hmm_cython
 
 ''' TODO:
  
-IMprove fit_state_seq
- 
 implement simulation and BAC to choose jump penalty.
 
 Z-score standardisation
+
+Consider setting boundscheck = False for all cython code
 '''
 
 class JumpHMM(BaseHiddenMarkov):
@@ -232,7 +232,7 @@ class JumpHMM(BaseHiddenMarkov):
         self.std = state_groupby['X'].std().values.T
 
         # Stationary distributiin
-        self.stationary_dist = self.get_stationary_dist()
+        self.stationary_dist = self.get_stationary_dist(tpm=self.tpm)
 
 
 if __name__ == '__main__':
@@ -241,5 +241,4 @@ if __name__ == '__main__':
 
     Z = model.construct_features(returns, window_len=6)
 
-    for i in range(10):
-        model.fit(Z)
+    model.fit(Z)

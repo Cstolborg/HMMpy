@@ -6,11 +6,8 @@ import matplotlib.pyplot as plt
 
 from typing import List
 
-from utils.simulate_returns import simulate_2state_gaussian, plot_posteriors_states
+from utils.simulate_returns import simulate_2state_gaussian, plot_posteriors_states, plot_samples_states
 from models.hmm_base import BaseHiddenMarkov
-
-import pyximport; pyximport.install()  # TODO can only be active during development -- must be done through setup.py
-from models import hmm_cython
 
 
 class EMHiddenMarkov(BaseHiddenMarkov):
@@ -149,9 +146,9 @@ class EMHiddenMarkov(BaseHiddenMarkov):
                         num_independent_params = self.n_states ** 2 + 2 * self.n_states - 1  # True for normal distributions
                         self.aic_ = -2 * llk + 2 * num_independent_params
                         self.bic_ = -2 * llk + num_independent_params * np.log(len(X))
-                        self.stationary_dist = self.get_stationary_dist()
+                        self.stationary_dist = self.get_stationary_dist(tpm=self.tpm)
 
-                        self.best_T = self.tpm
+                        self.best_tpm = self.tpm
                         self.best_delta = self.start_proba
                         self.best_mu = self.mu
                         self.best_std = self.std
@@ -166,7 +163,7 @@ class EMHiddenMarkov(BaseHiddenMarkov):
                 else:
                     self.old_llk = llk
 
-        self.tpm = self.best_T
+        self.tpm = self.best_tpm
         self.start_proba = self.best_delta
         self.mu = self.best_mu
         self.std = self.best_std
@@ -178,9 +175,17 @@ if __name__ == '__main__':
     returns, true_regimes = simulate_2state_gaussian(plotting=False)  # Simulate some data from two normal distributions
 
     model.fit(returns)
-    model.sample(2)
-    model.decode()
-    model.predict_proba(5)
+
+    sample_rets, sample_states = model.sample(10)
+
+    print(sample_rets)
+    print(sample_states)
+
+    #plot_samples_states(sample_rets, sample_states)
+
+
+
+
 
 
     check_hmmlearn = False

@@ -161,30 +161,52 @@ class BaseHiddenMarkov(BaseEstimator):
 
         return probs, log_probs
 
-    def sample(self, n_samples: int):
+    def sample(self, n_samples, n_sequences=1, hmm_params=None):
         '''
         Sample states from a fitted Hidden Markov Model.
 
         Parameters
         ----------
-        n_samples: ndarray of shape (n_samples,)
+        n_samples: int
             Amount of samples to generate
+        hmm_params: dict, default=None
+            hmm model parameters to sample from. If None and model is fitted it will use fitted parameters.
+            To manually set params, create a dict with 'mu', 'std', 'tpm' and 'stationary distribution' as kwds
+            and values ndarrays.
 
         Returns
         -------
         samples : ndarray of shape (n_samples,)
             Outputs the generated samples of size n_samples
         '''
+        if hmm_params == None:
+            mu = self.mu
+            std = self.std
+            tpm = self.tpm
+            stationary_dist = self.stationary_dist
+        else:
+            mu = hmm_params['mu']
+            std = hmm_params['std']
+            tpm = hmm_params['tpm']
+            stationary_dist = hmm_params['stationary_dist']
 
-        state_index = np.arange(start=0, stop=self.n_states, step=1, dtype=int)  # Array of possible states
-        sample_states = np.zeros(n_samples).astype(int)  # Init sample vector
-        sample_states[0] = np.random.choice(a=state_index, size=1, p=self.stationary_dist)
 
-        for t in range(1, n_samples):
-            # Each new state is chosen using the transition probs corresponding to the previous state sojourn.
-            sample_states[t] = np.random.choice(a=state_index, size=1, p=self.tpm[sample_states[t - 1], :])
+        state_index = np.arange(start=0, stop=self.n_states, step=1, dtype=np.int32)  # Array of possible states
+        sample_states = np.zeros(shape=(n_samples, n_sequences), dtype=np.int32) # Init sample vector
+        samples = np.zeros(shape=(n_samples, n_sequences))  # Init sample vector
 
-        samples = stats.norm.rvs(loc=self.mu[sample_states], scale=self.std[sample_states], size=n_samples)
+        for seq in range(n_sequences):
+            sample_states[0, seq] = np.random.choice(a=state_index, size=1, p=stationary_dist)
+
+            for t in range(1, n_samples):
+                # Each new state is chosen using the transition probs corresponding to the previous state sojourn.
+                sample_states[t, seq] = np.random.choice(a=state_index, size=1, p=tpm[sample_states[t - 1, seq], :])
+
+            samples[:, seq] = stats.norm.rvs(loc=mu[sample_states[:, seq]], scale=std[sample_states[:, seq]], size=n_samples)
+
+        if n_sequences == 1:
+            sample_states = sample_states[:, 0]
+            samples = samples[:, 0]
 
         return samples, sample_states
 
@@ -233,7 +255,7 @@ class BaseHiddenMarkov(BaseEstimator):
 
         return state_preds
 
-    def get_stationary_dist(self):
+    def get_stationary_dist(self, tpm):
         """
         Outputs the stationary distribution of the fitted model.
 
@@ -248,7 +270,7 @@ class BaseHiddenMarkov(BaseEstimator):
         stationary_dist: ndarray of shape (n_states,)
         """
         # Computes right eigenvectors, thus transposing the TPM is necessary.
-        eigvals, eigvecs = np.linalg.eig(self.tpm.T)
+        eigvals, eigvecs = np.linalg.eig(tpm.T)
         eigvec = eigvecs[:, np.argmax(eigvals)]  # Get the eigenvector corresponding to largest eigenvalue
 
         stationary_dist = eigvec / eigvec.sum()
@@ -315,9 +337,4 @@ if __name__ == '__main__':
     model._init_params(returns)
     model.emission_probs(returns)
 
-
-    print(model.predict_proba(X,n_preds=1))
-
-    model.stationary_dist = np.array([.5, .5])
-    print(model.sample(10))
 
