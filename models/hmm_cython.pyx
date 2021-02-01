@@ -21,6 +21,19 @@ cdef inline int _argmax(dtype_t[:] X) nogil:
 cdef inline dtype_t _max(dtype_t[:] X) nogil:
     return X[_argmax(X)]
 
+cdef inline int _argmin(dtype_t[:] X) nogil:
+    cdef dtype_t X_min = INFINITY
+    cdef int pos = 0
+    cdef int i
+    for i in range(X.shape[0]):
+        if X[i] < X_min:
+            X_min = X[i]
+            pos = i
+    return pos
+
+cdef inline dtype_t _min(dtype_t[:] X) nogil:
+    return X[_argmin(X)]
+
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
@@ -36,7 +49,7 @@ cdef inline dtype_t logsumexp_cython(dtype_t[:] a, int n_states) nogil:
     return largest_in_a + log(result)
 
 
-def forward_proba(int n_obs, int n_states,
+def forward_proba(int n_samples, int n_states,
              dtype_t[:] log_startprob,
              dtype_t[:, :] log_tpm,
              dtype_t[:, :] log_emission_proba,
@@ -50,7 +63,7 @@ def forward_proba(int n_obs, int n_states,
         for i in range(n_states):
             log_alphas[0, i] = log_startprob[i] + log_emission_proba[0, i]
 
-        for t in range(1, n_obs):
+        for t in range(1, n_samples):
             for j in range(n_states):
                 for i in range(n_states):
                     alpha_temp[i] = log_alphas[t - 1, i] + log_tpm[i, j]
@@ -58,7 +71,7 @@ def forward_proba(int n_obs, int n_states,
                 log_alphas[t, j] = logsumexp_cython(alpha_temp, n_states) + log_emission_proba[t, j]
 
 
-def backward_proba(int n_obs, int n_states,
+def backward_proba(int n_samples, int n_states,
               dtype_t[:] log_startprob,
               dtype_t[:, :] log_tpm,
               dtype_t[:, :] log_emission_proba,
@@ -69,9 +82,9 @@ def backward_proba(int n_obs, int n_states,
 
     with nogil:
         for i in range(n_states):
-            log_betas[n_obs - 1, i] = 0.0
+            log_betas[n_samples - 1, i] = 0.0
 
-        for t in range(n_obs - 2, -1, -1):
+        for t in range(n_samples - 2, -1, -1):
             for i in range(n_states):
                 for j in range(n_states):
                     beta_temp[j] = (log_tpm[i, j]
@@ -80,17 +93,61 @@ def backward_proba(int n_obs, int n_states,
 
                 log_betas[t, i] = logsumexp_cython(beta_temp, n_states)
 
-def viterbi(int n_obs, int n_states,
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def jump_state_seq(int n_samples, int n_states, int n_features,
+                   dtype_t jump_penalty,
+                   dtype_t[:, :] l2_norms):
+
+    cdef int i, j ,t, where_from
+    cdef int[::view.contiguous] state_sequence = np.empty(n_samples, dtype=np.int32)
+    cdef dtype_t[:, ::view.contiguous] losses = np.zeros(shape=(n_samples, n_states))
+
+    # Temporary variables
+    cdef dtype_t[::view.contiguous] state_change_penalty = np.empty(n_states)
+
+    with nogil:
+        losses[n_samples - 1] = l2_norms[n_samples - 1]
+
+        # Backward recursion to compute losses
+        for t in range(n_samples - 2, -1, -1):
+            for i in range(n_states):
+
+                for j in range(n_states):
+                    # If j==1, then no state change occurred and no jump penalty applies
+                    if j == i:
+                        state_change_penalty[j] = l2_norms[t+1, j]
+                    else:
+                        state_change_penalty[j] = l2_norms[t+1, j] + jump_penalty
+
+
+                losses[t, i] = l2_norms[t, i] + _min(state_change_penalty)
+
+        # Use losses in forward recursion to compute most likeley state sequence
+        state_sequence[0] = _argmin(losses[0])
+
+        for t in range(1, n_samples):
+            for i in range(n_states):
+
+                if i == state_sequence[t-1]:
+                    state_change_penalty[i] = losses[t, i]
+                else:
+                    state_change_penalty[i] = losses[t, i] + jump_penalty
+
+            state_sequence[t] = _argmin(state_change_penalty)
+
+    return np.asarray(losses), np.asarray(state_sequence)
+
+
+def viterbi(int n_samples, int n_states,
              dtype_t[:] log_startprob,
              dtype_t[:, :] log_tpm,
              dtype_t[:, :] log_emission_proba):
 
     cdef int i, j, t, where_from
 
-    cdef int[::view.contiguous] state_sequence = \
-        np.empty(n_obs, dtype=np.int32)
-    cdef dtype_t[:, ::view.contiguous] log_posteriors = \
-        np.zeros((n_obs, n_states))
+    cdef int[::view.contiguous] state_sequence = np.empty(n_samples, dtype=np.int32)
+    cdef dtype_t[:, ::view.contiguous] log_posteriors = np.zeros((n_samples, n_states))
     cdef dtype_t[::view.contiguous] work_buffer = np.empty(n_states)
 
     with nogil:
@@ -98,7 +155,7 @@ def viterbi(int n_obs, int n_states,
             log_posteriors[0, i] = log_startprob[i] + log_emission_proba[0, i]
 
         # Induction
-        for t in range(1, n_obs):
+        for t in range(1, n_samples):
             for i in range(n_states):
                 for j in range(n_states):
                     work_buffer[j] = (log_tpm[j, i]
@@ -107,10 +164,9 @@ def viterbi(int n_obs, int n_states,
                 log_posteriors[t, i] = _max(work_buffer) + log_emission_proba[t, i]
 
         # Observation traceback
-        state_sequence[n_obs - 1] = where_from = \
-            _argmax(log_posteriors[n_obs - 1])
+        state_sequence[n_samples - 1] = where_from = _argmax(log_posteriors[n_samples - 1])
 
-        for t in range(n_obs - 2, -1, -1):
+        for t in range(n_samples - 2, -1, -1):
             for i in range(n_states):
                 work_buffer[i] = (log_posteriors[t, i]
                                   + log_tpm[i, where_from])

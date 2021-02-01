@@ -8,12 +8,16 @@ from sklearn.cluster._kmeans import kmeans_plusplus
 
 import matplotlib.pyplot as plt
 
-
 from utils.simulate_returns import simulate_2state_gaussian
 from models.hmm_base import BaseHiddenMarkov
 
+import pyximport; pyximport.install()  # TODO can only be active during development -- must be done through setup.py
+from models import hmm_cython
+
 
 ''' TODO:
+ 
+IMprove fit_state_seq
  
 implement simulation and BAC to choose jump penalty.
 
@@ -77,24 +81,51 @@ class JumpHMM(BaseHiddenMarkov):
 
         return Z
 
-    def _l2_norm_squared(self, z, theta):  # TODO this function is called too many times can we rewrite it somehow?
-        # z must always be a vector but theta can be either a vector or a matrix
-        # Subtract z from theta row-wise. Requires the transpose of the column matrix theta
-        diff = (theta.T - z).T
-        return np.square(np.linalg.norm(diff, axis=0))  # squared l2 norm.
+    def _l2_norm_squared(self, z, theta):
+        """
+        Compute the squared l2 norm at each time step.
+
+        Squared l2 norm is computed as ||z_t - theta ||_2^2.
+
+        Parameters
+        ----------
+        z : ndarray of shape (n_samples, n_features)
+            Data to be fitted
+        theta : ndarray of shape (n_features, n_states)
+            jump model parameters
+
+        Returns
+        -------
+        norms: ndarray of shape (n_samples, n_states)
+            Squared l2 norms conditional on latent states
+        """
+        norms = np.zeros(shape=(len(z), self.n_states))
+
+        for j in range(self.n_states):
+            diff = (theta[:, j] - z)  # ndarray of shape (n_samples, n_states) with differences
+            norms[:, j] = np.square(np.linalg.norm(diff, axis=1))  # squared state conditional l2 norms
+
+        return norms  # squared l2 norm.
 
     def _fit_theta(self, Z):
+        """
+        Fit theta, i.e minimize the squared L2 norm in each latent state.
+
+        Computed analytically. See notebooks/math_overviews_algos for proof of solution.
+        """
         for j in range(self.n_states):
             state_slicer = self.state_seq == j  # Boolean array of True/False
-
             N_j = sum(state_slicer)  # Number of terms in state j
+
+            assert N_j != 0, "No state changes detected"  # Check that state changes are detected
             z = Z[state_slicer].sum(axis=0)  # Sum each feature across time
             self.theta[:, j] = 1 / N_j * z
 
     def _fit_state_seq(self, X: ndarray):
         """
         Fit a state sequence based on current theta estimates.
-        Used in jump model fitting.
+        Used in jump model fitting. Uses a dynamic programming technique very
+        similar to the viterbi algorithm.
 
         Parameters
         ----------
@@ -105,35 +136,14 @@ class JumpHMM(BaseHiddenMarkov):
         -------
         fitted state sequence
         """
-        T = len(X)
+        l2_norms = self._l2_norm_squared(X, self.theta)  # Compute array of all squared l2 norms
+        n_samples, _ = l2_norms.shape
 
-        losses = np.zeros(shape=(T, self.n_states))  # Init T X N matrix
-        losses[-1, :] = self._l2_norm_squared(X[-1], self.theta)  # loss corresponding to last state
-
-        # Do a backward recursion to get losses
-        for t in range(T - 2, -1, -1):  # Count backwards
-            current_loss = self._l2_norm_squared(X[t], self.theta)  # n-state vector of current losses
-            last_loss = self._l2_norm_squared(X[t + 1], self.theta)  # n-state vector of last losses
-
-            for j in range(self.n_states):  # TODO redefine this as a matrix problem and get rid of loop
-                state_change_penalty = np.ones(self.n_states) * self.jump_penalty  # Init jump penalty
-                state_change_penalty[j] = 0  # And remove it for all but current state
-                losses[t, j] = current_loss[j] + np.min(last_loss + state_change_penalty)
-
-        # From losses get the most likely sequence of states i
-        state_preds = np.zeros(T).astype(int)  # Vector of length N
-        state_preds[0] = np.argmin(losses[0])  # First most likely state is the index position
-
-        # Do a forward recursion to calculate most likely state sequence
-        for t in range(1, T):  # Count backwards
-            last_state = state_preds[t - 1]
-
-            state_change_penalty = np.ones(self.n_states) * self.jump_penalty  # Init jump penalty
-            state_change_penalty[last_state] = 0  # And remove it for all but current state
-
-            state_preds[t] = np.argmin(losses[t] + state_change_penalty)
-
-        # Finally compute score of objective function
+        losses, state_preds = hmm_cython.jump_state_seq(n_samples, self.n_states,
+                                                        self.n_features,
+                                                        self.jump_penalty,
+                                                        l2_norms)
+        # Compute score of objective function
         all_likelihoods = losses[np.arange(len(losses)), state_preds].sum()
         state_changes = np.diff(state_preds) != 0  # True/False array showing state changes
         jump_penalty = (state_changes * self.jump_penalty).sum()  # Multiply all True values with penalty
@@ -141,14 +151,14 @@ class JumpHMM(BaseHiddenMarkov):
         self.objective_likelihood = all_likelihoods + jump_penalty  # Float
         self.state_seq = state_preds
 
-    def fit(self, Z: ndarray, verbose=0):
-        # init params
-        self._init_params(Z, output_hmm_params=False)
-        self.old_state_seq = self.state_seq  # Required in fit() method
+        return state_preds
 
+    def fit(self, Z: ndarray, verbose=0):
+        # Each epoch independently inits and fits a new model to the same data
         for epoch in range(self.epochs):
             # Do new init at each epoch
-            if epoch > 0: self._init_params(Z, output_hmm_params=False)
+            self._init_params(Z, output_hmm_params=False)
+            self.old_state_seq = self.state_seq
 
             for iter in range(self.max_iter):
                 self._fit_theta(Z)
@@ -166,7 +176,9 @@ class JumpHMM(BaseHiddenMarkov):
                         self.best_theta = self.theta
                         self.get_params_from_seq(Z, state_sequence=self.best_state_seq)
 
-                    print(f'Epoch {epoch} -- Iter {iter} -- likelihood {self.objective_likelihood} -- Theta {self.theta[0]} ')#Means: {self.mu} - STD {self.std} - Gamma {np.diag(self.T)} - Delta {self.delta}')
+                    if verbose == 1:
+                        print(f'Epoch {epoch} -- Iter {iter} -- likelihood {self.objective_likelihood} -- Theta {self.theta[0]} ')#Means: {self.mu} - STD {self.std} - Gamma {np.diag(self.T)} - Delta {self.delta}')
+
                     break
 
                 elif iter == self.max_iter - 1:
@@ -229,21 +241,5 @@ if __name__ == '__main__':
 
     Z = model.construct_features(returns, window_len=6)
 
-    model.fit(Z)
-
-    #model.stationary_dist = np.array([0.5, 0.5])
-    #print(model.sample(10))
-
-    plotting = False
-    if plotting == True:
-        fig, ax = plt.subplots(nrows=2, ncols=1)
-        #ax[0].plot(posteriors[:, 0], label='Posteriors state 1', )
-        #ax[0].plot(posteriors[:, 1], label='Posteriors state 2', )
-        #ax[1].plot(first_seq, label='First Predicted states', ls='dashdot')
-        ax[1].plot(model.best_state_seq, label='Predicted states', ls='dotted')
-        ax[1].plot(true_regimes, label='True states', ls='dashed')
-
-        plt.legend()
-        plt.show()
-
-
+    for i in range(10):
+        model.fit(Z)
