@@ -8,9 +8,11 @@ from sklearn.cluster._kmeans import kmeans_plusplus
 
 import matplotlib.pyplot as plt
 
-
 from utils.simulate_returns import simulate_2state_gaussian
 from models.hmm_base import BaseHiddenMarkov
+
+import pyximport; pyximport.install()  # TODO can only be active during development -- must be done through setup.py
+from models import hmm_cython
 
 
 ''' TODO:
@@ -133,6 +135,38 @@ class JumpHMM(BaseHiddenMarkov):
         -------
         fitted state sequence
         """
+        l2_norms = self._l2_norm_squared(X, self.theta)  # Compute array of all squared l2 norms
+        n_samples, _ = l2_norms.shape
+
+        losses, state_preds = hmm_cython.jump_state_seq(n_samples, self.n_states,
+                                                        self.n_features,
+                                                        self.jump_penalty,
+                                                        l2_norms)
+        # Compute score of objective function
+        all_likelihoods = losses[np.arange(len(losses)), state_preds].sum()
+        state_changes = np.diff(state_preds) != 0  # True/False array showing state changes
+        jump_penalty = (state_changes * self.jump_penalty).sum()  # Multiply all True values with penalty
+
+        self.objective_likelihood = all_likelihoods + jump_penalty  # Float
+        self.state_seq = state_preds
+
+        return state_preds
+
+    def _fit_state_seq1(self, X: ndarray):
+        """
+        Fit a state sequence based on current theta estimates.
+        Used in jump model fitting. Uses a dynamic programming technique very
+        similar to the viterbi algorithm.
+
+        Parameters
+        ----------
+        X : ndarray of shape (n_samples, n_features)
+            Set of standardized times series features
+
+        Returns
+        -------
+        fitted state sequence
+        """
         n_samples = len(X)
 
         l2_norms = self._l2_norm_squared(X, self.theta)  # Compute array of all squared l2 norms
@@ -170,6 +204,8 @@ class JumpHMM(BaseHiddenMarkov):
         self.objective_likelihood = all_likelihoods + jump_penalty  # Float
         self.state_seq = state_preds
 
+        return state_preds
+
     def fit(self, Z: ndarray, verbose=0):
         # Each epoch independently inits and fits a new model to the same data
         for epoch in range(self.epochs):
@@ -180,6 +216,40 @@ class JumpHMM(BaseHiddenMarkov):
             for iter in range(self.max_iter):
                 self._fit_theta(Z)
                 self._fit_state_seq(Z)
+
+                # Check convergence criterion
+                crit1 = np.array_equal(self.state_seq, self.old_state_seq)  # No change in state sequence
+                crit2 = np.abs(self.old_objective_likelihood - self.objective_likelihood)
+                if crit1 == True or crit2 < self.tol:
+                    # If model is converged check if current epoch is the best
+                    # If current model is best all model params are updated
+                    if self.objective_likelihood < self.best_objective_likelihood:
+                        self.best_objective_likelihood = self.objective_likelihood
+                        self.best_state_seq = self.state_seq
+                        self.best_theta = self.theta
+                        self.get_params_from_seq(Z, state_sequence=self.best_state_seq)
+
+                    if verbose == 1:
+                        print(f'Epoch {epoch} -- Iter {iter} -- likelihood {self.objective_likelihood} -- Theta {self.theta[0]} ')#Means: {self.mu} - STD {self.std} - Gamma {np.diag(self.T)} - Delta {self.delta}')
+
+                    break
+
+                elif iter == self.max_iter - 1:
+                    print(f'No convergence after {iter} iterations')
+                else:
+                    self.old_state_seq = self.state_seq
+                    self.old_objective_likelihood = self.objective_likelihood
+
+    def fit1(self, Z: ndarray, verbose=0):
+        # Each epoch independently inits and fits a new model to the same data
+        for epoch in range(self.epochs):
+            # Do new init at each epoch
+            self._init_params(Z, output_hmm_params=False)
+            self.old_state_seq = self.state_seq
+
+            for iter in range(self.max_iter):
+                self._fit_theta(Z)
+                self._fit_state_seq1(Z)
 
                 # Check convergence criterion
                 crit1 = np.array_equal(self.state_seq, self.old_state_seq)  # No change in state sequence
@@ -259,4 +329,6 @@ if __name__ == '__main__':
     Z = model.construct_features(returns, window_len=6)
     #model._init_params(Z)
 
-    model.fit(Z)
+
+    for i in range(10):
+        model.fit(Z)
