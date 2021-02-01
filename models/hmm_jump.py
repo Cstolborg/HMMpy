@@ -115,8 +115,9 @@ class JumpHMM(BaseHiddenMarkov):
         """
         for j in range(self.n_states):
             state_slicer = self.state_seq == j  # Boolean array of True/False
-
             N_j = sum(state_slicer)  # Number of terms in state j
+
+            assert N_j != 0, "No state changes detected"  # Check that state changes are detected
             z = Z[state_slicer].sum(axis=0)  # Sum each feature across time
             self.theta[:, j] = 1 / N_j * z
 
@@ -152,60 +153,6 @@ class JumpHMM(BaseHiddenMarkov):
 
         return state_preds
 
-    def _fit_state_seq1(self, X: ndarray):
-        """
-        Fit a state sequence based on current theta estimates.
-        Used in jump model fitting. Uses a dynamic programming technique very
-        similar to the viterbi algorithm.
-
-        Parameters
-        ----------
-        X : ndarray of shape (n_samples, n_features)
-            Set of standardized times series features
-
-        Returns
-        -------
-        fitted state sequence
-        """
-        n_samples = len(X)
-
-        l2_norms = self._l2_norm_squared(X, self.theta)  # Compute array of all squared l2 norms
-        losses = np.zeros(shape=(n_samples, self.n_states))  # Init T X N matrix
-        losses[-1, :] = l2_norms[-1]  # loss corresponding to last state
-
-        # Do a backward recursion to get losses
-        for t in range(n_samples - 2, -1, -1):  # Count backwards
-            current_loss = l2_norms[t]  # n-state vector of current losses
-            last_loss = l2_norms[t+1]  # n-state vector of last losses
-
-            for j in range(self.n_states):
-                state_change_penalty = np.ones(self.n_states) * self.jump_penalty  # Init jump penalty
-                state_change_penalty[j] = 0  # And remove it for all but current state
-                losses[t, j] = current_loss[j] + np.min(last_loss + state_change_penalty)
-
-        # From losses get the most likely sequence of states i
-        state_preds = np.zeros(n_samples).astype(int)  # Vector of length N
-        state_preds[0] = np.argmin(losses[0])  # First most likely state is the index position
-
-        # Do a forward recursion to calculate most likely state sequence
-        for t in range(1, n_samples):  # Count backwards
-            last_state = state_preds[t - 1]
-
-            state_change_penalty = np.ones(self.n_states) * self.jump_penalty  # Init jump penalty
-            state_change_penalty[last_state] = 0  # And remove it for all but current state
-
-            state_preds[t] = np.argmin(losses[t] + state_change_penalty)
-
-        # Finally compute score of objective function
-        all_likelihoods = losses[np.arange(len(losses)), state_preds].sum()
-        state_changes = np.diff(state_preds) != 0  # True/False array showing state changes
-        jump_penalty = (state_changes * self.jump_penalty).sum()  # Multiply all True values with penalty
-
-        self.objective_likelihood = all_likelihoods + jump_penalty  # Float
-        self.state_seq = state_preds
-
-        return state_preds
-
     def fit(self, Z: ndarray, verbose=0):
         # Each epoch independently inits and fits a new model to the same data
         for epoch in range(self.epochs):
@@ -216,40 +163,6 @@ class JumpHMM(BaseHiddenMarkov):
             for iter in range(self.max_iter):
                 self._fit_theta(Z)
                 self._fit_state_seq(Z)
-
-                # Check convergence criterion
-                crit1 = np.array_equal(self.state_seq, self.old_state_seq)  # No change in state sequence
-                crit2 = np.abs(self.old_objective_likelihood - self.objective_likelihood)
-                if crit1 == True or crit2 < self.tol:
-                    # If model is converged check if current epoch is the best
-                    # If current model is best all model params are updated
-                    if self.objective_likelihood < self.best_objective_likelihood:
-                        self.best_objective_likelihood = self.objective_likelihood
-                        self.best_state_seq = self.state_seq
-                        self.best_theta = self.theta
-                        self.get_params_from_seq(Z, state_sequence=self.best_state_seq)
-
-                    if verbose == 1:
-                        print(f'Epoch {epoch} -- Iter {iter} -- likelihood {self.objective_likelihood} -- Theta {self.theta[0]} ')#Means: {self.mu} - STD {self.std} - Gamma {np.diag(self.T)} - Delta {self.delta}')
-
-                    break
-
-                elif iter == self.max_iter - 1:
-                    print(f'No convergence after {iter} iterations')
-                else:
-                    self.old_state_seq = self.state_seq
-                    self.old_objective_likelihood = self.objective_likelihood
-
-    def fit1(self, Z: ndarray, verbose=0):
-        # Each epoch independently inits and fits a new model to the same data
-        for epoch in range(self.epochs):
-            # Do new init at each epoch
-            self._init_params(Z, output_hmm_params=False)
-            self.old_state_seq = self.state_seq
-
-            for iter in range(self.max_iter):
-                self._fit_theta(Z)
-                self._fit_state_seq1(Z)
 
                 # Check convergence criterion
                 crit1 = np.array_equal(self.state_seq, self.old_state_seq)  # No change in state sequence
@@ -327,8 +240,6 @@ if __name__ == '__main__':
     returns, true_regimes = simulate_2state_gaussian(plotting=False)  # Simulate some data from two normal distributions
 
     Z = model.construct_features(returns, window_len=6)
-    #model._init_params(Z)
-
 
     for i in range(10):
         model.fit(Z)
