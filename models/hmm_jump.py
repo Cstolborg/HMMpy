@@ -1,14 +1,13 @@
 import numpy as np
 from numpy import ndarray
-from scipy import stats
-import scipy.optimize as opt
 import pandas as pd
-from sklearn.base import BaseEstimator
 from sklearn.cluster._kmeans import kmeans_plusplus
+from sklearn.metrics import confusion_matrix
 
 import matplotlib.pyplot as plt
 
 from utils.simulate_returns import simulate_2state_gaussian
+from utils.hmm_sampler import SampleHMM
 from models.hmm_base import BaseHiddenMarkov
 
 import pyximport; pyximport.install()  # TODO can only be active during development -- must be done through setup.py
@@ -187,9 +186,9 @@ class JumpHMM(BaseHiddenMarkov):
                     self.old_state_seq = self.state_seq
                     self.old_objective_likelihood = self.objective_likelihood
 
-    def get_params_from_seq(self, X: ndarray, state_sequence: ndarray):  # TODO remove forward-looking params and slice X accordingly
+    def get_params_from_seq(self, X, state_sequence):  # TODO remove forward-looking params and slice X accordingly
         """
-        Stores and outputs the model parameters
+        Stores and outputs the model parameters based on the input sequence.
 
         Parameters
         ----------
@@ -198,6 +197,9 @@ class JumpHMM(BaseHiddenMarkov):
 
         state_sequence : ndarray of shape (n_samples)
             State sequence for a given observation sequence
+        Returns
+        ----------
+        Hmm parameters
         """
 
         # Slice data
@@ -234,11 +236,25 @@ class JumpHMM(BaseHiddenMarkov):
         # Stationary distributiin
         self.stationary_dist = self.get_stationary_dist(tpm=self.tpm)
 
+    def bac_score(self, X, y_true, jump_penalty, window_len=6):
+        self.jump_penalty = jump_penalty
+        Z = self.construct_features(X, window_len=window_len)
+        self.fit(Z)  # Updates self.state_seq
+        y_pred = self.state_seq
+
+        tpr = np.array()
+        for i in range(self.n_states):
+            state_idx = y_pred == i
+            tn, fp, fn, tp = confusion_matrix(y_true[state_idx], y_pred[state_idx]).ravel()
+            np.append(tpr, tp / (tp + fn))
+
+
 
 if __name__ == '__main__':
     model = JumpHMM(n_states=2, random_state=42)
-    returns, true_regimes = simulate_2state_gaussian(plotting=False)  # Simulate some data from two normal distributions
+    sampler = SampleHMM(n_states=2)
 
-    Z = model.construct_features(returns, window_len=6)
+    n_samples = 1000
+    n_sequences = 1
+    X, true_states = sampler.sample_with_viterbi(n_samples, n_sequences)
 
-    model.fit(Z)

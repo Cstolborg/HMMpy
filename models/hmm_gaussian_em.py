@@ -171,15 +171,10 @@ class EMHiddenMarkov(BaseHiddenMarkov):
 
 
 if __name__ == '__main__':
-    model = EMHiddenMarkov(n_states=2, init="random", random_state=1, epochs=1, max_iter=100)
+    model = EMHiddenMarkov(n_states=2, init="random", random_state=1, epochs=2, max_iter=100)
     returns, true_regimes = simulate_2state_gaussian(plotting=False)  # Simulate some data from two normal distributions
 
     model.fit(returns)
-
-    sample_rets, sample_states = model.sample(10)
-
-    print(sample_rets)
-    print(sample_states)
 
     #plot_samples_states(sample_rets, sample_states)
 
