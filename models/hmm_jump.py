@@ -3,6 +3,7 @@ from numpy import ndarray
 import pandas as pd
 from sklearn.cluster._kmeans import kmeans_plusplus
 from sklearn.metrics import confusion_matrix
+from sklearn.preprocessing import StandardScaler
 
 import matplotlib.pyplot as plt
 
@@ -37,7 +38,7 @@ class JumpHMM(BaseHiddenMarkov):
         self.best_objective_likelihood = np.inf
         self.old_objective_likelihood = np.inf
 
-    def _init_params(self, X=None, diag_uniform_dist = (.7, .99), output_hmm_params=True):
+    def _init_params(self, X=None, diag_uniform_dist = (.7, .99), output_hmm_params=False):
         super()._init_params()
 
         if self.init == "kmeans++":
@@ -46,9 +47,9 @@ class JumpHMM(BaseHiddenMarkov):
             if X.ndim == 1:
                 X = X.reshape(-1, 1)  # Compatible with sklearn
 
-            # Theta - only used in jump models and are discarded in EM models
+            # Theta
             centroids, _ = kmeans_plusplus(X, self.n_states)  # Use sklearns kmeans++ algorithm
-            self.theta = centroids.T  # Transpose to get shape: N_features X N_states
+            self.theta = centroids.T  # Transpose to get shape (n_features, n_states)
 
             # State sequence
             self._fit_state_seq(X)  # this function implicitly updates self.state_seq
@@ -72,10 +73,14 @@ class JumpHMM(BaseHiddenMarkov):
         df['Centered local std'] = df[0].rolling(window_len * 2).std(ddof=0).shift(-window_len)  # Rolls from 0 and 2x length iteratively, then shifts back 1x window length
 
         # Absolute changes
-        #Y[1:, 1] = np.abs(np.diff(X))
-        #Y[:-1, 2] = np.abs(np.diff(X))
+        df['left_abs_change'] = np.abs(df[0].diff()) #np.abs(np.diff(X))
+        df['right_abs_change'] = df['left_abs_change'].shift(-1)
 
         Z = df.dropna().to_numpy()
+        # Scale features
+        scaler = StandardScaler()
+        Z = scaler.fit_transform(Z)
+
         self.n_features = Z.shape[1]
 
         return Z
@@ -100,7 +105,7 @@ class JumpHMM(BaseHiddenMarkov):
         norms = np.zeros(shape=(len(z), self.n_states))
 
         for j in range(self.n_states):
-            diff = (theta[:, j] - z)  # ndarray of shape (n_samples, n_states) with differences
+            diff = theta[:, j] - z  # ndarray of shape (n_samples, n_states) with differences
             norms[:, j] = np.square(np.linalg.norm(diff, axis=1))  # squared state conditional l2 norms
 
         return norms  # squared l2 norm.
@@ -121,7 +126,7 @@ class JumpHMM(BaseHiddenMarkov):
                 self.theta[:, j] = 1 / N_j * z
             else:
                 print("No state changes detected in _fit_theta() method")
-                self.theta[:, j] = np.inf
+                self.theta[:, j] = 0.  # TODO is the best estimate of theta when the state is not present?
 
     def _fit_state_seq(self, X: ndarray):
         """
@@ -155,12 +160,11 @@ class JumpHMM(BaseHiddenMarkov):
 
         return state_preds
 
-    def fit(self, Z: ndarray, verbose=0):
+    def fit(self, Z: ndarray, get_hmm_params=True, verbose=0):
         # Each epoch independently inits and fits a new model to the same data
         for epoch in range(self.epochs):
             # Do new init at each epoch
             self._init_params(Z, output_hmm_params=False)
-            print(self.state_seq)
             self.old_state_seq = self.state_seq
 
             for iter in range(self.max_iter):
@@ -177,7 +181,6 @@ class JumpHMM(BaseHiddenMarkov):
                         self.best_objective_likelihood = self.objective_likelihood
                         self.best_state_seq = self.state_seq
                         self.best_theta = self.theta
-                        self.get_params_from_seq(Z, state_sequence=self.best_state_seq)
 
                     if verbose == 1:
                         print(f'Epoch {epoch} -- Iter {iter} -- likelihood {self.objective_likelihood} -- Theta {self.theta[0]} ')#Means: {self.mu} - STD {self.std} - Gamma {np.diag(self.T)} - Delta {self.delta}')
@@ -191,9 +194,11 @@ class JumpHMM(BaseHiddenMarkov):
                     self.old_objective_likelihood = self.objective_likelihood
 
         self.state_seq = self.best_state_seq
-        self.best_theta = self.best_theta
+        self.theta = self.best_theta
+        if get_hmm_params == True:
+            self.get_params_from_seq(Z, state_sequence=self.best_state_seq)
 
-    def get_params_from_seq(self, X, state_sequence):  # TODO remove forward-looking params and slice X accordingly
+    def get_params_from_seq(self, X, state_sequence):  # TODO remove forward-looking params and slice X accordingly ofr X.ndim == 1
         """
         Stores and outputs the model parameters based on the input sequence.
 
@@ -228,8 +233,6 @@ class JumpHMM(BaseHiddenMarkov):
         # TODO only works for a 2-state HMM
         self.tpm = np.diag(state_groupby['state_sojourns'].sum())
         state_changes = state_groupby['state_changes'].sum()
-        print('state changes ',state_changes)
-        print(state_changes[0])
         self.tpm[0, 1] = state_changes[0]
         self.tpm[1, 0] = state_changes[1]
         self.tpm = self.tpm / self.tpm.sum(axis=1).reshape(-1, 1)  # make rows sum to 1
@@ -251,29 +254,31 @@ class JumpHMM(BaseHiddenMarkov):
         self.fit(Z)  # Updates self.state_seq
         y_pred = self.state_seq
 
-        tpr = np.array()
-        for i in range(self.n_states):
-            state_idx = y_pred == i
-            tn, fp, fn, tp = confusion_matrix(y_true[state_idx], y_pred[state_idx]).ravel()
-            np.append(tpr, tp / (tp + fn))
+        y_true = y_true[(self.window_len - 1): -self.window_len]
 
-        print(tpr)
+        conf_matrix = confusion_matrix(y_true, y_pred)
+        tp = np.diag(conf_matrix)
+        fn = conf_matrix.sum(axis=1) - tp
+        tpr = tp / (tp + fn)
+        bac = np.mean(tpr)
 
-
+        return bac
 
 
 if __name__ == '__main__':
-    model = JumpHMM(n_states=2, random_state=42)
+    model = JumpHMM(n_states=2, jump_penalty=2, random_state=42)
     sampler = SampleHMM(n_states=2, random_state=1)
 
     n_samples = 1000
     n_sequences = 5
     X, viterbi_states, true_states = sampler.sample_with_viterbi(n_samples, n_sequences)
-    print('True states == 1: ', true_states.sum())
+    print('True states == 0 and 1: ', (true_states == 0).sum(), (true_states == 1).sum() )
     print("-"*50)
 
-    plotting.plot_samples_states_viterbi(X[:, 4], viterbi_states[:, 4], true_states[:, 4])
+    #plotting.plot_samples_states_viterbi(X[:, 4], viterbi_states[:, 4], true_states[:, 4])
 
-    Z = model.construct_features(X[:, 4], window_len=6)
-    model.fit(Z, verbose=1)
-    #model.bac_score(X, true_states, 0.2)
+    #Z = model.construct_features(X[:, 2], window_len=2)
+
+    bac = model.bac_score(X[:, 2], true_states[:, 2], jump_penalty=2)
+
+    print(bac)

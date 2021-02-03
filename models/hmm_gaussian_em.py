@@ -4,9 +4,7 @@ from scipy.special import logsumexp
 from scipy import stats
 import matplotlib.pyplot as plt
 
-from typing import List
-
-from utils.simulate_returns import simulate_2state_gaussian, plot_posteriors_states, plot_samples_states
+from utils.simulate_returns import simulate_2state_gaussian
 from models.hmm_base import BaseHiddenMarkov
 
 
