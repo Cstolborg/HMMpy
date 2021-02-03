@@ -329,7 +329,7 @@ class BaseHiddenMarkov(BaseEstimator):
                                             np.log(self.start_proba),
                                             np.log(self.tpm),
                                             self.log_emission_probs_)
-        return state_sequence
+        return state_sequence.astype(np.int32)
 
 
 if __name__ == '__main__':

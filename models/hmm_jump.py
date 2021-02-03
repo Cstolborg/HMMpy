@@ -125,7 +125,6 @@ class JumpHMM(BaseHiddenMarkov):
                 z = Z[state_slicer].sum(axis=0)  # Sum each feature across time
                 self.theta[:, j] = 1 / N_j * z
             else:
-                print("No state changes detected in _fit_theta() method")
                 self.theta[:, j] = 0.  # TODO is the best estimate of theta when the state is not present?
 
     def _fit_state_seq(self, X: ndarray):
@@ -161,6 +160,7 @@ class JumpHMM(BaseHiddenMarkov):
         return state_preds
 
     def fit(self, Z: ndarray, get_hmm_params=True, verbose=0):
+        converged = False
         # Each epoch independently inits and fits a new model to the same data
         for epoch in range(self.epochs):
             # Do new init at each epoch
@@ -181,14 +181,12 @@ class JumpHMM(BaseHiddenMarkov):
                         self.best_objective_likelihood = self.objective_likelihood
                         self.best_state_seq = self.state_seq
                         self.best_theta = self.theta
+                        converged = True
 
                     if verbose == 1:
-                        print(f'Epoch {epoch} -- Iter {iter} -- likelihood {self.objective_likelihood} -- Theta {self.theta[0]} ')#Means: {self.mu} - STD {self.std} - Gamma {np.diag(self.T)} - Delta {self.delta}')
-
+                        print(f'Epoch {epoch} -- Iter {iter} -- likelihood {self.objective_likelihood} -- Theta {self.theta[0]} ')
                     break
 
-                elif iter == self.max_iter - 1:
-                    print(f'No convergence after {iter} iterations')
                 else:
                     self.old_state_seq = self.state_seq
                     self.old_objective_likelihood = self.objective_likelihood
@@ -197,6 +195,9 @@ class JumpHMM(BaseHiddenMarkov):
         self.theta = self.best_theta
         if get_hmm_params == True:
             self.get_params_from_seq(Z, state_sequence=self.best_state_seq)
+
+        if converged == False:
+            print(f'No convergence in any epoch out of {self.epochs} epochs')
 
     def get_params_from_seq(self, X, state_sequence):  # TODO remove forward-looking params and slice X accordingly ofr X.ndim == 1
         """
@@ -240,45 +241,46 @@ class JumpHMM(BaseHiddenMarkov):
         # init dist and stationary dist
         self.start_proba = np.zeros(self.n_states)
         self.start_proba[state_sequence[0]] = 1.
+        self.stationary_dist = self.get_stationary_dist(tpm=self.tpm)
 
         # Conditional distributions
         self.mu = state_groupby['X'].mean().values.T  # transform mean back into 1darray
         self.std = state_groupby['X'].std().values.T
 
-        # Stationary distributiin
-        self.stationary_dist = self.get_stationary_dist(tpm=self.tpm)
-
-    def bac_score(self, X, y_true, jump_penalty, window_len=6):
+    def bac_score_1d(self, X, y_true, jump_penalty, window_len=6):
         self.jump_penalty = jump_penalty
         Z = self.construct_features(X, window_len=window_len)
-        self.fit(Z)  # Updates self.state_seq
+        self.fit(Z, get_hmm_params=False)  # Updates self.state_seq
         y_pred = self.state_seq
 
-        y_true = y_true[(self.window_len - 1): -self.window_len]
+        y_true = y_true[(self.window_len - 1): -self.window_len]  # slice y_true to have same dim as y_pred
 
         conf_matrix = confusion_matrix(y_true, y_pred)
         tp = np.diag(conf_matrix)
         fn = conf_matrix.sum(axis=1) - tp
-        tpr = tp / (tp + fn)
-        bac = np.mean(tpr)
+
+        if y_true.all() == 0 or y_true.all() == 1:
+            bac = tp[0] / (tp[0] + fn[0])  # If only one state is present bac == tpr
+        else:
+            tpr = tp / (tp + fn)
+            bac = np.mean(tpr)
 
         return bac
 
+    def bac_score_nd(self, X, y_true, jump_penalty, window_len=6):
+        bac = []
+        for seq in range(X.shape[1]):
+            bac_temp = self.bac_score_1d(X[:, seq], y_true[:, seq], jump_penalty, window_len=6)
+            bac.append(bac_temp)
+
+        return np.mean(bac)
 
 if __name__ == '__main__':
     model = JumpHMM(n_states=2, jump_penalty=2, random_state=42)
     sampler = SampleHMM(n_states=2, random_state=1)
 
-    n_samples = 1000
-    n_sequences = 5
+    n_samples = 2000
+    n_sequences = 2
     X, viterbi_states, true_states = sampler.sample_with_viterbi(n_samples, n_sequences)
-    print('True states == 0 and 1: ', (true_states == 0).sum(), (true_states == 1).sum() )
-    print("-"*50)
 
-    #plotting.plot_samples_states_viterbi(X[:, 4], viterbi_states[:, 4], true_states[:, 4])
-
-    #Z = model.construct_features(X[:, 2], window_len=2)
-
-    bac = model.bac_score(X[:, 2], true_states[:, 2], jump_penalty=2)
-
-    print(bac)
+    bac = model.bac_score_nd(X, true_states, jump_penalty=0.1)
