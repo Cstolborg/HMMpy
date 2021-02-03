@@ -6,7 +6,7 @@ from sklearn.metrics import confusion_matrix
 
 import matplotlib.pyplot as plt
 
-from utils.simulate_returns import simulate_2state_gaussian
+from utils import plotting
 from utils.hmm_sampler import SampleHMM
 from models.hmm_base import BaseHiddenMarkov
 
@@ -16,8 +16,8 @@ from models import hmm_cython
 
 ''' TODO:
  
-implement simulation and BAC to choose jump penalty.
-
+Problems with fitting thetas due to no state changes. 
+ 
 Z-score standardisation
 
 Consider setting boundscheck = False for all cython code
@@ -92,7 +92,6 @@ class JumpHMM(BaseHiddenMarkov):
             Data to be fitted
         theta : ndarray of shape (n_features, n_states)
             jump model parameters
-
         Returns
         -------
         norms: ndarray of shape (n_samples, n_states)
@@ -116,9 +115,13 @@ class JumpHMM(BaseHiddenMarkov):
             state_slicer = self.state_seq == j  # Boolean array of True/False
             N_j = sum(state_slicer)  # Number of terms in state j
 
-            assert N_j != 0, "No state changes detected"  # Check that state changes are detected
-            z = Z[state_slicer].sum(axis=0)  # Sum each feature across time
-            self.theta[:, j] = 1 / N_j * z
+            #assert N_j != 0, "No state changes detected"  # Check that state changes are detected
+            if N_j != 0:
+                z = Z[state_slicer].sum(axis=0)  # Sum each feature across time
+                self.theta[:, j] = 1 / N_j * z
+            else:
+                print("No state changes detected in _fit_theta() method")
+                self.theta[:, j] = np.inf
 
     def _fit_state_seq(self, X: ndarray):
         """
@@ -157,6 +160,7 @@ class JumpHMM(BaseHiddenMarkov):
         for epoch in range(self.epochs):
             # Do new init at each epoch
             self._init_params(Z, output_hmm_params=False)
+            print(self.state_seq)
             self.old_state_seq = self.state_seq
 
             for iter in range(self.max_iter):
@@ -185,6 +189,9 @@ class JumpHMM(BaseHiddenMarkov):
                 else:
                     self.old_state_seq = self.state_seq
                     self.old_objective_likelihood = self.objective_likelihood
+
+        self.state_seq = self.best_state_seq
+        self.best_theta = self.best_theta
 
     def get_params_from_seq(self, X, state_sequence):  # TODO remove forward-looking params and slice X accordingly
         """
@@ -221,6 +228,8 @@ class JumpHMM(BaseHiddenMarkov):
         # TODO only works for a 2-state HMM
         self.tpm = np.diag(state_groupby['state_sojourns'].sum())
         state_changes = state_groupby['state_changes'].sum()
+        print('state changes ',state_changes)
+        print(state_changes[0])
         self.tpm[0, 1] = state_changes[0]
         self.tpm[1, 0] = state_changes[1]
         self.tpm = self.tpm / self.tpm.sum(axis=1).reshape(-1, 1)  # make rows sum to 1
@@ -248,13 +257,23 @@ class JumpHMM(BaseHiddenMarkov):
             tn, fp, fn, tp = confusion_matrix(y_true[state_idx], y_pred[state_idx]).ravel()
             np.append(tpr, tp / (tp + fn))
 
+        print(tpr)
+
+
 
 
 if __name__ == '__main__':
     model = JumpHMM(n_states=2, random_state=42)
-    sampler = SampleHMM(n_states=2)
+    sampler = SampleHMM(n_states=2, random_state=1)
 
     n_samples = 1000
-    n_sequences = 1
-    X, true_states = sampler.sample_with_viterbi(n_samples, n_sequences)
+    n_sequences = 5
+    X, viterbi_states, true_states = sampler.sample_with_viterbi(n_samples, n_sequences)
+    print('True states == 1: ', true_states.sum())
+    print("-"*50)
 
+    plotting.plot_samples_states_viterbi(X[:, 4], viterbi_states[:, 4], true_states[:, 4])
+
+    Z = model.construct_features(X[:, 4], window_len=6)
+    model.fit(Z, verbose=1)
+    #model.bac_score(X, true_states, 0.2)

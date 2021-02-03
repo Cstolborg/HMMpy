@@ -1,5 +1,6 @@
 import numpy as np
 from scipy import stats
+from scipy.linalg import fractional_matrix_power
 import matplotlib.pyplot as plt
 
 
@@ -36,9 +37,16 @@ class SampleHMM(BaseHiddenMarkov):
         Transition probability matrix between states
     """
     
-    def __init__(self, n_states=2, hmm_params=None, random_state=42):
+    def __init__(self, n_states=2, hmm_params=None, frequency='daily', random_state=42):
 
-        if hmm_params == None:  # hmm params following Hardy (2001)
+        if hmm_params == None and frequency == "daily":  # hmm params following Hardy (2001)
+            # Convert from monthly time scale t=20 to daily t=1
+            hmm_params = {'mu': np.array([0.0123, -0.0157]) / 20,
+                          'std': np.array([0.0347, 0.0778]) /np.sqrt(20),
+                          'tpm': np.array([[1-0.0021, 0.0021],  # TODO figure out powers of vectors in python
+                                           [0.0165, 1-0.0165]])
+                          }
+        elif hmm_params == None and frequency == "monthly":
             hmm_params = {'mu': np.array([0.0123, -0.0157]),
                           'std': np.array([0.0347, 0.0778]),
                           'tpm': np.array([[0.9629, 0.0371],
@@ -102,16 +110,23 @@ class SampleHMM(BaseHiddenMarkov):
         samples, true_states = self.sample(n_samples, n_sequences)
 
         viterbi_states = np.empty(shape=(n_samples, n_sequences), dtype=np.float)
-        for i in range(1000):
-            viterbi_states[:, i] = self.decode(samples[:, i])
+        if n_sequences == 1:
+            viterbi_states = self.decode(samples)
+        else:
+            for i in range(n_sequences):
+                viterbi_states[:, i] = self.decode(samples[:, i])
 
-        return samples, viterbi_states
+        return samples, viterbi_states, true_states
 
 
 if __name__ == "__main__":
     model = SampleHMM(n_states=2)
+    print(model.mu)
+    print(model.std)
+    print(model.tpm)
+    print(model.stationary_dist)
 
     n_samples = 1000
     n_sequences = 1000
-    X, true_states = model.sample_with_viterbi(n_samples, n_sequences)
+    X, viterbi_states, true_states = model.sample_with_viterbi(n_samples, n_sequences)
 
