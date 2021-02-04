@@ -4,13 +4,15 @@ from scipy.special import logsumexp
 from sklearn.base import BaseEstimator
 import matplotlib.pyplot as plt
 
-
 from utils.simulate_returns import simulate_2state_gaussian
 
 import pyximport; pyximport.install()  # TODO can only be active during development -- must be done through setup.py
 from models import hmm_cython
 
-class BaseHiddenMarkov(BaseEstimator):
+from abc import ABC, abstractmethod
+
+
+class BaseHiddenMarkov(BaseEstimator, ABC):
     """
     Parent class for Hidden Markov methods with gaussian distributions.
     Contain methods related to:
@@ -35,6 +37,7 @@ class BaseHiddenMarkov(BaseEstimator):
         Set to 'kmeans++' to use that init method - only supported for jump models.
         Set to 'random' for random initialization.
         Set to "deterministic" for deterministic init.
+
     Attributes
     ----------
     mu : ndarray of shape (n_states,)
@@ -93,8 +96,6 @@ class BaseHiddenMarkov(BaseEstimator):
                              trans_prob.diagonal() - remaining_row_nums)  # And subtract these numbers from the diagonal so it remains uniform
 
             # initial distribution
-            # init_dist = np.random.uniform(low=0.4, high=0.6, size=self.n_states)
-            # init_dist /= np.sum(init_dist)
             init_dist = np.ones(self.n_states) / np.sum(self.n_states)  # initial distribution 1 X N vector
 
             # State dependent distributions
@@ -106,7 +107,7 @@ class BaseHiddenMarkov(BaseEstimator):
             self.mu = mu
             self.std = std
 
-        elif self.init == "deterministic":
+        elif self.init == "deterministic":  # TODO deprecate
             # Init theta as zeros and sample state seq from uniform dist
             self.theta = np.zeros(shape=(self.n_features, self.n_states))  # Init as empty matrix
             state_index = np.arange(start=0, stop=self.n_states, step=1, dtype=int)  # Array of possible states
@@ -335,9 +336,8 @@ class BaseHiddenMarkov(BaseEstimator):
 if __name__ == '__main__':
     X = np.arange(1,1000)
 
-    model = BaseHiddenMarkov(n_states=2)
-    returns, true_regimes = simulate_2state_gaussian(plotting=False)  # Simulate some data from two normal distributions
-    model._init_params(returns)
-    model.emission_probs(returns)
-
-
+    #model = BaseHiddenMarkov(n_states=2)
+    #returns, true_regimes = simulate_2state_gaussian(plotting=False)  # Simulate some data from two normal distributions
+    #model._init_params(returns)
+    #probs, logprobs = model.emission_probs(returns)
+    #print(probs)
