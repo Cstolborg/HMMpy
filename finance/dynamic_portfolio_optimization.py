@@ -11,9 +11,13 @@ df_returns = df[['Hedge Funds Global', 'MSCI World', 'MSCI Emerging Markets',
             'European Public Real Estate','S&P Crude Oil Index','Gold']].pct_change()
 df_returns.dropna(inplace=True)
 
-state_sequence = [0,0,1,0,1,0,1,1,1,1]
+df_returns = df_returns.iloc[-10:] ## - Dummy for 10 periods would have to be the entire series for full-scale setup
 
-Weight_asset = np.zeros(shape=(len(state_sequence), 8))  # Init as empty matrix
+state_sequence = [0,0,1,0,1,0,1,1,1,1] ## TODO - We have to forecast mean and variance of the assets based on the HMM... This is purely dummy stuff that serves as nice to have for the setup
+
+Weight_asset = np.zeros(shape=(len(state_sequence), 8))  # Init as empty matrix to store the weight in a specific asset.
+
+Dollar_val_t0 = np.array([1000,1000,1000,1000,1000,1000,1000,1000])
 
 for i in range(len(state_sequence)):
     if state_sequence[i] == 0:
@@ -21,5 +25,7 @@ for i in range(len(state_sequence)):
     elif state_sequence[i] == 1:
         Weight_asset[i] = ([0, 0.30, 0, 0.25, 0, 0.15, 0, 0.3])
 print(Weight_asset)
+
+
 
 
