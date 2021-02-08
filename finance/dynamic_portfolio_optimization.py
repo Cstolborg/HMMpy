@@ -17,14 +17,25 @@ state_sequence = [0,0,1,0,1,0,1,1,1,1] ## TODO - We have to forecast mean and va
 
 Weight_asset = np.zeros(shape=(len(state_sequence), 8))  # Init as empty matrix to store the weight in a specific asset.
 
-Dollar_val_t0 = np.array([1000,1000,1000,1000,1000,1000,1000,1000])
+Capital_t0 = np.array([1000,1000,1000,1000,1000,1000,1000,1000])
 
 for i in range(len(state_sequence)):
     if state_sequence[i] == 0:
         Weight_asset[i] = ([0.125,0.125,0.125,0.125,0.125,0.125,0.125,0.125])
     elif state_sequence[i] == 1:
         Weight_asset[i] = ([0, 0.30, 0, 0.25, 0, 0.15, 0, 0.3])
-print(Weight_asset)
+
+Weight_asset = pd.DataFrame(Weight_asset, columns=['Hedge Funds Global', 'MSCI World', 'MSCI Emerging Markets',
+            'Barclays US Treasury Bond Index', 'S&P Listed Private Equity Index',
+            'European Public Real Estate','S&P Crude Oil Index','Gold'])
+
+Portfolio_t0 = Weight_asset.iloc[0,:]*Capital_t0
+
+print(Portfolio_t0)
+
+
+
+
 
 
 
