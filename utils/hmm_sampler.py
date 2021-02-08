@@ -4,7 +4,7 @@ from scipy.linalg import fractional_matrix_power
 import matplotlib.pyplot as plt
 
 
-from utils.simulate_returns import simulate_2state_gaussian
+from utils import plotting
 from models.hmm_base import BaseHiddenMarkov
 
 import pyximport; pyximport.install()  # TODO can only be active during development -- must be done through setup.py
@@ -44,7 +44,7 @@ class SampleHMM(BaseHiddenMarkov):
             hmm_params = {'mu': np.array([0.0123, -0.0157]) / 20,
                           'std': np.array([0.0347, 0.0778]) /np.sqrt(20),
                           'tpm': np.array([[1-0.0021, 0.0021],  # TODO figure out powers of vectors in python
-                                           [0.0165, 1-0.0165]])
+                                           [0.0120, 1-0.0120]])
                           }
         elif hmm_params == None and frequency == "monthly":
             hmm_params = {'mu': np.array([0.0123, -0.0157]),
@@ -129,4 +129,7 @@ if __name__ == "__main__":
     n_samples = 1000
     n_sequences = 1000
     X, viterbi_states, true_states = model.sample_with_viterbi(n_samples, n_sequences)
+
+    for i in range(10):
+        plotting.plot_samples_states_viterbi(X[:, i], viterbi_states[:, i], true_states[:, i])
 

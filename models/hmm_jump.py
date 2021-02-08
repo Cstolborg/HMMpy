@@ -61,20 +61,19 @@ class JumpHMM(BaseHiddenMarkov):
             return state_seq, theta
 
     def construct_features(self, X: ndarray, window_len: int):  # TODO remove forward-looking params and slice X accordingly
-        N = len(X)
         df = pd.DataFrame(X)
 
         df['Left local mean'] = df.rolling(window_len).mean()
-        df['Left local std'] = df[0].rolling(window_len).std(ddof=0)
+        df['Left local std'] = df[0].rolling(window_len).std(ddof=1)
 
         df['Right local mean'] = df[0].rolling(window_len).mean().shift(-window_len + 1)
-        df['Right local std'] = df[0].rolling(window_len).std(ddof=0).shift(-window_len + 1)
+        df['Right local std'] = df[0].rolling(window_len).std(ddof=1).shift(-window_len + 1)
 
         look_ahead = df[0].rolling(window_len).sum().shift(-window_len)  # Looks forward with window_len (Helper 1)
         look_back = df[0].rolling(
             window_len).sum()  # Includes current position and looks window_len - 1 backward (Helper 2)
         df['Central local mean'] = (look_ahead + look_back) / (2 * window_len)
-        df['Centered local std'] = df[0].rolling(window_len * 2).std(ddof=0).shift(
+        df['Centered local std'] = df[0].rolling(window_len * 2).std(ddof=1).shift(
             -window_len)  # Rolls from 0 and 2x length iteratively, then shifts back 1x window length
 
         # Absolute changes
@@ -207,8 +206,8 @@ class JumpHMM(BaseHiddenMarkov):
                     # If current model is best all model params are updated
                     if objective_score < best_objective_score:
                         best_objective_score = objective_score
-                        self.state_seq = state_seq
                         self.theta = theta
+                        self.state_seq = state_seq
 
                     if verbose == 1:
                         print(f'Epoch {epoch} -- Iter {iter} -- likelihood {objective_score} -- Theta {self.theta[0]} ')
@@ -226,7 +225,7 @@ class JumpHMM(BaseHiddenMarkov):
         if self.is_fitted is False:
             print(f'No convergence in any epoch out of {self.epochs} epochs')
 
-    def get_params_from_seq(self, X, state_sequence):  # TODO remove forward-looking params and slice X accordingly ofr X.ndim == 1
+    def get_params_from_seq(self, X, state_sequence):  # TODO remove forward-looking params and slice X accordingly for X.ndim == 1
         """
         Stores and outputs the model parameters based on the input sequence.
 
@@ -274,12 +273,39 @@ class JumpHMM(BaseHiddenMarkov):
         self.mu = state_groupby['X'].mean().values.T  # transform mean back into 1darray
         self.std = state_groupby['X'].std().values.T
 
+    def check_state_sort(self, X, state_sequence):
+        # Slice data
+        if X.ndim == 1:  # Makes function compatible on higher dimensions
+            X = X[(self.window_len - 1): -self.window_len]
+        elif X.ndim > 1:
+            X = X[:, 0]
+
+        df_states = pd.DataFrame({'state_seq': state_sequence,
+                                  'X': X})
+
+        state_groupby = df_states.groupby('state_seq')
+        self.mu = state_groupby['X'].mean().values.T  # transform mean back into 1darray
+        self.std = state_groupby['X'].std().values.T
+
+        # Sort array ascending and check if order is changed
+        # If the order is changed then states are reversed
+        if np.sort(self.std)[0] != self.std[0]:
+            print("reversing states...")
+            state_sequence = np.where(state_sequence == 0, 1, 0)
+
+        return state_sequence
+
     def bac_score_1d(self, X, y_true, jump_penalty, window_len=6):
         self.jump_penalty = jump_penalty
         self.fit(X, get_hmm_params=False)  # Updates self.state_seq
 
-        y_pred = self.state_seq
+        #if self.theta[0, 0] < self.theta[0, 1]:  # We want the high mean state to be the first - otherwise reverse sequence
+        #    print("reversing states...")
+        #    self.state_seq = np.where(self.state_seq==0, 1, 0)
 
+        self.state_seq = self.check_state_sort(X, self.state_seq)
+
+        y_pred = self.state_seq
         y_true = y_true[(self.window_len - 1): -self.window_len]  # slice y_true to have same dim as y_pred
 
         conf_matrix = confusion_matrix(y_true, y_pred)
@@ -295,6 +321,9 @@ class JumpHMM(BaseHiddenMarkov):
         if bac < 0.5:
             print(f'bac {bac} -- tpr {tpr} -- jump_penalty {jump_penalty}')
             print(conf_matrix)
+
+        #if (bac<=0.5) and self.jump_penalty>10:
+        #    plotting.plot_samples_states_viterbi(X, y_pred, y_true)
 
         return bac
 
@@ -312,10 +341,11 @@ if __name__ == '__main__':
     sampler = SampleHMM(n_states=2, random_state=1)
 
     n_samples = 2000
-    n_sequences = 2
+    n_sequences = 50
     X, viterbi_states, true_states = sampler.sample_with_viterbi(n_samples, n_sequences)
 
-    plotting.plot_samples_states_viterbi(X[:,0], viterbi_states[:,0], true_states[:,0])
 
+    #plotting.plot_samples_states_viterbi(X[:,0], viterbi_states[:,0], true_states[:,0])
 
-    bac = model.bac_score_1d(X[:,0], true_states[:,0] , 0.01)
+    for i in range(50):
+        bac = model.bac_score_1d(X[:,i], viterbi_states[:, i] , 30)
