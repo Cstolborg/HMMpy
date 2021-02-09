@@ -271,9 +271,26 @@ class JumpHMM(BaseHiddenMarkov):
 
         # Conditional distributions
         self.mu = state_groupby['X'].mean().values.T  # transform mean back into 1darray
-        self.std = state_groupby['X'].std().values.T
+        self.std = state_groupby['X'].std(ddof=1).values.T
 
-    def check_state_sort(self, X, state_sequence):
+    def _check_state_sort(self, X, state_sequence):
+        """
+        Checks whether the low-variance state is the first state.
+
+        Otherwise sorts state predictions accoridngly.
+
+        Parameters
+        ----------
+        X : ndarray of shape (n_samples,)
+            Data to be fitted.
+        state_sequence : ndarray of shape (n_samples,)
+            Predicted state sequence.
+
+        Returns
+        -------
+        state_sequence : ndarray of shape (n_samples,)
+            Predicted state sequence sorted in correct order.
+        """
         # Slice data
         if X.ndim == 1:  # Makes function compatible on higher dimensions
             X = X[(self.window_len - 1): -self.window_len]
@@ -285,12 +302,11 @@ class JumpHMM(BaseHiddenMarkov):
 
         state_groupby = df_states.groupby('state_seq')
         self.mu = state_groupby['X'].mean().values.T  # transform mean back into 1darray
-        self.std = state_groupby['X'].std().values.T
+        self.std = state_groupby['X'].std(ddof=1).values.T
 
         # Sort array ascending and check if order is changed
         # If the order is changed then states are reversed
         if np.sort(self.std)[0] != self.std[0]:
-            print("reversing states...")
             state_sequence = np.where(state_sequence == 0, 1, 0)
 
         return state_sequence
@@ -298,32 +314,28 @@ class JumpHMM(BaseHiddenMarkov):
     def bac_score_1d(self, X, y_true, jump_penalty, window_len=6):
         self.jump_penalty = jump_penalty
         self.fit(X, get_hmm_params=False)  # Updates self.state_seq
-
-        #if self.theta[0, 0] < self.theta[0, 1]:  # We want the high mean state to be the first - otherwise reverse sequence
-        #    print("reversing states...")
-        #    self.state_seq = np.where(self.state_seq==0, 1, 0)
-
-        self.state_seq = self.check_state_sort(X, self.state_seq)
+        self.state_seq = self._check_state_sort(X, self.state_seq)
 
         y_pred = self.state_seq
         y_true = y_true[(self.window_len - 1): -self.window_len]  # slice y_true to have same dim as y_pred
 
         conf_matrix = confusion_matrix(y_true, y_pred)
+        keep_idx = conf_matrix.sum(axis=1) != 0
+        conf_matrix = conf_matrix[keep_idx]
+
         tp = np.diag(conf_matrix)
         fn = conf_matrix.sum(axis=1) - tp
-
-        if (np.all(conf_matrix[:,0]==0) or np.all(conf_matrix[:,1]==0)) and jump_penalty < 100:
-            print(conf_matrix)
-
         tpr = tp / (tp + fn)
         bac = np.mean(tpr)
 
-        if bac < 0.5:
+        logical_1 = bac < 0.5
+        logical_2 = conf_matrix.ndim > 1 and \
+                    (np.any(conf_matrix.sum(axis=1)==0) and \
+                    jump_penalty < 100)
+
+        if logical_1 or logical_2:
             print(f'bac {bac} -- tpr {tpr} -- jump_penalty {jump_penalty}')
             print(conf_matrix)
-
-        #if (bac<=0.5) and self.jump_penalty>10:
-        #    plotting.plot_samples_states_viterbi(X, y_pred, y_true)
 
         return bac
 
@@ -340,7 +352,7 @@ if __name__ == '__main__':
     model = JumpHMM(n_states=2, jump_penalty=2, random_state=42)
     sampler = SampleHMM(n_states=2, random_state=1)
 
-    n_samples = 2000
+    n_samples = 250
     n_sequences = 50
     X, viterbi_states, true_states = sampler.sample_with_viterbi(n_samples, n_sequences)
 

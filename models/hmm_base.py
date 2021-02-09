@@ -9,10 +9,8 @@ from utils.simulate_returns import simulate_2state_gaussian
 import pyximport; pyximport.install()  # TODO can only be active during development -- must be done through setup.py
 from models import hmm_cython
 
-from abc import ABC, abstractmethod
 
-
-class BaseHiddenMarkov(BaseEstimator, ABC):
+class BaseHiddenMarkov(BaseEstimator):
     """
     Parent class for Hidden Markov methods with gaussian distributions.
     Contain methods related to:

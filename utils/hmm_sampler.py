@@ -37,7 +37,7 @@ class SampleHMM(BaseHiddenMarkov):
         Transition probability matrix between states
     """
     
-    def __init__(self, n_states=2, hmm_params=None, frequency='daily', random_state=42):
+    def __init__(self, n_states=2, frequency='daily', hmm_params=None, random_state=42):
 
         if hmm_params == None and frequency == "daily":  # hmm params following Hardy (2001)
             # Convert from monthly time scale t=20 to daily t=1
