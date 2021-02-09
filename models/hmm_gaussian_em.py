@@ -4,9 +4,7 @@ from scipy.special import logsumexp
 from scipy import stats
 import matplotlib.pyplot as plt
 
-from typing import List
-
-from utils.simulate_returns import simulate_2state_gaussian, plot_posteriors_states, plot_samples_states
+from utils.simulate_returns import simulate_2state_gaussian
 from models.hmm_base import BaseHiddenMarkov
 
 
@@ -31,7 +29,6 @@ class EMHiddenMarkov(BaseHiddenMarkov):
         Set to 'random' for random initialization.
         Set to None for deterministic init.
 
-
     Attributes
     ----------
     mu : ndarray of shape (n_states,)
@@ -43,7 +40,8 @@ class EMHiddenMarkov(BaseHiddenMarkov):
     start_proba : ndarray of shape (n_states,)
         Initial state occupation distribution
     gamma : ndarray of shape (n_states,)
-        Entails the probability of being in a state at time t knowing all the observations that has come and all the observations to come. (Its a bowtie)
+        Entails the probability of being in a state at time t knowing
+        all the observations that has come and all the observations to come. (Its a bowtie)
     AIC : float
         Measurement to select the best fitted model
     BIC : float
@@ -171,15 +169,10 @@ class EMHiddenMarkov(BaseHiddenMarkov):
 
 
 if __name__ == '__main__':
-    model = EMHiddenMarkov(n_states=2, init="random", random_state=1, epochs=1, max_iter=100)
+    model = EMHiddenMarkov(n_states=2, init="random", random_state=1, epochs=2, max_iter=100)
     returns, true_regimes = simulate_2state_gaussian(plotting=False)  # Simulate some data from two normal distributions
 
     model.fit(returns)
-
-    sample_rets, sample_states = model.sample(10)
-
-    print(sample_rets)
-    print(sample_states)
 
     #plot_samples_states(sample_rets, sample_states)
 

@@ -1,28 +1,28 @@
 import numpy as np
 from numpy import ndarray
-from scipy import stats
-import scipy.optimize as opt
 import pandas as pd
-from sklearn.base import BaseEstimator
 from sklearn.cluster._kmeans import kmeans_plusplus
+from sklearn.metrics import confusion_matrix
+from sklearn.preprocessing import StandardScaler
 
 import matplotlib.pyplot as plt
 
-from utils.simulate_returns import simulate_2state_gaussian
+from utils import plotting
+from utils.hmm_sampler import SampleHMM
 from models.hmm_base import BaseHiddenMarkov
 
-import pyximport; pyximport.install()  # TODO can only be active during development -- must be done through setup.py
+import pyximport;
+
+pyximport.install()  # TODO can only be active during development -- must be done through setup.py
 from models import hmm_cython
 
-
 ''' TODO:
+
+Consider reusing previous fitted models in rolling windows to minimize no. of epochs.
  
-implement simulation and BAC to choose jump penalty.
-
-Z-score standardisation
-
-Consider setting boundscheck = False for all cython code
+Problems with fitting thetas due to no state changes. 
 '''
+
 
 class JumpHMM(BaseHiddenMarkov):
 
@@ -34,11 +34,12 @@ class JumpHMM(BaseHiddenMarkov):
         # Init parameters initial distribution, transition matrix and state-dependent distributions
         self.jump_penalty = jump_penalty
         self.window_len = window_len
+        self.theta = None
+        self.state_seq = None
+        self.n_features = None
+        self.is_fitted = False
 
-        self.best_objective_likelihood = np.inf
-        self.old_objective_likelihood = np.inf
-
-    def _init_params(self, X=None, diag_uniform_dist = (.7, .99), output_hmm_params=True):
+    def _init_params(self, X=None, diag_uniform_dist=(.7, .99), output_hmm_params=False):
         super()._init_params()
 
         if self.init == "kmeans++":
@@ -47,36 +48,43 @@ class JumpHMM(BaseHiddenMarkov):
             if X.ndim == 1:
                 X = X.reshape(-1, 1)  # Compatible with sklearn
 
-            # Theta - only used in jump models and are discarded in EM models
+            # Theta
             centroids, _ = kmeans_plusplus(X, self.n_states)  # Use sklearns kmeans++ algorithm
-            self.theta = centroids.T  # Transpose to get shape: N_features X N_states
+            theta = self.theta = centroids.T  # Transpose to get shape (n_features, n_states)
 
             # State sequence
-            self._fit_state_seq(X)  # this function implicitly updates self.state_seq
+            state_seq, _ = self.state_seq, _ = self._fit_state_seq(X, theta)
 
-            if output_hmm_params == True: # output all hmm parameters from state sequence
+            if output_hmm_params == True:  # output all hmm parameters from state sequence
                 self.get_params_from_seq(X, state_sequence=self.state_seq)
 
+            return state_seq, theta
+
     def construct_features(self, X: ndarray, window_len: int):  # TODO remove forward-looking params and slice X accordingly
-        N = len(X)
         df = pd.DataFrame(X)
 
         df['Left local mean'] = df.rolling(window_len).mean()
-        df['Left local std'] = df[0].rolling(window_len).std(ddof=0)
+        df['Left local std'] = df[0].rolling(window_len).std(ddof=1)
 
-        df['Right local mean'] = df[0].rolling(window_len).mean().shift(-window_len+1)
-        df['Right local std'] = df[0].rolling(window_len).std(ddof=0).shift(-window_len + 1)
+        df['Right local mean'] = df[0].rolling(window_len).mean().shift(-window_len + 1)
+        df['Right local std'] = df[0].rolling(window_len).std(ddof=1).shift(-window_len + 1)
 
         look_ahead = df[0].rolling(window_len).sum().shift(-window_len)  # Looks forward with window_len (Helper 1)
-        look_back = df[0].rolling(window_len).sum()  # Includes current position and looks window_len - 1 backward (Helper 2)
+        look_back = df[0].rolling(
+            window_len).sum()  # Includes current position and looks window_len - 1 backward (Helper 2)
         df['Central local mean'] = (look_ahead + look_back) / (2 * window_len)
-        df['Centered local std'] = df[0].rolling(window_len * 2).std(ddof=0).shift(-window_len)  # Rolls from 0 and 2x length iteratively, then shifts back 1x window length
+        df['Centered local std'] = df[0].rolling(window_len * 2).std(ddof=1).shift(
+            -window_len)  # Rolls from 0 and 2x length iteratively, then shifts back 1x window length
 
         # Absolute changes
-        #Y[1:, 1] = np.abs(np.diff(X))
-        #Y[:-1, 2] = np.abs(np.diff(X))
+        df['left_abs_change'] = np.abs(df[0].diff())  # np.abs(np.diff(X))
+        df['right_abs_change'] = df['left_abs_change'].shift(-1)
 
         Z = df.dropna().to_numpy()
+        # Scale features
+        scaler = StandardScaler()
+        Z = scaler.fit_transform(Z)
+
         self.n_features = Z.shape[1]
 
         return Z
@@ -93,7 +101,6 @@ class JumpHMM(BaseHiddenMarkov):
             Data to be fitted
         theta : ndarray of shape (n_features, n_states)
             jump model parameters
-
         Returns
         -------
         norms: ndarray of shape (n_samples, n_states)
@@ -102,26 +109,42 @@ class JumpHMM(BaseHiddenMarkov):
         norms = np.zeros(shape=(len(z), self.n_states))
 
         for j in range(self.n_states):
-            diff = (theta[:, j] - z)  # ndarray of shape (n_samples, n_states) with differences
+            diff = theta[:, j] - z  # ndarray of shape (n_samples, n_states) with differences
             norms[:, j] = np.square(np.linalg.norm(diff, axis=1))  # squared state conditional l2 norms
 
         return norms  # squared l2 norm.
 
-    def _fit_theta(self, Z):
+    def _fit_theta(self, Z, state_seq):
         """
         Fit theta, i.e minimize the squared L2 norm in each latent state.
-
         Computed analytically. See notebooks/math_overviews_algos for proof of solution.
+
+        Parameters
+        ----------
+        Z : ndarray of shape (n_samples, n_features)
+            Set of standardized times series features
+        state_seq : ndarray of shape (n_samples,)
+            State sequence
+
+        Returns
+        -------
+        theta : ndarray of shape (n_features, n_states)
+            jump model parameters. Distances from state (cluster) centers.
         """
+        theta = np.zeros(shape=(self.n_features, self.n_states))
         for j in range(self.n_states):
-            state_slicer = self.state_seq == j  # Boolean array of True/False
-            N_j = sum(state_slicer)  # Number of terms in state j
+            state_slicer = np.array(state_seq == j)  # Boolean array of True/False
+            N_j = np.sum(state_slicer)  # Number of terms in state j
 
-            assert N_j != 0, "No state changes detected"  # Check that state changes are detected
-            z = Z[state_slicer].sum(axis=0)  # Sum each feature across time
-            self.theta[:, j] = 1 / N_j * z
+            if N_j != 0:
+                z = Z[state_slicer].sum(axis=0)  # Sum each feature across time
+                theta[:, j] = z / N_j
+            else:
+                theta[:, j] = 0.  # TODO what is the best estimate of theta when the state is not present?
 
-    def _fit_state_seq(self, X: ndarray):
+        return theta
+
+    def _fit_state_seq(self, X, theta):
         """
         Fit a state sequence based on current theta estimates.
         Used in jump model fitting. Uses a dynamic programming technique very
@@ -129,14 +152,19 @@ class JumpHMM(BaseHiddenMarkov):
 
         Parameters
         ----------
-        X : ndarray of shape (n_samples, n_features)
-            Set of standardized times series features
+        X : ndarray of shape (n_samples)
+            Standardized returns.
+        theta : ndarray of shape (n_features, n_states)
+            jump model parameters. Distances from state (cluster) centers.
 
         Returns
         -------
-        fitted state sequence
+        state_seq : ndarray of shape (n_samples,)
+            State sequence
+        objective_score : float
+            Objective score under the model
         """
-        l2_norms = self._l2_norm_squared(X, self.theta)  # Compute array of all squared l2 norms
+        l2_norms = self._l2_norm_squared(X, theta)  # Compute array of all squared l2 norms
         n_samples, _ = l2_norms.shape
 
         losses, state_preds = hmm_cython.jump_state_seq(n_samples, self.n_states,
@@ -148,48 +176,58 @@ class JumpHMM(BaseHiddenMarkov):
         state_changes = np.diff(state_preds) != 0  # True/False array showing state changes
         jump_penalty = (state_changes * self.jump_penalty).sum()  # Multiply all True values with penalty
 
-        self.objective_likelihood = all_likelihoods + jump_penalty  # Float
-        self.state_seq = state_preds
+        objective_score = all_likelihoods + jump_penalty  # Float
 
-        return state_preds
+        return state_preds, objective_score
 
-    def fit(self, Z: ndarray, verbose=0):
+    def fit(self, X, auto_construct_features=True, get_hmm_params=True, verbose=0):
+        self.is_fitted = False
+        old_objective_score = best_objective_score = np.inf
+
+        if auto_construct_features is True:
+            X = self.construct_features(X, window_len=self.window_len)
+
         # Each epoch independently inits and fits a new model to the same data
-        for epoch in range(self.epochs):
+        for epoch in range(self.epochs):  # TODO consider parallel processing
             # Do new init at each epoch
-            self._init_params(Z, output_hmm_params=False)
-            self.old_state_seq = self.state_seq
+            state_seq, theta = self._init_params(X, output_hmm_params=False)
+            old_state_seq = state_seq
 
             for iter in range(self.max_iter):
-                self._fit_theta(Z)
-                self._fit_state_seq(Z)
+                theta = self._fit_theta(X, state_seq)
+                state_seq, objective_score = self._fit_state_seq(X, theta)
 
                 # Check convergence criterion
-                crit1 = np.array_equal(self.state_seq, self.old_state_seq)  # No change in state sequence
-                crit2 = np.abs(self.old_objective_likelihood - self.objective_likelihood)
-                if crit1 == True or crit2 < self.tol:
+                crit1 = np.array_equal(state_seq, old_state_seq)  # No change in state sequence
+                crit2 = np.abs(old_objective_score - objective_score)
+                if crit1 is True or crit2 < self.tol:
+                    self.is_fitted = True
                     # If model is converged check if current epoch is the best
                     # If current model is best all model params are updated
-                    if self.objective_likelihood < self.best_objective_likelihood:
-                        self.best_objective_likelihood = self.objective_likelihood
-                        self.best_state_seq = self.state_seq
-                        self.best_theta = self.theta
-                        self.get_params_from_seq(Z, state_sequence=self.best_state_seq)
+                    if objective_score < best_objective_score:
+                        best_objective_score = objective_score
+                        self.theta = theta
+                        self.state_seq = state_seq
 
                     if verbose == 1:
-                        print(f'Epoch {epoch} -- Iter {iter} -- likelihood {self.objective_likelihood} -- Theta {self.theta[0]} ')#Means: {self.mu} - STD {self.std} - Gamma {np.diag(self.T)} - Delta {self.delta}')
+                        print(f'Epoch {epoch} -- Iter {iter} -- likelihood {objective_score} -- Theta {self.theta[0]} ')
 
-                    break
+                    break  # Break out of inner loop and go to next epoch
 
-                elif iter == self.max_iter - 1:
-                    print(f'No convergence after {iter} iterations')
                 else:
-                    self.old_state_seq = self.state_seq
-                    self.old_objective_likelihood = self.objective_likelihood
+                    old_state_seq = state_seq
+                    old_objective_score = objective_score
 
-    def get_params_from_seq(self, X: ndarray, state_sequence: ndarray):  # TODO remove forward-looking params and slice X accordingly
+
+        if get_hmm_params is True:
+            self.get_params_from_seq(X, state_sequence=self.state_seq)
+
+        if self.is_fitted is False:
+            print(f'No convergence in any epoch out of {self.epochs} epochs')
+
+    def get_params_from_seq(self, X, state_sequence):  # TODO remove forward-looking params and slice X accordingly for X.ndim == 1
         """
-        Stores and outputs the model parameters
+        Stores and outputs the model parameters based on the input sequence.
 
         Parameters
         ----------
@@ -198,6 +236,9 @@ class JumpHMM(BaseHiddenMarkov):
 
         state_sequence : ndarray of shape (n_samples)
             State sequence for a given observation sequence
+        Returns
+        ----------
+        Hmm parameters
         """
 
         # Slice data
@@ -226,19 +267,97 @@ class JumpHMM(BaseHiddenMarkov):
         # init dist and stationary dist
         self.start_proba = np.zeros(self.n_states)
         self.start_proba[state_sequence[0]] = 1.
+        self.stationary_dist = self.get_stationary_dist(tpm=self.tpm)
 
         # Conditional distributions
         self.mu = state_groupby['X'].mean().values.T  # transform mean back into 1darray
-        self.std = state_groupby['X'].std().values.T
+        self.std = state_groupby['X'].std(ddof=1).values.T
 
-        # Stationary distributiin
-        self.stationary_dist = self.get_stationary_dist(tpm=self.tpm)
+    def _check_state_sort(self, X, state_sequence):
+        """
+        Checks whether the low-variance state is the first state.
+
+        Otherwise sorts state predictions accoridngly.
+
+        Parameters
+        ----------
+        X : ndarray of shape (n_samples,)
+            Data to be fitted.
+        state_sequence : ndarray of shape (n_samples,)
+            Predicted state sequence.
+
+        Returns
+        -------
+        state_sequence : ndarray of shape (n_samples,)
+            Predicted state sequence sorted in correct order.
+        """
+        # Slice data
+        if X.ndim == 1:  # Makes function compatible on higher dimensions
+            X = X[(self.window_len - 1): -self.window_len]
+        elif X.ndim > 1:
+            X = X[:, 0]
+
+        df_states = pd.DataFrame({'state_seq': state_sequence,
+                                  'X': X})
+
+        state_groupby = df_states.groupby('state_seq')
+        self.mu = state_groupby['X'].mean().values.T  # transform mean back into 1darray
+        self.std = state_groupby['X'].std(ddof=1).values.T
+
+        # Sort array ascending and check if order is changed
+        # If the order is changed then states are reversed
+        if np.sort(self.std)[0] != self.std[0]:
+            state_sequence = np.where(state_sequence == 0, 1, 0)
+
+        return state_sequence
+
+    def bac_score_1d(self, X, y_true, jump_penalty, window_len=6):
+        self.jump_penalty = jump_penalty
+        self.fit(X, get_hmm_params=False)  # Updates self.state_seq
+        self.state_seq = self._check_state_sort(X, self.state_seq)
+
+        y_pred = self.state_seq
+        y_true = y_true[(self.window_len - 1): -self.window_len]  # slice y_true to have same dim as y_pred
+
+        conf_matrix = confusion_matrix(y_true, y_pred)
+        keep_idx = conf_matrix.sum(axis=1) != 0
+        conf_matrix = conf_matrix[keep_idx]
+
+        tp = np.diag(conf_matrix)
+        fn = conf_matrix.sum(axis=1) - tp
+        tpr = tp / (tp + fn)
+        bac = np.mean(tpr)
+
+        logical_1 = bac < 0.5
+        logical_2 = conf_matrix.ndim > 1 and \
+                    (np.any(conf_matrix.sum(axis=1)==0) and \
+                    jump_penalty < 100)
+
+        if logical_1 or logical_2:
+            print(f'bac {bac} -- tpr {tpr} -- jump_penalty {jump_penalty}')
+            print(conf_matrix)
+
+        return bac
+
+    def bac_score_nd(self, X, y_true, jump_penalty, window_len=6):
+        bac = []
+        for seq in range(X.shape[1]):
+            bac_temp = self.bac_score_1d(X[:, seq], y_true[:, seq], jump_penalty, window_len=6)
+            bac.append(bac_temp)
+
+        return bac
 
 
 if __name__ == '__main__':
-    model = JumpHMM(n_states=2, random_state=42)
-    returns, true_regimes = simulate_2state_gaussian(plotting=False)  # Simulate some data from two normal distributions
+    model = JumpHMM(n_states=2, jump_penalty=2, random_state=42)
+    sampler = SampleHMM(n_states=2, random_state=1)
 
-    Z = model.construct_features(returns, window_len=6)
+    n_samples = 250
+    n_sequences = 50
+    X, viterbi_states, true_states = sampler.sample_with_viterbi(n_samples, n_sequences)
 
-    model.fit(Z)
+
+    #plotting.plot_samples_states_viterbi(X[:,0], viterbi_states[:,0], true_states[:,0])
+
+    for i in range(50):
+        bac = model.bac_score_1d(X[:,i], viterbi_states[:, i] , 30)

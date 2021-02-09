@@ -1,16 +1,14 @@
 import numpy as np
-from numpy.core._multiarray_umath import ndarray
 from scipy import stats
 from scipy.special import logsumexp
 from sklearn.base import BaseEstimator
-from sklearn.cluster._kmeans import kmeans_plusplus
 import matplotlib.pyplot as plt
-
 
 from utils.simulate_returns import simulate_2state_gaussian
 
 import pyximport; pyximport.install()  # TODO can only be active during development -- must be done through setup.py
 from models import hmm_cython
+
 
 class BaseHiddenMarkov(BaseEstimator):
     """
@@ -24,19 +22,20 @@ class BaseHiddenMarkov(BaseEstimator):
     Parameters
     ----------
     n_states : int, default=2
-            Number of hidden states
+        Number of hidden states
     max_iter : int, default=100
-            Maximum number of iterations to perform during expectation-maximization
+        Maximum number of iterations to perform during expectation-maximization
     tol : float, default=1e-6
-            Criterion for early stopping
+        Criterion for early stopping
     epochs : int, default=1
-            Number of complete passes through the data to improve fit
+        Number of complete passes through the data to improve fit
     random_state : int, default = 42
-            Parameter set to recreate output
+        Parameter set to recreate output
     init : str
-            Set to 'kmeans++' to use that init method - only supported for jump models.
-            Set to 'random' for random initialization.
-            Set to "deterministic" for deterministic init.
+        Set to 'kmeans++' to use that init method - only supported for jump models.
+        Set to 'random' for random initialization.
+        Set to "deterministic" for deterministic init.
+
     Attributes
     ----------
     mu : ndarray of shape (n_states,)
@@ -64,7 +63,6 @@ class BaseHiddenMarkov(BaseEstimator):
         self.mu = None
         self.std = None
 
-        # Init parameters initial distribution, transition matrix and state-dependent distributions from function
         np.random.seed(self.random_state)
 
     def _init_params(self, X=None, diag_uniform_dist = (.7, .99), output_hmm_params=True):
@@ -96,8 +94,6 @@ class BaseHiddenMarkov(BaseEstimator):
                              trans_prob.diagonal() - remaining_row_nums)  # And subtract these numbers from the diagonal so it remains uniform
 
             # initial distribution
-            # init_dist = np.random.uniform(low=0.4, high=0.6, size=self.n_states)
-            # init_dist /= np.sum(init_dist)
             init_dist = np.ones(self.n_states) / np.sum(self.n_states)  # initial distribution 1 X N vector
 
             # State dependent distributions
@@ -109,7 +105,7 @@ class BaseHiddenMarkov(BaseEstimator):
             self.mu = mu
             self.std = std
 
-        elif self.init == "deterministic":
+        elif self.init == "deterministic":  # TODO deprecate
             # Init theta as zeros and sample state seq from uniform dist
             self.theta = np.zeros(shape=(self.n_features, self.n_states))  # Init as empty matrix
             state_index = np.arange(start=0, stop=self.n_states, step=1, dtype=int)  # Array of possible states
@@ -167,9 +163,12 @@ class BaseHiddenMarkov(BaseEstimator):
 
         Parameters
         ----------
-        n_samples: int
+        n_samples : int
             Amount of samples to generate
-        hmm_params: dict, default=None
+        n_sequences : int, default=1
+            Number of independent sequences to sample from, e.g. if n_samples=100 and n_sequences=3
+            then 3 different sequences of length 100 are sampled
+        hmm_params : dict, default=None
             hmm model parameters to sample from. If None and model is fitted it will use fitted parameters.
             To manually set params, create a dict with 'mu', 'std', 'tpm' and 'stationary distribution' as kwds
             and values ndarrays.
@@ -178,6 +177,8 @@ class BaseHiddenMarkov(BaseEstimator):
         -------
         samples : ndarray of shape (n_samples,)
             Outputs the generated samples of size n_samples
+        sample_states : ndarray of shape (n_samples, n_sequences)
+            Outputs sampled states
         '''
         if hmm_params == None:
             mu = self.mu
@@ -210,7 +211,7 @@ class BaseHiddenMarkov(BaseEstimator):
 
         return samples, sample_states
 
-    def decode(self):
+    def decode(self, X):
         """
         Function to output the most likely sequence of states given an observation sequence.
 
@@ -226,7 +227,7 @@ class BaseHiddenMarkov(BaseEstimator):
         posteriors : ndarray of shape (n_samples, n_states)
             Computes the most likely state at each time-step, however, the state might not be valid (non-Viterbi) # TODO confirm with CS
         """
-        state_preds = self._viterbi()
+        state_preds = self._viterbi(X)
         return state_preds
 
     def predict_proba(self, n_preds=1):
@@ -319,22 +320,22 @@ class BaseHiddenMarkov(BaseEstimator):
                                   self.log_emission_probs_, log_betas)
         return log_betas
 
-    def _viterbi(self):
+    def _viterbi(self, X):
+        self.emission_probs_, self.log_emission_probs_ = self.emission_probs(X)
         n_obs, n_states = self.log_emission_probs_.shape
         log_alphas = np.zeros((n_obs, n_states))
         state_sequence = hmm_cython.viterbi(n_obs, n_states,
                                             np.log(self.start_proba),
                                             np.log(self.tpm),
                                             self.log_emission_probs_)
-        return state_sequence
+        return state_sequence.astype(np.int32)
 
 
 if __name__ == '__main__':
     X = np.arange(1,1000)
 
-    model = BaseHiddenMarkov(n_states=2)
-    returns, true_regimes = simulate_2state_gaussian(plotting=False)  # Simulate some data from two normal distributions
-    model._init_params(returns)
-    model.emission_probs(returns)
-
-
+    #model = BaseHiddenMarkov(n_states=2)
+    #returns, true_regimes = simulate_2state_gaussian(plotting=False)  # Simulate some data from two normal distributions
+    #model._init_params(returns)
+    #probs, logprobs = model.emission_probs(returns)
+    #print(probs)
