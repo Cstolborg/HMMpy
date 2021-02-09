@@ -5,15 +5,15 @@ import matplotlib.pyplot as plt
 
 
 from utils import plotting
-from models.hmm_base import BaseHiddenMarkov
+from hmm_models.hmm_base import BaseHiddenMarkov
 
 import pyximport; pyximport.install()  # TODO can only be active during development -- must be done through setup.py
-from models import hmm_cython
+from hmm_models import hmm_cython
 
 
 class SampleHMM(BaseHiddenMarkov):
     """
-    Class to handle sampling from HMM models with predefined parameters.
+    Class to handle sampling from HMM hmm_models with predefined parameters.
     
 
     Parameters

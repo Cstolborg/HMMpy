@@ -9,16 +9,16 @@ import matplotlib.pyplot as plt
 
 from utils import plotting
 from utils.hmm_sampler import SampleHMM
-from models.hmm_base import BaseHiddenMarkov
+from hmm_models.hmm_base import BaseHiddenMarkov
 
 import pyximport;
 
 pyximport.install()  # TODO can only be active during development -- must be done through setup.py
-from models import hmm_cython
+from hmm_models import hmm_cython
 
 ''' TODO:
 
-Consider reusing previous fitted models in rolling windows to minimize no. of epochs.
+Consider reusing previous fitted hmm_models in rolling windows to minimize no. of epochs.
  
 Problems with fitting thetas due to no state changes. 
 '''

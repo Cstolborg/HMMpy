@@ -5,7 +5,7 @@ from scipy import stats
 import matplotlib.pyplot as plt
 
 from utils.simulate_returns import simulate_2state_gaussian
-from models.hmm_base import BaseHiddenMarkov
+from hmm_models.hmm_base import BaseHiddenMarkov
 
 
 class EMHiddenMarkov(BaseHiddenMarkov):

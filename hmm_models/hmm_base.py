@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from utils.simulate_returns import simulate_2state_gaussian
 
 import pyximport; pyximport.install()  # TODO can only be active during development -- must be done through setup.py
-from models import hmm_cython
+from hmm_models import hmm_cython
 
 
 class BaseHiddenMarkov(BaseEstimator):
@@ -32,7 +32,7 @@ class BaseHiddenMarkov(BaseEstimator):
     random_state : int, default = 42
         Parameter set to recreate output
     init : str
-        Set to 'kmeans++' to use that init method - only supported for jump models.
+        Set to 'kmeans++' to use that init method - only supported for jump hmm_models.
         Set to 'random' for random initialization.
         Set to "deterministic" for deterministic init.
 
