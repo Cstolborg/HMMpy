@@ -251,8 +251,7 @@ class BaseHiddenMarkov(BaseEstimator):
 
         state_preds = np.zeros(shape=(n_preds, self.n_states))  # Init matrix of predictions
         for t in range(n_preds):
-            state_pred_t = state_pred_t @ self.tpm
-            state_preds[t] = state_pred_t
+            state_preds[t] = state_pred_t @ self.tpm
 
         return state_preds
 
