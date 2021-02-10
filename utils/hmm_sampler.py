@@ -129,7 +129,3 @@ if __name__ == "__main__":
     n_samples = 1000
     n_sequences = 1000
     X, viterbi_states, true_states = model.sample_with_viterbi(n_samples, n_sequences)
-
-    for i in range(10):
-        plotting.plot_samples_states_viterbi(X[:, i], viterbi_states[:, i], true_states[:, i])
-
