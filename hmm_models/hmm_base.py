@@ -139,7 +139,7 @@ class BaseHiddenMarkov(BaseEstimator):
         Returns
         ----------
         probs : ndarray of shape (n_samples, n_states)
-            Output the probability for sampling from a particular state distribution  # TODO vend lige med CS ang. notation.
+            Output the probability for sampling from a particular state distribution
         """
 
         T = len(X)
@@ -224,8 +224,6 @@ class BaseHiddenMarkov(BaseEstimator):
         ----------
         state_preds : ndarray of shape (n_samples,)
             Predicted sequence of states with length of the inputted time series.
-        posteriors : ndarray of shape (n_samples, n_states)
-            Computes the most likely state at each time-step, however, the state might not be valid (non-Viterbi) # TODO confirm with CS
         """
         state_preds = self._viterbi(X)
         return state_preds

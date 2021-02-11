@@ -1,5 +1,5 @@
 import numpy as np
-import pandas as pd
+import pandas as pd; pd.set_option('display.max_columns', 10); pd.set_option('display.width', 320)
 import cvxpy as cp
 import scipy.optimize as opt
 
@@ -23,11 +23,14 @@ def get_cov_mat(df_ret):
 
 class MPC:
     """
-    Solve the convec minimization problem in the MPC approach.
+    Solve the model predictive control problem using convex optimization.
+
+    This class is strictly made for use with the CVXPY library. All methods are created to be
+    compatible with this library and as such use of Numpy or Pandas is limited.
 
     Parameters
     ----------
-    ret_pred : ndarray of shape (n_preds, n_assets)
+    rets : ndarray of shape (n_preds, n_assets)
         Return predictions for each asset h time steps into the future.
     covariances : ndarray of shape (n_assets, n_assets)
         Covarince matrix of returns
@@ -35,65 +38,144 @@ class MPC:
         Times series of portfolio value at all previous time steps
     """
 
-    def __init__(self, ret_pred, covariances, prev_port_vals, max_drawdown=0.4, gamma_0=5, kappa1=0.004,
-                 rho2=0.0005, max_holding=0.4, eps = 0.0000001):
+    def __init__(self, rets, covariances, prev_port_vals, max_drawdown=0.4, gamma_0=5, kappa1=0.004,
+                 rho2=0.0005, max_holding=0.4, long_only=False, eps = 0.0000001):
 
         self.max_drawdown = max_drawdown
         self.gamma_0 = gamma_0
         self.kappa1 = kappa1
         self.rho2 = rho2
         self.max_holding = max_holding
+        self.long_only = long_only
         self.eps = eps
 
-        self.ret_pred = np.array(ret_pred)
+        self.rets = np.array(rets)
         self.cov = np.array(covariances)
         self.prev_port_vals = prev_port_vals
 
         self.n_assets = self.cov.shape[0]
-        self.n_preds = len(self.ret_pred)
-        self.start_weights = np.zeros(self.n_assets)
+        self.n_preds = len(self.rets)
+        self.start_weights = np.zeros(self.n_assets)  # TODO should be a parameter in __init__ method.
         self.start_weights[-1] = 1.
-        self.start_weights = cp.Parameter((self.n_assets), value=self.start_weights)
 
-        # Dummy variables
-        #self.weights = np.array([1/self.n_assets]*120).reshape(15,8)
+        self.gamma = self._gamma_from_drawdown_control()
 
-    def port_ret(self, weights):
-        port_ret_ = cp.multiply(self.ret_pred, weights)
-        port_ret_ = cp.sum(port_ret_, axis=1)
+    def single_period_objective_func(self, current_weights, prev_weights, rets):
+        """
+        Compiles all individual components in the objective function into one.
 
-        # Multiply starting portfolio value with the cumulative product of gross returns
-        # Gives the portfolio value at each time h in forecasting sequence
-        #port_vals_ = cp.multiply(self.prev_port_vals[-1], (1 + port_ret_)).cumprod()  # DEPRECATED
+        The method works for a single period. Remaining periods are bundled in cvxpy_solver method.
 
-        self.port_ret_ = port_ret_
+        Parameters
+        ----------
+        current_weights : CVXPY Variable of shape (n_assets,)
+            Portfolio weights in the given time step t
+        prev_weights : CVXPY Variable of shape (n_assets,)
+            Portfolio weights in the previous time step t-1
+        rets : ndarray of shape (n_assets,)
+            Predicted returns for each asset at time t
+
+        Returns
+        -------
+        objective : float
+            Scalar value of objective function evaluated at time t.
+        """
+        port_ret = self._port_ret(current_weights, rets)
+        trading_cost_ = self._trading_cost(current_weights, prev_weights)
+        holding_cost_ = self._holding_cost(current_weights)
+        port_risk = self._port_risk_control(current_weights)
+
+        objctive = port_ret - trading_cost_ - holding_cost_ - self.gamma * port_risk
+        return objctive
+
+    def single_period_constraints(self, current_weights):
+        """
+        Construct portfolio constraints for a single period. Bundled across time in cvxpy_solver method.
+
+        Parameters
+        ----------
+        current_weights : CVXPY Variable of shape (n_assets,)
+            Portfolio weights in the given time step t
+
+        Returns
+        -------
+        constraints : list
+            list containing all construct for time period t.
+        """
+        if self.long_only is True:
+            constraints = [cp.sum(current_weights) == 1, current_weights <= self.max_holding, current_weights >= 0]
+        else:
+            constraints = [cp.sum(current_weights) == 1, current_weights <= self.max_holding]
+
+        return constraints
+
+    def cvxpy_solver(self, verbose=False):
+        """
+        Compile the optimization problem into CVXPY objects and solve.
+
+        Returns optimal weights for each forecasted time period as ndarray of shape (n_preds, n_assets).
+        """
+        # variable with shape h+1 predictions so first row
+        # can be the known (non-variable) portfolio weight at time t
+        weights = cp.Variable(shape=(self.n_preds + 1, self.n_assets))
+        objective = 0
+        constr = []
+
+        # Loop through each row in the weights variable and construct the optimization problem
+        # Note this loop is very cpu-light since no actual computations takes place inside it
+        for t in range(1, weights.shape[0]):
+            # sum problem objectives. Weights are shifted 1 period forward compared to self.rets
+            objective += self.single_period_objective_func(weights[t], weights[t-1], self.rets[t-1])
+            constr += self.single_period_constraints(weights[t])  # Concatenate constraints
+
+        constr += [weights[0] == self.start_weights]  # first weights are fixed at known current portfolio
+
+        prob = cp.Problem(cp.Maximize(objective), constr) # Construct maximization problem
+        opt_val = prob.solve(verbose=verbose)
+        opt_var = weights.value
+
+        if verbose is True:
+            print("Shape of var: ", opt_var.shape)
+            temp_df = pd.DataFrame(opt_var).round(3)
+            temp_df['sum_weights'] = np.sum(opt_var, axis=1)
+            print(temp_df)
+
+        return opt_var[1:]  # Discard first row which is not a variable.
+
+    def _port_ret(self, weights, rets):
+        """
+        Compute portfolio return at a specific point in time.
+
+        Takes a vector of weights and another vector of returns at time t.
+        Returns the dot product -> Scalar.
+        """
+        port_ret_ = rets @ weights
         return port_ret_
 
-    def trading_cost(self, weights):
-        # Insert the initial weight first
-        # Has to be done this way since the initial weight is not part of the convex opt. problem
-        print(type(self.start_weights))
-        print(self.start_weights.T.shape)
-        print(weights.shape)
-        delta_weight = cp.hstack([self.start_weights, weights])
+    def _trading_cost(self, current_weights, prev_weights):
+        """
+        Using current and previous portfolio weights computes the trading costs as scalar value.
+        """
+        delta_weight = current_weights - prev_weights
+        delta_weight = cp.abs(delta_weight)
+        trading_cost = self.kappa1 * delta_weight  # Vector of trading costs per asset
 
-        print(delta_weight.shape)
-        delta_weight = cp.abs(cp.diff(delta_weight, axis=0))
-        trading_cost = self.kappa1 * delta_weight
+        return cp.sum(trading_cost)
 
-        return cp.sum(trading_cost, axis=1)
-
-    def holding_cost(self, weights):
+    def _holding_cost(self, weights):
+        """
+        Portfolio holding costs.
+        """
         holding_cost_ = self.rho2 * cp.square(weights)
-        return cp.sum(holding_cost_, axis=1)
+        return cp.sum(holding_cost_)
 
-    def drawdown_control(self):
+    def _gamma_from_drawdown_control(self):
+        """
+        Compute gamma (risk-aversion parameter) using drawdown control.
+
+        """
         # From all previous total portfolio values get the highest one
         previous_peak = np.max(self.prev_port_vals)
-
-        # Compute running total of highest peak during forecast period
-        #combined_peaks = np.append(np.array(previous_peak), port_vals_) # vector of candidate running portfolio peaks
-        #combined_peaks = np.maximum.accumulate(combined_peaks)[1:]  # DEPRECATED
 
         drawdown_t = 1 - self.prev_port_vals[-1] / previous_peak
         denom = np.max([self.max_drawdown - drawdown_t, self.eps])  # If drawdown limit is breached use a number very close to zero
@@ -101,37 +183,12 @@ class MPC:
 
         return gamma
 
-    def port_risk_control(self, weights):  # TODO get rid of loop
-        #port_var = np.zeros(self.n_preds)
-
-        #for t in range(self.n_preds):
-        #    port_var[t] = weights[t].T @ self.cov @ weights[t]
-
-        port_var = weights[0].T @ self.cov @ weights[0]
+    def _port_risk_control(self, weights):
+        """
+        Computes portfolio risk parameter. Currently set to portfolio variance.
+        """
+        port_var = cp.quad_form(weights, self.cov)  # CVXPY method for doing: w^T @ COV @ w
         return port_var
-
-    def cons(self, weights):
-        return [cp.sum(weights, axis=1) == 1]
-
-    def objective_func(self, weights):
-        port_ret = self.port_ret(weights)
-        #trading_cost_ = self.trading_cost(weights)
-        holding_cost_ = self.holding_cost(weights)
-        gamma = self.drawdown_control()
-        port_risk = self.port_risk_control(weights)
-
-        objctive = cp.sum(port_ret - holding_cost_ - gamma * port_risk)
-        return objctive
-
-    def cvxpy_solver(self):
-        weights = cp.Variable(shape=(self.n_preds , self.n_assets))
-        objective = cp.Maximize(self.objective_func(weights))
-        constraints = self.cons(weights)
-        prob = cp.Problem(objective, constraints)
-
-        print('Optimal value: ', prob.solve(verbose=True))
-        print("Optimal var")
-        print(weights.value)
 
 
 if __name__ == "__main__":
@@ -148,6 +205,6 @@ if __name__ == "__main__":
 
     model = MPC(ret_pred, cov, prev_port_vals)
 
-    model.cvxpy_solver()
+    model.cvxpy_solver(verbose=True)
 
 
