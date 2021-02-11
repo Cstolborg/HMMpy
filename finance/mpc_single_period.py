@@ -45,7 +45,7 @@ class MPC:
         self.max_holding = max_holding
         self.eps = eps
 
-        self.ret_pred = np.array(ret_pred)
+        self.ret_pred = np.array(ret_pred)[0,:]
         self.cov = np.array(covariances)
         self.prev_port_vals = prev_port_vals
 
@@ -72,20 +72,15 @@ class MPC:
     def trading_cost(self, weights):
         # Insert the initial weight first
         # Has to be done this way since the initial weight is not part of the convex opt. problem
-        print(type(self.start_weights))
-        print(self.start_weights.T.shape)
-        print(weights.shape)
-        delta_weight = cp.hstack([self.start_weights, weights])
-
-        print(delta_weight.shape)
-        delta_weight = cp.abs(cp.diff(delta_weight, axis=0))
+        delta_weight = self.start_weights - weights
+        delta_weight = cp.abs(delta_weight)
         trading_cost = self.kappa1 * delta_weight
 
-        return cp.sum(trading_cost, axis=1)
+        return cp.sum(trading_cost)
 
     def holding_cost(self, weights):
         holding_cost_ = self.rho2 * cp.square(weights)
-        return cp.sum(holding_cost_, axis=1)
+        return cp.sum(holding_cost_)
 
     def drawdown_control(self):
         # From all previous total portfolio values get the highest one
@@ -107,11 +102,11 @@ class MPC:
         #for t in range(self.n_preds):
         #    port_var[t] = weights[t].T @ self.cov @ weights[t]
 
-        port_var = weights[0].T @ self.cov @ weights[0]
+        port_var = weights.T @ self.cov @ weights
         return port_var
 
     def cons(self, weights):
-        return [cp.sum(weights, axis=1) == 1]
+        return [cp.sum(weights) == 1]
 
     def objective_func(self, weights):
         port_ret = self.port_ret(weights)
@@ -124,7 +119,13 @@ class MPC:
         return objctive
 
     def cvxpy_solver(self):
-        weights = cp.Variable(shape=(self.n_preds , self.n_assets))
+        weights = cp.Variable(self.n_assets)
+        print("dimensions of X:", weights.shape)
+        print("size of X:", weights.size)
+        print("number of dimensions:", weights.ndim)
+        print("dimensions of sum(X):", cp.sum(weights).shape)
+
+
         objective = cp.Maximize(self.objective_func(weights))
         constraints = self.cons(weights)
         prob = cp.Problem(objective, constraints)
@@ -142,7 +143,7 @@ if __name__ == "__main__":
     df_ret['rf'] = 0.
     cov = get_cov_mat(df_ret).to_numpy()
 
-    ret_pred = df_ret.iloc[-15:].to_numpy()
+    ret_pred = df_ret.iloc[-1:].to_numpy()
     #weights = np.array([1/9] * 135).reshape(15, 9)
     prev_port_vals = np.array([100, 105,110,100,105,120,130,150,135,160])
 
