@@ -53,21 +53,14 @@ class MPC:
         self.n_preds = len(self.ret_pred)
         self.start_weights = np.zeros(self.n_assets)
         self.start_weights[-1] = 1.
-        self.start_weights = cp.Parameter((self.n_assets), value=self.start_weights)
+        #self.start_weights = cp.Parameter((self.n_assets), value=self.start_weights)
 
         # Dummy variables
         #self.weights = np.array([1/self.n_assets]*120).reshape(15,8)
 
     def port_ret(self, weights):
         port_ret_ = cp.multiply(self.ret_pred, weights)
-        port_ret_ = cp.sum(port_ret_, axis=1)
-
-        # Multiply starting portfolio value with the cumulative product of gross returns
-        # Gives the portfolio value at each time h in forecasting sequence
-        #port_vals_ = cp.multiply(self.prev_port_vals[-1], (1 + port_ret_)).cumprod()  # DEPRECATED
-
-        self.port_ret_ = port_ret_
-        return port_ret_
+        return cp.sum(port_ret_)
 
     def trading_cost(self, weights):
         # Insert the initial weight first
@@ -86,36 +79,27 @@ class MPC:
         # From all previous total portfolio values get the highest one
         previous_peak = np.max(self.prev_port_vals)
 
-        # Compute running total of highest peak during forecast period
-        #combined_peaks = np.append(np.array(previous_peak), port_vals_) # vector of candidate running portfolio peaks
-        #combined_peaks = np.maximum.accumulate(combined_peaks)[1:]  # DEPRECATED
-
         drawdown_t = 1 - self.prev_port_vals[-1] / previous_peak
         denom = np.max([self.max_drawdown - drawdown_t, self.eps])  # If drawdown limit is breached use a number very close to zero
         gamma = self.gamma_0 * self.max_drawdown / denom
 
         return gamma
 
-    def port_risk_control(self, weights):  # TODO get rid of loop
-        #port_var = np.zeros(self.n_preds)
-
-        #for t in range(self.n_preds):
-        #    port_var[t] = weights[t].T @ self.cov @ weights[t]
-
-        port_var = weights.T @ self.cov @ weights
+    def port_risk_control(self, weights):
+        port_var = cp.quad_form(weights, self.cov)
         return port_var
 
-    def cons(self, weights):
+    def constraints(self, weights):
         return [cp.sum(weights) == 1]
 
     def objective_func(self, weights):
         port_ret = self.port_ret(weights)
-        #trading_cost_ = self.trading_cost(weights)
+        trading_cost_ = self.trading_cost(weights)
         holding_cost_ = self.holding_cost(weights)
         gamma = self.drawdown_control()
         port_risk = self.port_risk_control(weights)
 
-        objctive = cp.sum(port_ret - holding_cost_ - gamma * port_risk)
+        objctive = port_ret - trading_cost_ - holding_cost_ - gamma * port_risk
         return objctive
 
     def cvxpy_solver(self):
@@ -125,14 +109,14 @@ class MPC:
         print("number of dimensions:", weights.ndim)
         print("dimensions of sum(X):", cp.sum(weights).shape)
 
-
         objective = cp.Maximize(self.objective_func(weights))
-        constraints = self.cons(weights)
+        constraints = self.constraints(weights)
         prob = cp.Problem(objective, constraints)
 
         print('Optimal value: ', prob.solve(verbose=True))
         print("Optimal var")
         print(weights.value)
+        print(np.sum(weights.value))
 
 
 if __name__ == "__main__":
