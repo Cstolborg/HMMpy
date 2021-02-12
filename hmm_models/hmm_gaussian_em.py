@@ -64,7 +64,8 @@ class EMHiddenMarkov(BaseHiddenMarkov):
 
         Returns
         -------
-        ndarray
+        gamma : ndarray of shape (n_samples, n_states)
+            Expectation of being in state j at time t given observations, P(S_t = j | x^T)
         """
         gamma = log_alphas + log_betas
         normalizer = logsumexp(gamma, axis=1, keepdims=True)
