@@ -1,25 +1,9 @@
 import numpy as np
 import pandas as pd; pd.set_option('display.max_columns', 10); pd.set_option('display.width', 320)
 import cvxpy as cp
-import scipy.optimize as opt
 
 from utils.hmm_sampler import SampleHMM
-
-
-def load_data_get_ret(path='../data/adjusted_close_price_series_load.xlsx'):
-    df = pd.read_excel(path, header=2, index_col='Time / Name')
-    df.dropna(inplace=True)
-
-    df_ret = df[['Hedge Funds Global', 'MSCI World', 'MSCI Emerging Markets',
-                     'Barclays US Treasury Bond Index', 'S&P Listed Private Equity Index',
-                     'European Public Real Estate', 'S&P Crude Oil Index', 'Gold']].pct_change()
-
-    df_ret.dropna(inplace=True)
-
-    return df_ret
-
-def get_cov_mat(df_ret):
-    return df_ret.cov()
+from utils.data_transformation import load_data_get_ret, get_cov_mat
 
 class MPC:
     """
@@ -256,6 +240,8 @@ class MPCBacktester(MPC):
         self.gamma = gamma
 
         return self.weights, self.port_val, gamma
+
+
 
 if __name__ == "__main__":
     sampler = SampleHMM(n_states=2, random_state=1)
