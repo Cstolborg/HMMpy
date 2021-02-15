@@ -233,15 +233,13 @@ class MPCBacktester(MPC):
             self.weights[t+1] = weights[0]  # Only use first forecasted weight
             gamma = np.append(gamma, model.gamma)
 
-            new_port_val = (1 + self.weights[t+1]@self.df_rets.iloc[t]) * self.port_val[-1]
+            new_port_val = (1 + self.weights[t+1] @ self.df_rets.iloc[t]) * self.port_val[-1]
             self.port_val = np.append(self.port_val, new_port_val)  # TODO double check time periods match
 
         self.port_val = self.port_val[1:]  # Throw away first observations since it is artificially set to zero
         self.gamma = gamma
 
         return self.weights, self.port_val, gamma
-
-
 
 if __name__ == "__main__":
     sampler = SampleHMM(n_states=2, random_state=1)
@@ -261,6 +259,8 @@ if __name__ == "__main__":
 
     df_preds = []
     covariances = []
+
+    # Create some random data
     for t in range(5):
         idx = np.random.randint(500)
         df_preds.append(df_ret.iloc[idx:idx+15])

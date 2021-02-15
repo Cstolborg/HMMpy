@@ -249,7 +249,7 @@ class BaseHiddenMarkov(BaseEstimator):
 
         state_preds = np.zeros(shape=(n_preds, self.n_states))  # Init matrix of predictions
         for t in range(n_preds):
-            state_preds[t] = state_pred_t @ self.tpm
+            state_preds[t] = state_pred_t = state_pred_t @ self.tpm
 
         return state_preds
 
@@ -283,10 +283,10 @@ class BaseHiddenMarkov(BaseEstimator):
 
         Returns
         -------
-        log-likelihood: float
+        log-likelihood : float
             log-likehood of given HMM parameters
-        log of forward probabilities: ndarray of shape (n_samples, n_states)
-            Array of the log of forward probabilties at each time step
+        log of forward probabilities : ndarray of shape (n_samples, n_states)
+            Array of the log of forward probabilities at each time step
         """
         n_obs, n_states = self.log_emission_probs_.shape
         log_alphas = np.zeros((n_obs, n_states))

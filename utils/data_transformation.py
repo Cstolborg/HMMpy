@@ -14,5 +14,18 @@ def load_data_get_ret(path='../data/adjusted_close_price_series_load.csv'):
 
     return df_ret
 
+def load_data_get_logret(path='../data/adjusted_close_price_series_load.csv'):
+    df = pd.read_csv(path, index_col='Time / Name')
+    df.dropna(inplace=True)
+
+    df_ret = np.log(df) - np.log(df.shift(1))
+
+    df_ret.dropna(inplace=True)
+
+    return df_ret
+
 def get_cov_mat(df_ret):
     return df_ret.cov()
+
+
+df = load_data_get_logret()

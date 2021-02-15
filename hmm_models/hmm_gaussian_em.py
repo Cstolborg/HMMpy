@@ -42,9 +42,9 @@ class EMHiddenMarkov(BaseHiddenMarkov):
     gamma : ndarray of shape (n_states,)
         Entails the probability of being in a state at time t knowing
         all the observations that has come and all the observations to come. (Its a bowtie)
-    AIC : float
+    aic_ : float
         Measurement to select the best fitted model
-    BIC : float
+    bic_ : float
         Measurement to select the best fitted model
     """
 
@@ -157,7 +157,7 @@ class EMHiddenMarkov(BaseHiddenMarkov):
                             f'Iteration {iter} - LLK {llk} - Means: {self.mu} - STD {self.std} - Gamma {np.diag(self.tpm)} - Delta {self.start_proba}')
                     break
 
-                elif iter == self.max_iter - 1:
+                elif iter == self.max_iter - 1 and verbose == 1:
                     print(f'No convergence after {iter} iterations')
                 else:
                     self.old_llk = llk
