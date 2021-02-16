@@ -182,7 +182,7 @@ class MPCBacktester(MPC):
     Parameters
     ----------
     df_rets : DataFrame of shape (n_samples, n_assets)
-        Return predictions for each asset h time steps into the future.
+        Historical returns for each asset i.
     df_preds : list of len(n_samples) with DataFrame objects, each of shape (n_preds, n_assets)
         list of return predictions for each asset h time steps into the future. Each element in list contains,
         from time t, predictions h time steps into the future.
@@ -263,7 +263,7 @@ if __name__ == "__main__":
     # Create some random data
     for t in range(5):
         idx = np.random.randint(500)
-        df_preds.append(df_ret.iloc[idx:idx+15])
+        df_preds.append(df_ret.iloc[idx:idx+15].to_numpy())
         covariances.append(df_ret.iloc[:idx].cov())
 
     df_rets = df_ret.iloc[:5]
