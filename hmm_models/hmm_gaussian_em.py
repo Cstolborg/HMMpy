@@ -1,3 +1,4 @@
+import os
 import numpy as np
 from numpy import ndarray
 from scipy.special import logsumexp
@@ -6,6 +7,8 @@ import matplotlib.pyplot as plt
 
 from utils.simulate_returns import simulate_2state_gaussian
 from hmm_models.hmm_base import BaseHiddenMarkov
+
+from multiprocessing import Pool
 
 
 class EMHiddenMarkov(BaseHiddenMarkov):
@@ -122,13 +125,15 @@ class EMHiddenMarkov(BaseHiddenMarkov):
         Derives the optimal model parameters
         """
         # Init parameters initial distribution, transition matrix and state-dependent distributions
+        self.is_fitted = False
         self._init_params(X, output_hmm_params=True)
         self.old_llk = -np.inf  # Used to check model convergence
         self.best_epoch = -np.inf
 
         for epoch in range(self.epochs):
             # Do new init at each epoch
-            if epoch > 0: self._init_params(X, output_hmm_params=True)
+            if epoch > 0:
+                self._init_params(X, output_hmm_params=True)
 
             for iter in range(self.max_iter):
                 # Do e- and m-step
@@ -138,6 +143,7 @@ class EMHiddenMarkov(BaseHiddenMarkov):
                 # Check convergence criterion
                 crit = np.abs(llk - self.old_llk)  # Improvement in log likelihood
                 if crit < self.tol:
+                    self.is_fitted = True
                     if llk > self.best_epoch:
                         # Compute AIC and BIC and print model results
                         # AIC & BIC computed as shown on
@@ -170,10 +176,12 @@ class EMHiddenMarkov(BaseHiddenMarkov):
 
 
 if __name__ == '__main__':
-    model = EMHiddenMarkov(n_states=2, init="random", random_state=1, epochs=2, max_iter=100)
+    model = EMHiddenMarkov(n_states=2, init="random", random_state=42, epochs=1, max_iter=100)
     returns, true_regimes = simulate_2state_gaussian(plotting=False)  # Simulate some data from two normal distributions
 
-    model.fit(returns)
+    pool = Pool()
+
+    result = pool.map(model.fit, [returns]*10)
 
     #plot_samples_states(sample_rets, sample_states)
 

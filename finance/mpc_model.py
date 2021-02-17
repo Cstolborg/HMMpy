@@ -1,9 +1,10 @@
 import numpy as np
 import pandas as pd; pd.set_option('display.max_columns', 10); pd.set_option('display.width', 320)
+import tqdm
 import cvxpy as cp
 
 from utils.hmm_sampler import SampleHMM
-from utils.data_transformation import load_data_get_ret, get_cov_mat
+from utils.data_prep import load_data_get_ret, get_cov_mat
 
 class MPC:
     """
@@ -183,10 +184,10 @@ class MPCBacktester(MPC):
     ----------
     df_rets : DataFrame of shape (n_samples, n_assets)
         Historical returns for each asset i.
-    df_preds : list of len(n_samples) with DataFrame objects, each of shape (n_preds, n_assets)
+    preds : ndarray of shape (n_samples, n_preds, n_assets)
         list of return predictions for each asset h time steps into the future. Each element in list contains,
         from time t, predictions h time steps into the future.
-    covariances : list of len(n_samples) with ndarray objects, each of shape (n_assets, n_assets)
+    covariances : ndarray of shape (n_samples, n_preds, n_assets, n_assets)
         list of covariance matrix of returns for each time step t.
     port_val : float, default=1000
         Current portfolio value.
@@ -194,7 +195,7 @@ class MPCBacktester(MPC):
         Current (known) portfolio weights at time t. Default is 100% allocation to cash.
     """
 
-    def __init__(self, df_rets, df_preds, covariances, n_preds=15, port_val=1000, start_weights=None, max_drawdown=0.4, gamma_0=5, kappa1=0.004,
+    def __init__(self, df_rets, preds, covariances, n_preds=15, port_val=1000, start_weights=None, max_drawdown=0.4, gamma_0=5, kappa1=0.004,
                  rho2=0.0005, max_holding=0.4, long_only=False, eps=0.0000001):
 
         self.max_drawdown = max_drawdown
@@ -206,7 +207,7 @@ class MPCBacktester(MPC):
         self.eps = eps
 
         self.df_rets = df_rets
-        self.df_preds = df_preds
+        self.preds = preds
         self.covariances = covariances
         self.port_val = np.array([0, port_val])
 
@@ -219,13 +220,16 @@ class MPCBacktester(MPC):
         else:
             self.start_weights = start_weights
 
-        self.weights = np.zeros(shape=(len(df_preds)+1, self.n_assets))
+        self.weights = np.zeros(shape=(len(preds) + 1, self.n_assets))
         self.weights[0] = self.start_weights
 
     def backtest(self):
         gamma = np.array([])  # empty array
-        for t, (preds, cov) in enumerate(zip(self.df_preds, self.covariances)):
-            model = MPC(rets=preds, covariances=cov, prev_port_vals=self.port_val, start_weights=self.weights[t],
+
+        for t in tqdm.trange(self.preds.shape[0]):
+            # Instantiate MPC class
+            # TODO smarter instantiation and implement covariance predictions
+            model = MPC(rets=preds[t], covariances=cov[t, 0], prev_port_vals=self.port_val, start_weights=self.weights[t],
                         max_drawdown=self.max_drawdown, gamma_0=self.gamma_0, kappa1=self.kappa1,
                         rho2=self.rho2, max_holding=self.max_holding, long_only=self.long_only, eps=self.eps)
 
@@ -246,8 +250,7 @@ if __name__ == "__main__":
     X, true_states = sampler.sample(15)
 
     df_ret = load_data_get_ret()
-    df_ret['rf'] = 0.
-    cov = get_cov_mat(df_ret).to_numpy()
+    #cov = get_cov_mat(df_ret).to_numpy()
 
     #ret_pred = df_ret.iloc[-15:].to_numpy()
     #weights = np.zeros(len(cov))
@@ -257,19 +260,21 @@ if __name__ == "__main__":
     #model = MPC(ret_pred, cov, prev_port_vals)
     #weigths = model.cvxpy_solver()
 
-    df_preds = []
-    covariances = []
+    #df_preds = []
+    #covariances = []
 
     # Create some random data
-    for t in range(5):
-        idx = np.random.randint(500)
-        df_preds.append(df_ret.iloc[idx:idx+15].to_numpy())
-        covariances.append(df_ret.iloc[:idx].cov())
+    #for t in range(5):
+    #    idx = np.random.randint(500)
+    #    df_preds.append(df_ret.iloc[idx:idx+15].to_numpy())
+    #    covariances.append(df_ret.iloc[:idx].cov())
 
-    df_rets = df_ret.iloc[:5]
-    model = MPCBacktester(df_rets, df_preds, covariances)
+    #df_rets = df_ret.iloc[:5]
+
+    df_ret = df_ret.iloc[1500:]
+    preds = np.load('../data/rolling_preds.npy')
+    cov = np.load('../data/rolling_cov.npy')
+
+    model = MPCBacktester(df_ret, preds, cov)
 
     model.backtest()
-
-
-

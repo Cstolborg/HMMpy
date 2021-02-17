@@ -62,6 +62,7 @@ class BaseHiddenMarkov(BaseEstimator):
         self.start_proba = None
         self.mu = None
         self.std = None
+        self.is_fitted = False
 
         np.random.seed(self.random_state)
 
