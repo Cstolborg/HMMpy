@@ -34,4 +34,11 @@ def plot_posteriors_states(posteriors, states, true_regimes, show=True):
         plt.show()
     return fig, ax
 
+def plot_port_weights(weights, show=True):
+    fig, ax = plt.subplots()
+    ax.stackplot(np.arange(0,len(weights),1), weights)
+
+    if show == True:
+        plt.show()
+    return fig, ax
 

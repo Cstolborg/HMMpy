@@ -1,10 +1,19 @@
 import numpy as np
 import pandas as pd; pd.set_option('display.max_columns', 10); pd.set_option('display.width', 320)
+import matplotlib.pyplot as plt
 import tqdm
 import cvxpy as cp
 
 from utils.hmm_sampler import SampleHMM
-from utils.data_prep import load_data_get_ret, get_cov_mat
+from utils.data_prep import load_data_get_ret
+
+""" TODO
+
+Trading costs associated with the risk-free asset when solving MPC problem
+
+No trading costs included in backtest.
+
+"""
 
 class MPC:
     """
@@ -276,5 +285,8 @@ if __name__ == "__main__":
     cov = np.load('../data/rolling_cov.npy')
 
     model = MPCBacktester(df_ret, preds, cov)
+    weights, port_val, gamma = model.backtest()
 
-    model.backtest()
+    np.save('../data/mpc_weights.npy', weights)
+    np.save('../data/port_val.npy', port_val)
+

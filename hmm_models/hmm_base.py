@@ -9,6 +9,14 @@ from utils.simulate_returns import simulate_2state_gaussian
 import pyximport; pyximport.install()  # TODO can only be active during development -- must be done through setup.py
 from hmm_models import hmm_cython
 
+""" TODO
+
+Which emission probs are used after a model is fitted?
+
+When only 1 states exists 
+
+"""
+
 
 class BaseHiddenMarkov(BaseEstimator):
     """
@@ -68,8 +76,7 @@ class BaseHiddenMarkov(BaseEstimator):
 
     def _init_params(self, X=None, diag_uniform_dist = (.7, .99), output_hmm_params=True):
         """
-        Function to initialize HMM parameters. Can do so using kmeans++, randomly
-        or completely deterministic.
+        Function to initialize HMM parameters. Can do so using kmeans++, randomly or deterministic.
 
         Parameters
         ----------
@@ -91,8 +98,7 @@ class BaseHiddenMarkov(BaseEstimator):
             remaining_row_nums = (1 - np.diag(trans_prob)) / (
                         self.n_states - 1)  # Spread the remaining mass evenly onto remaining row values
             trans_prob += remaining_row_nums.reshape(-1, 1)  # Add this to the uniform diagonal matrix
-            np.fill_diagonal(trans_prob,
-                             trans_prob.diagonal() - remaining_row_nums)  # And subtract these numbers from the diagonal so it remains uniform
+            np.fill_diagonal(trans_prob, trans_prob.diagonal() - remaining_row_nums)  # And subtract these numbers from the diagonal so it remains uniform
 
             # initial distribution
             init_dist = np.ones(self.n_states) / np.sum(self.n_states)  # initial distribution 1 X N vector
@@ -149,6 +155,8 @@ class BaseHiddenMarkov(BaseEstimator):
 
         # For all states evaluate the density function
         for j in range(self.n_states):
+            if self.std[j] == np.nan or self.std[j] == 0. or self.std < 0.:
+                continue  # If std has non-standard value keep the probs at zero and go to next loop
             log_probs[:, j] = stats.norm.logpdf(X, loc=self.mu[j], scale=self.std[j])
 
         probs = np.exp(log_probs)
