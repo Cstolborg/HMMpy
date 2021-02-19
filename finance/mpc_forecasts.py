@@ -94,6 +94,35 @@ class Backtester:
             """
         return mu, cov
 
+    def get_uncond_asset_dist(self, posteriors, cond_mu, cond_cov):
+        """
+        Compute unconditional multivariate normal distribution of all assets.
+
+        Parameters
+        ----------
+        posteriors: ndarray of shape (n_preds, n_states)
+            predicted posterior probability of being in state i at time t+h.
+        cond_mu : ndarray of shape (n_states, n_assets)
+            Conditional mean value of each assets
+        cond_cov : ndarray of shape (n_states, n_assets, n_assets)
+            Conditional covariance matrix
+        Returns
+        -------
+        pred_mu : ndarray of shape (n_preds, n_assets)
+            Conditional mean value of each assets
+        pred_cov : ndarray of shape (n_preds, n_assets, n_assets)
+            Conditional covariance matrix
+        """
+        pred_mu = np.inner(cond_mu.T, posteriors).T  # shape (n_preds, n_assets)
+
+        cov_x1 = np.inner(posteriors, cond_cov.T)  # shape (n_preds, n_assets, n_assets)
+        cov_x2 = pred_mu - cond_mu[:, np.newaxis]  # shape (n_states, n_preds)
+        cov_x3 = np.einsum('ijk,ijk->ij', cov_x2, cov_x2)  # Equal to np.sum(X**2, axis=-1)
+        cov_x4 = np.einsum('ij,ij->i', cov_x3.T, posteriors)  # Equal to np.sum(X3*posteriors, axis=1)
+        pred_cov = cov_x1 + cov_x4[:, np.newaxis, np.newaxis]  # shape (n_preds, n_assets, n_assets)
+
+        return pred_mu, pred_cov
+
     @staticmethod
     def logcov_to_cov(log_mu, log_cov):
         """
@@ -157,32 +186,24 @@ class Backtester:
             # posteriors is 2D-array with shape (n_preds, n_states)
             state_sequence, posteriors = self.model.fit_predict(X_rolling, n_preds=n_preds, verbose=verbose)
 
-            mu, cov = self.get_cond_asset_dist(df_rolling, state_sequence)  # shapes (n_states, n_assets), (n_states, n_assets, n_assets)
-            preds = np.inner(mu.T, posteriors).T  # shape (n_preds, n_assets)
+            # Compute conditional mixture distributions in rolling period
+            cond_mu, cond_cov = self.get_cond_asset_dist(df_rolling, state_sequence)  # shapes (n_states, n_assets), (n_states, n_assets, n_assets)
 
-            cov_x1 = np.inner(posteriors, cov.T)  # shape (n_preds, n_assets, n_assets)
-            cov_x2 = preds - mu[:, np.newaxis]  # shape (n_states, n_preds)
-            cov_x3 = np.einsum('ijk,ijk->ij', cov_x2, cov_x2)  # Equal to np.sum(X**2, axis=-1)
-            cov_x4 = np.einsum('ij,ij->i', cov_x3.T, posteriors)  # Equal to np.sum(X3*posteriors, axis=1)
-            cov_x5 = cov_x1 + cov_x4[:, np.newaxis, np.newaxis]  # shape (n_samples-window_len, n_preds, n_assets, n_assets)
+            # Transform into unconditional moments at time t
+            # Combine with posteriors to also predict moments h steps into future
+            pred_mu, pred_cov = self.get_uncond_asset_dist(posteriors, cond_mu, cond_cov)  # shapes (n_preds, n_assets), (n_preds, n_assets, n_assets)
 
-            if np.any(np.isnan(preds)) == True:
+            if np.any(np.isnan(pred_mu)) == True:
                 print('t: ', t)
-                print(preds)
-                print(f'NaNs in cov: {np.any(np.isnan(cov_x5))} -- NaNs in posteriors: {np.any(np.isnan(posteriors))} ')
+                print(pred_mu)
+                print(f'NaNs in cov: {np.any(np.isnan(pred_cov))} -- NaNs in posteriors: {np.any(np.isnan(posteriors))} ')
 
                 # TODO this is a quick fix and must be solved better in cases where no solutins are found!
                 self.preds[t - window_len] = self.preds[t - window_len - 1]
                 self.cov[t - window_len] = self.cov[t - window_len - 1]
             else:
-                self.preds[t - window_len] = preds
-                self.cov[t - window_len] = cov_x5
-
-            if verbose == True:
-                self.state_sequence = state_sequence
-                self.posteriors = posteriors
-                self.mu, self.covariances = mu, cov
-                self.cov_x1, self.cov_x2, self.cov_x3, self.cov_x4 = cov_x1, cov_x2, cov_x3, cov_x4
+                self.preds[t - window_len] = pred_mu
+                self.cov[t - window_len] = pred_cov
 
         return self.preds, self.cov
 
