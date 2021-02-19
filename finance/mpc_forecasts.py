@@ -50,9 +50,9 @@ class Backtester:
         self.n_states = model.n_states
         self.n_assets = self.df_rets.shape[1]
 
-    def get_asset_dist(self, df, state_sequence):
+    def get_cond_asset_dist(self, df, state_sequence):
         """
-        Compute multivariate normal distribution of all assets in each state.
+        Compute conditional multivariate normal distribution of all assets in each state.
 
         Assumes returns follow a multivariate log-normal distribution. Proceeds by first
         getting the conditional log of means and covariances and then transforming them
@@ -82,16 +82,16 @@ class Backtester:
 
         # Loop through n_states present in current sample
         for s in log_mu.index:
-            try:
-                if state_count > 1:  # If state_count not >1, covariance will return NaN
-                    mu[s], cov[s] = self.logcov_to_cov(log_mu.loc[s], log_cov.loc[s])
+            if state_count[s] > 1:  # If state_count not >1, covariance will return NaN
+                mu[s], cov[s] = self.logcov_to_cov(log_mu.loc[s], log_cov.loc[s])
+            """
             except:
                 print('s: ', s)
                 print('log mu:')
                 print(log_mu)
                 print('log COV:')
                 print(log_cov)
-
+            """
         return mu, cov
 
     @staticmethod
@@ -113,13 +113,13 @@ class Backtester:
         """
         diag = np.diag(log_cov)
         mu = np.exp(log_mu + np.diag(log_cov)/2) - 1
-        x1 = np.outer(mu, mu)
+        x1 = np.outer(mu, mu)  # Multiply all combinations of the vector mu -> 2-D array
         x2 = np.outer(diag, diag) / 2
         cov = np.exp(x1+x2) * (np.exp(log_cov) - 1)
 
         return mu, cov
 
-    def rolling_backtest_hmm(self, X, df, n_preds=15, window_len=1500, progress_bar=True, debug=False):
+    def rolling_backtest_hmm(self, X, df, n_preds=15, window_len=1500, progress_bar=True, verbose=False):
         """
         Backtest based on rolling windows.
 
@@ -133,7 +133,7 @@ class Backtester:
         n_preds
         window_len
         progress_bar
-        debug
+        verbose
 
         Returns
         -------
@@ -152,21 +152,12 @@ class Backtester:
             df_rolling = df.iloc[t - window_len:t]
             X_rolling = X.iloc[t - window_len:t]
 
-            self.model.fit(X_rolling)
-            if self.model.is_fitted == False:  # Check if model is fitted
-                print(f'refitting at t: {t}...')
-                max_iter = self.model.max_iter
-                self.model.max_iter = max_iter * 2  # Double amount of iterations
-                self.model.fit(X_rolling)  # Try fitting again
-                self.model.max_iter = max_iter  # Reset max_iter back to user-input
-                if self.model.is_fitted == False:
-                    print(f'NOT FITTED at t: {t} -- mu {self.model.mu} -- tpm {np.diag(self.model.tpm)}')
+            # fit model, return decoded historical state sequnce and n predictions
+            # state_sequence is 1D-array with same length as X_rolling
+            # posteriors is 2D-array with shape (n_preds, n_states)
+            state_sequence, posteriors = self.model.fit_predict(X_rolling, n_preds=n_preds, verbose=verbose)
 
-            state_sequence = self.model.decode(X_rolling)  # 1darray with most likely state sequence
-
-            # Posterior probability of being in state j at time t
-            posteriors = self.model.predict_proba(n_preds)  # 2-D array of shape (n_preds, n_states)
-            mu, cov = self.get_asset_dist(df_rolling, state_sequence)  # shapes (n_states, n_assets), (n_states, n_assets, n_assets)
+            mu, cov = self.get_cond_asset_dist(df_rolling, state_sequence)  # shapes (n_states, n_assets), (n_states, n_assets, n_assets)
             preds = np.inner(mu.T, posteriors).T  # shape (n_preds, n_assets)
 
             cov_x1 = np.inner(posteriors, cov.T)  # shape (n_preds, n_assets, n_assets)
@@ -177,7 +168,6 @@ class Backtester:
 
             if np.any(np.isnan(preds)) == True:
                 print('t: ', t)
-                print('posteriors: ', posteriors)
                 print(preds)
                 print(f'NaNs in cov: {np.any(np.isnan(cov_x5))} -- NaNs in posteriors: {np.any(np.isnan(posteriors))} ')
 
@@ -188,7 +178,7 @@ class Backtester:
                 self.preds[t - window_len] = preds
                 self.cov[t - window_len] = cov_x5
 
-            if debug == True:
+            if verbose == True:
                 self.state_sequence = state_sequence
                 self.posteriors = posteriors
                 self.mu, self.covariances = mu, cov
@@ -205,7 +195,7 @@ if __name__ == "__main__":
     model1 = EMHiddenMarkov(n_states=2, init="random", random_state=42, epochs=20, max_iter=50)
     backtester = Backtester(model1, X, df_ret)
 
-    backtester.rolling_backtest_hmm(X, df_ret, debug=True)
+    backtester.rolling_backtest_hmm(X, df_ret, verbose=True)
 
     np.save('../data/rolling_preds.npy', backtester.preds)
     np.save('../data/rolling_cov.npy', backtester.cov)

@@ -155,7 +155,7 @@ class BaseHiddenMarkov(BaseEstimator):
 
         # For all states evaluate the density function
         for j in range(self.n_states):
-            if self.std[j] == np.nan or self.std[j] == 0. or self.std < 0.:
+            if self.std[j] == np.nan or self.std[j] == 0. or self.std[j] < 0.:
                 continue  # If std has non-standard value keep the probs at zero and go to next loop
             log_probs[:, j] = stats.norm.logpdf(X, loc=self.mu[j], scale=self.std[j])
 
@@ -165,6 +165,39 @@ class BaseHiddenMarkov(BaseEstimator):
         self.log_emission_probs_ = log_probs
 
         return probs, log_probs
+
+    def fit_predict(self, X, n_preds=15, verbose=False):
+        """
+        Fit model, then decode states and make n predictions.
+        Wraps .fit(), .decode() and .predict_proba() into one method.
+
+        Parameters
+        ----------
+        X : ndarray of shape (n_samples,)
+            Data to be fitted.
+        n_preds : int, default=15
+            Number of time steps to look forward from current time
+
+        Returns
+        -------
+
+        """
+        self.fit(X)
+        if self.is_fitted == False:  # Check if model is fitted
+            print(f'refitting at t: {t}...')
+            max_iter = self.max_iter
+            self.max_iter = max_iter * 2  # Double amount of iterations
+            self.fit(X_rolling)  # Try fitting again
+            self.max_iter = max_iter  # Reset max_iter back to user-input
+            if self.is_fitted == False and verbose == True:
+                print(f'NOT FITTED at t: {t} -- mu {self.mu} -- tpm {np.diag(self.tpm)}')
+
+        state_sequence = self.decode(X)  # 1darray with most likely state sequence
+
+        # Posterior probability of being in state j at time t
+        posteriors = self.predict_proba(n_preds)  # 2-D array of shape (n_preds, n_states)
+
+        return state_sequence, posteriors
 
     def sample(self, n_samples, n_sequences=1, hmm_params=None):
         '''
@@ -237,14 +270,14 @@ class BaseHiddenMarkov(BaseEstimator):
         state_preds = self._viterbi(X)
         return state_preds
 
-    def predict_proba(self, n_preds=1):
+    def predict_proba(self, n_preds=15):
         """
         Compute the probability P(St+h = i | X^T = x^T).
         Calculates the probability of being in state i at future time step h given a specific observation sequence up untill time T.
 
         Parameters
         ----------
-        n_preds : int, default=1
+        n_preds : int, default=15
             Number of time steps to look forward from current time
 
         Returns
@@ -335,6 +368,12 @@ class BaseHiddenMarkov(BaseEstimator):
                                             np.log(self.tpm),
                                             self.log_emission_probs_)
         return state_sequence.astype(np.int32)
+
+    def fit(self, X):
+        """
+        fit model to data. Defined in respective child classes
+        """
+        pass
 
 
 if __name__ == '__main__':

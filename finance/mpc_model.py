@@ -120,6 +120,7 @@ class MPC:
         # Note this loop is very cpu-light since no actual computations takes place inside it
         for t in range(1, weights.shape[0]):
             # sum problem objectives. Weights are shifted 1 period forward compared to self.rets
+            # Concatenates objective and constraints in lists
             objective += self.single_period_objective_func(weights[t], weights[t-1], self.rets[t-1])
             constr += self.single_period_constraints(weights[t])  # Concatenate constraints
 
