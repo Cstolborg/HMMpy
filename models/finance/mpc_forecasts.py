@@ -13,24 +13,25 @@ In Backtester.get_asset_dist when only 1 state is present the other takes on mea
 values of 0 and covariances of 0. Is this a good result ?
 
 Sometimes a state is not vistited or only has 1 observation in which case covariance matrix will return null results.
-We need a solution for this.
+We need a solution for this; currently setting it equal to zero in those cases.
 
+Better integration with MPC step 3-4. Find way to standarize times.
 """
 
-class Backtester:
+class FinanceHMM:
     """
-    Backtester for Hidden Markov Models.
+    Class to compute multivariate mixture distributions from n_assets based on a given HMM.
 
     Computes posteriors, state sequences as well as expected and forecasted returns and standard deviations.
 
     Parameters
     ----------
-    model : hidden markov model
-        Hidden Markov Model object.
     X : ndarray of shape (n_samples,)
         Times series data used to train the HMM.
-    df_rets : DataFrame of shape (n_samples, n_assets)
+    df : DataFrame of shape (n_samples, n_assets)
         Times series data used when estimating expected returns and covariances.
+    model : hidden markov model
+        Hidden Markov Model object.
 
     Attributes
     ----------
@@ -39,16 +40,11 @@ class Backtester:
     cov : ndarray of shape(n_samples-window_len, n_preds, n_assets, n_assets)
         predicted covariance matrix h time steps into the future at each time t.
     """
-    def __init__(self, model, X, df_rets):
+
+    def __init__(self, model):
         self.model = model
-        self.X = X
-        self.df_rets = df_rets
-
-        self.preds = None
-        self.cov = None
-
         self.n_states = model.n_states
-        self.n_assets = self.df_rets.shape[1]
+        self.n_assets = None
 
     def get_cond_asset_dist(self, df, state_sequence):
         """
@@ -72,6 +68,7 @@ class Backtester:
         cov : ndarray of shape (n_states, n_assets, n_assets)
             Conditional covariance matrix
         """
+        self.n_assets = df.shape[1]
         df['state_sequence'] = state_sequence
         groupby_state = df.groupby('state_sequence')
         log_mu, log_cov = groupby_state.mean(), groupby_state.cov()
@@ -141,10 +138,10 @@ class Backtester:
             Covariance matrix
         """
         diag = np.diag(log_cov)
-        mu = np.exp(log_mu + np.diag(log_cov)/2) - 1
+        mu = np.exp(log_mu + np.diag(log_cov) / 2) - 1
         x1 = np.outer(mu, mu)  # Multiply all combinations of the vector mu -> 2-D array
         x2 = np.outer(diag, diag) / 2
-        cov = np.exp(x1+x2) * (np.exp(log_cov) - 1)
+        cov = np.exp(x1 + x2) * (np.exp(log_cov) - 1)
 
         return mu, cov
 
@@ -172,7 +169,7 @@ class Backtester:
         pred_cov : ndarray of shape (n_preds, n_assets, n_assets)
             Conditional covariance matrix
         """
-
+        self.n_assets = df.shape[1]
         # fit model, return decoded historical state sequnce and n predictions
         # state_sequence is 1D-array with same length as X_rolling
         # posteriors is 2D-array with shape (n_preds, n_states)
@@ -189,7 +186,28 @@ class Backtester:
 
         return pred_mu, pred_cov, posteriors, state_sequence
 
-    def rolling_backtest_hmm(self, X, df, n_preds=15, window_len=1500, progress_bar=True, verbose=False):
+
+class Backtester:
+    """
+    Backtester for Hidden Markov Models.
+
+    Parameters
+    ----------
+
+    Attributes
+    ----------
+    preds : ndarray of shape (n_samples-window_len, n_preds, n_assets)
+        mean predictions for each asset h time steps into the future at each time t.
+    cov : ndarray of shape(n_samples-window_len, n_preds, n_assets, n_assets)
+        predicted covariance matrix h time steps into the future at each time t.
+    """
+    def __init__(self):
+        self.preds = None
+        self.cov = None
+        self.n_states = None
+        self.n_assets = None
+
+    def rolling_backtest_hmm(self, X, df, model, n_preds=15, window_len=1500, verbose=False):
         """
         Backtest based on rolling windows.
 
@@ -198,12 +216,17 @@ class Backtester:
 
         Parameters
         ----------
-        X
-        df
-        n_preds
-        window_len
-        progress_bar
-        verbose
+        X : ndarray of shape (n_samples,)
+        Times series data used to train the HMM.
+        df : DataFrame of shape (n_samples, n_assets)
+            Times series data used when estimating expected returns and covariances.
+        model : hidden markov model
+            Hidden Markov Model object
+        n_preds : int, default=15
+            Number of h predictions
+        window_len : int, default=1500
+        verbose : boolean, default=False
+            Make output verbose
 
         Returns
         -------
@@ -212,6 +235,9 @@ class Backtester:
         cov : ndarray of shape (n_samples-window_len, n_preds, n_assets, n_assets)
             Unconditional covariance matrix at each time step t, h steps into future
         """
+        self.n_states = model.n_states
+        self.n_assets = df.shape[1]
+        finance_hmm = FinanceHMM(model)  # class for computing asset distributions and predictions.
 
         # Create 3- and 4-D array to store predictions and covariances
         self.preds = np.empty(shape=(len(df) - window_len, n_preds, self.n_assets))  # 3-D array
@@ -223,14 +249,15 @@ class Backtester:
             X_rolling = X.iloc[t - window_len:t]
 
             # fit rolling data with model, return predicted means and covariances, posteriors and state sequence
-            pred_mu, pred_cov, posteriors, state_sequence = self.fit_model_get_uncond_dist(X_rolling, df_rolling, n_preds=n_preds, verbose=verbose)
+            pred_mu, pred_cov, posteriors, state_sequence = \
+                finance_hmm.fit_model_get_uncond_dist(X_rolling, df_rolling, n_preds=n_preds, verbose=verbose)  # TODO why is this giving a warning?
 
             if np.any(np.isnan(pred_mu)) == True:
                 print('t: ', t)
                 print(pred_mu)
                 print(f'NaNs in cov: {np.any(np.isnan(pred_cov))} -- NaNs in posteriors: {np.any(np.isnan(posteriors))} ')
 
-                # TODO this is a quick fix and must be solved better in cases where no solutins are found!
+                # TODO this is a quick fix and must be solved better in cases when no solutions are found.
                 self.preds[t - window_len] = self.preds[t - window_len - 1]
                 self.cov[t - window_len] = self.cov[t - window_len - 1]
             else:
@@ -246,9 +273,9 @@ if __name__ == "__main__":
     X = df_ret["MSCI World"]
 
     model1 = EMHiddenMarkov(n_states=2, init="random", random_state=42, epochs=20, max_iter=50)
-    backtester = Backtester(model1, X, df_ret)
+    backtester = Backtester()
 
-    backtester.rolling_backtest_hmm(X, df_ret, verbose=True)
+    backtester.rolling_backtest_hmm(X, df_ret, model1, verbose=True)
 
     np.save('../data/rolling_preds.npy', backtester.preds)
     np.save('../data/rolling_cov.npy', backtester.cov)

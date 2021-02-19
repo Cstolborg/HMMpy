@@ -189,7 +189,7 @@ class BaseHiddenMarkov(BaseEstimator):
             if self.is_fitted == False and verbose == True:
                 print(f'NOT FITTED -- mu {self.mu} -- std {self.std} -- tpm {np.diag(self.tpm)}')
 
-        state_sequence = self.decode(X)  # 1darray with most likely state sequence
+        state_sequence = self.decode(X)  # 1D-array with most likely state sequence
 
         # Posterior probability of being in state j at time t
         posteriors = self.predict_proba(n_preds)  # 2-D array of shape (n_preds, n_states)
@@ -284,6 +284,9 @@ class BaseHiddenMarkov(BaseEstimator):
         """
 
         llk, log_alphas = self._log_forward_proba() # Compute scaled log-likelihood
+
+        # Same as posterior at terminal time. Subtracting llk to get unscaled probability.
+        # Since backward_proba = 1 at last time step, this is omitted
         state_pred_t = np.exp(log_alphas[-1, :] - llk)
 
         state_preds = np.zeros(shape=(n_preds, self.n_states))  # Init matrix of predictions
@@ -316,6 +319,7 @@ class BaseHiddenMarkov(BaseEstimator):
     def _log_forward_proba(self):
         """
         Compute log forward probabilities in scaled form.
+
         Forward probability is essentially the joint probability of observing
         a state = i and observation sequences x^t=x_1...x_t, i.e. P(St=i , X^t=x^t).
         Follows the method by Zucchini A.1.8 p 334.
@@ -325,7 +329,7 @@ class BaseHiddenMarkov(BaseEstimator):
         log-likelihood : float
             log-likehood of given HMM parameters
         log of forward probabilities : ndarray of shape (n_samples, n_states)
-            Array of the log of forward probabilities at each time step
+            Array of the scaled log of forward probabilities at each time step.
         """
         n_obs, n_states = self.log_emission_probs_.shape
         log_alphas = np.zeros((n_obs, n_states))
