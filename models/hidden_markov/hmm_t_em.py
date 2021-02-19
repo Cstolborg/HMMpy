@@ -28,7 +28,6 @@ class EMTHiddenMarkov(EMHiddenMarkov):
         """
         T = len(X)
         log_probs = np.zeros((T, self.n_states))  # Init N X M matrix
-        probs = np.zeros((T, self.n_states))
 
         # For all states evaluate the density function
         # In the last state, i.e. the high variance state use a t-dist
@@ -39,6 +38,9 @@ class EMTHiddenMarkov(EMHiddenMarkov):
                 log_probs[:, j] = stats.t.logpdf(X, loc=self.mu[j], scale=self.std[j], df=self.dof)
 
         probs = np.exp(log_probs)
+
+        self.emission_probs_ = probs
+        self.log_emission_probs_ = log_probs
 
         return probs, log_probs
 
@@ -89,9 +91,9 @@ if __name__ == '__main__':
     returns, true_regimes = simulate_2state_gaussian(plotting=False)  # Simulate some X in two states from normal distributions
 
     model.fit(returns, verbose=0)
-    states, posteriors = model.decode(returns)
+    states = model.decode(returns)
 
-    plotting = True
+    plotting = False
     if plotting == True:
         fig, ax = plt.subplots(nrows=2, ncols=1)
         ax[0].plot(posteriors[:, 0], label='Posteriors state 1', )

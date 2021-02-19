@@ -282,12 +282,12 @@ if __name__ == "__main__":
     #df_rets = df_ret.iloc[:5]
 
     df_ret = df_ret.iloc[1500:]
-    preds = np.load('../data/rolling_preds.npy')
-    cov = np.load('../data/rolling_cov.npy')
+    preds = np.load('../../data/rolling_preds.npy')
+    cov = np.load('../../data/rolling_cov.npy')
 
     model = MPCBacktester(df_ret, preds, cov)
     weights, port_val, gamma = model.backtest()
 
-    np.save('../data/mpc_weights.npy', weights)
-    np.save('../data/port_val.npy', port_val)
+    np.save('../../data/mpc_weights.npy', weights)
+    np.save('../../data/port_val.npy', port_val)
 

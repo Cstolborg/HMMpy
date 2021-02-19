@@ -2,7 +2,7 @@ import numpy as np; np.seterr(divide='ignore')
 import pandas as pd; pd.set_option('display.max_columns', 10); pd.set_option('display.width', 320)
 import tqdm
 
-from hmm_models.hmm_gaussian_em import EMHiddenMarkov
+from models.hidden_markov.hmm_gaussian_em import EMHiddenMarkov
 from utils.data_prep import load_data_get_logret
 
 import warnings

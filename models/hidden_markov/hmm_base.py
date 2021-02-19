@@ -2,12 +2,9 @@ import numpy as np
 from scipy import stats
 from scipy.special import logsumexp
 from sklearn.base import BaseEstimator
-import matplotlib.pyplot as plt
-
-from utils.simulate_returns import simulate_2state_gaussian
 
 import pyximport; pyximport.install()  # TODO can only be active during development -- must be done through setup.py
-from hmm_models import hmm_cython
+from models.hidden_markov import hmm_cython
 
 """ TODO
 
@@ -40,7 +37,7 @@ class BaseHiddenMarkov(BaseEstimator):
     random_state : int, default = 42
         Parameter set to recreate output
     init : str
-        Set to 'kmeans++' to use that init method - only supported for jump hmm_models.
+        Set to 'kmeans++' to use that init method - only supported for jump hidden_markov.
         Set to 'random' for random initialization.
         Set to "deterministic" for deterministic init.
 
@@ -184,13 +181,13 @@ class BaseHiddenMarkov(BaseEstimator):
         """
         self.fit(X)
         if self.is_fitted == False:  # Check if model is fitted
-            print(f'refitting at t: {t}...')
+            print(f'refitting with double max_iter')
             max_iter = self.max_iter
             self.max_iter = max_iter * 2  # Double amount of iterations
-            self.fit(X_rolling)  # Try fitting again
+            self.fit(X)  # Try fitting again
             self.max_iter = max_iter  # Reset max_iter back to user-input
             if self.is_fitted == False and verbose == True:
-                print(f'NOT FITTED at t: {t} -- mu {self.mu} -- tpm {np.diag(self.tpm)}')
+                print(f'NOT FITTED -- mu {self.mu} -- std {self.std} -- tpm {np.diag(self.tpm)}')
 
         state_sequence = self.decode(X)  # 1darray with most likely state sequence
 

@@ -1,12 +1,9 @@
-import os
 import numpy as np
 from numpy import ndarray
 from scipy.special import logsumexp
-from scipy import stats
-import matplotlib.pyplot as plt
 
 from utils.simulate_returns import simulate_2state_gaussian
-from hmm_models.hmm_base import BaseHiddenMarkov
+from models.hidden_markov.hmm_base import BaseHiddenMarkov
 
 from multiprocessing import Pool
 
