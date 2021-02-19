@@ -1,6 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+import warnings
+warnings.filterwarnings('ignore')
+
 def plot_samples_states(samples, states, show=True):
     fig, ax = plt.subplots(nrows=2, ncols=1)
     ax[0].plot(samples, label='Sample returns', )
