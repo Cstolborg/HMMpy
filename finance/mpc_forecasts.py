@@ -148,6 +148,47 @@ class Backtester:
 
         return mu, cov
 
+    def fit_model_get_uncond_dist(self, X, df, n_preds=15, verbose=False):
+        """
+        From data, fit hmm model, predict posteriors probabilities and return unconditional distribution.
+
+        Wraps model.fit_predict, get_cond_asset_dist and get_uncond_asset_dist methods into one.
+
+        Parameters
+        ----------
+        X : ndarray of shape (n_samples,)
+            Time series of data
+        df : DataFrame of shape (n_samples, n_assets)
+            Historical returns for each asset i.
+        n_preds : int, default=15
+            Number of h predictions
+        verbose : boolean, default=False
+            Get verbose output
+
+        Returns
+        -------
+        pred_mu : ndarray of shape (n_preds, n_assets)
+            Conditional mean value of each assets
+        pred_cov : ndarray of shape (n_preds, n_assets, n_assets)
+            Conditional covariance matrix
+        """
+
+        # fit model, return decoded historical state sequnce and n predictions
+        # state_sequence is 1D-array with same length as X_rolling
+        # posteriors is 2D-array with shape (n_preds, n_states)
+        state_sequence, posteriors = self.model.fit_predict(X, n_preds=n_preds, verbose=verbose)
+
+        # Compute conditional mixture distributions in rolling period
+        cond_mu, cond_cov = self.get_cond_asset_dist(df,
+                                                     state_sequence)  # shapes (n_states, n_assets), (n_states, n_assets, n_assets)
+
+        # Transform into unconditional moments at time t
+        # Combine with posteriors to also predict moments h steps into future
+        # shapes (n_preds, n_assets), (n_preds, n_assets, n_assets)
+        pred_mu, pred_cov = self.get_uncond_asset_dist(posteriors, cond_mu, cond_cov)
+
+        return pred_mu, pred_cov, posteriors, state_sequence
+
     def rolling_backtest_hmm(self, X, df, n_preds=15, window_len=1500, progress_bar=True, verbose=False):
         """
         Backtest based on rolling windows.
@@ -181,17 +222,8 @@ class Backtester:
             df_rolling = df.iloc[t - window_len:t]
             X_rolling = X.iloc[t - window_len:t]
 
-            # fit model, return decoded historical state sequnce and n predictions
-            # state_sequence is 1D-array with same length as X_rolling
-            # posteriors is 2D-array with shape (n_preds, n_states)
-            state_sequence, posteriors = self.model.fit_predict(X_rolling, n_preds=n_preds, verbose=verbose)
-
-            # Compute conditional mixture distributions in rolling period
-            cond_mu, cond_cov = self.get_cond_asset_dist(df_rolling, state_sequence)  # shapes (n_states, n_assets), (n_states, n_assets, n_assets)
-
-            # Transform into unconditional moments at time t
-            # Combine with posteriors to also predict moments h steps into future
-            pred_mu, pred_cov = self.get_uncond_asset_dist(posteriors, cond_mu, cond_cov)  # shapes (n_preds, n_assets), (n_preds, n_assets, n_assets)
+            # fit rolling data with model, return predicted means and covariances, posteriors and state sequence
+            pred_mu, pred_cov, posteriors, state_sequence = self.fit_model_get_uncond_dist(X_rolling, df_rolling, n_preds=n_preds, verbose=verbose)
 
             if np.any(np.isnan(pred_mu)) == True:
                 print('t: ', t)

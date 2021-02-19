@@ -117,7 +117,7 @@ class EMHiddenMarkov(BaseHiddenMarkov):
         ----------
         X : ndarray of shape (n_samples,)
             Time series of data
-        Verbose : boolean
+        verbose : boolean
             False / True for extra information regarding the function.
 
         Returns
