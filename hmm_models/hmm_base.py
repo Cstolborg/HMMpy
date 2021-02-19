@@ -9,6 +9,14 @@ from utils.simulate_returns import simulate_2state_gaussian
 import pyximport; pyximport.install()  # TODO can only be active during development -- must be done through setup.py
 from hmm_models import hmm_cython
 
+""" TODO
+
+Which emission probs are used after a model is fitted?
+
+When only 1 states exists 
+
+"""
+
 
 class BaseHiddenMarkov(BaseEstimator):
     """
@@ -62,13 +70,13 @@ class BaseHiddenMarkov(BaseEstimator):
         self.start_proba = None
         self.mu = None
         self.std = None
+        self.is_fitted = False
 
         np.random.seed(self.random_state)
 
     def _init_params(self, X=None, diag_uniform_dist = (.7, .99), output_hmm_params=True):
         """
-        Function to initialize HMM parameters. Can do so using kmeans++, randomly
-        or completely deterministic.
+        Function to initialize HMM parameters. Can do so using kmeans++, randomly or deterministic.
 
         Parameters
         ----------
@@ -90,8 +98,7 @@ class BaseHiddenMarkov(BaseEstimator):
             remaining_row_nums = (1 - np.diag(trans_prob)) / (
                         self.n_states - 1)  # Spread the remaining mass evenly onto remaining row values
             trans_prob += remaining_row_nums.reshape(-1, 1)  # Add this to the uniform diagonal matrix
-            np.fill_diagonal(trans_prob,
-                             trans_prob.diagonal() - remaining_row_nums)  # And subtract these numbers from the diagonal so it remains uniform
+            np.fill_diagonal(trans_prob, trans_prob.diagonal() - remaining_row_nums)  # And subtract these numbers from the diagonal so it remains uniform
 
             # initial distribution
             init_dist = np.ones(self.n_states) / np.sum(self.n_states)  # initial distribution 1 X N vector
@@ -148,6 +155,8 @@ class BaseHiddenMarkov(BaseEstimator):
 
         # For all states evaluate the density function
         for j in range(self.n_states):
+            if self.std[j] == np.nan or self.std[j] == 0. or self.std[j] < 0.:
+                continue  # If std has non-standard value keep the probs at zero and go to next loop
             log_probs[:, j] = stats.norm.logpdf(X, loc=self.mu[j], scale=self.std[j])
 
         probs = np.exp(log_probs)
@@ -156,6 +165,39 @@ class BaseHiddenMarkov(BaseEstimator):
         self.log_emission_probs_ = log_probs
 
         return probs, log_probs
+
+    def fit_predict(self, X, n_preds=15, verbose=False):
+        """
+        Fit model, then decode states and make n predictions.
+        Wraps .fit(), .decode() and .predict_proba() into one method.
+
+        Parameters
+        ----------
+        X : ndarray of shape (n_samples,)
+            Data to be fitted.
+        n_preds : int, default=15
+            Number of time steps to look forward from current time
+
+        Returns
+        -------
+
+        """
+        self.fit(X)
+        if self.is_fitted == False:  # Check if model is fitted
+            print(f'refitting at t: {t}...')
+            max_iter = self.max_iter
+            self.max_iter = max_iter * 2  # Double amount of iterations
+            self.fit(X_rolling)  # Try fitting again
+            self.max_iter = max_iter  # Reset max_iter back to user-input
+            if self.is_fitted == False and verbose == True:
+                print(f'NOT FITTED at t: {t} -- mu {self.mu} -- tpm {np.diag(self.tpm)}')
+
+        state_sequence = self.decode(X)  # 1darray with most likely state sequence
+
+        # Posterior probability of being in state j at time t
+        posteriors = self.predict_proba(n_preds)  # 2-D array of shape (n_preds, n_states)
+
+        return state_sequence, posteriors
 
     def sample(self, n_samples, n_sequences=1, hmm_params=None):
         '''
@@ -228,14 +270,14 @@ class BaseHiddenMarkov(BaseEstimator):
         state_preds = self._viterbi(X)
         return state_preds
 
-    def predict_proba(self, n_preds=1):
+    def predict_proba(self, n_preds=15):
         """
         Compute the probability P(St+h = i | X^T = x^T).
         Calculates the probability of being in state i at future time step h given a specific observation sequence up untill time T.
 
         Parameters
         ----------
-        n_preds : int, default=1
+        n_preds : int, default=15
             Number of time steps to look forward from current time
 
         Returns
@@ -249,7 +291,7 @@ class BaseHiddenMarkov(BaseEstimator):
 
         state_preds = np.zeros(shape=(n_preds, self.n_states))  # Init matrix of predictions
         for t in range(n_preds):
-            state_preds[t] = state_pred_t @ self.tpm
+            state_preds[t] = state_pred_t = state_pred_t @ self.tpm
 
         return state_preds
 
@@ -283,10 +325,10 @@ class BaseHiddenMarkov(BaseEstimator):
 
         Returns
         -------
-        log-likelihood: float
+        log-likelihood : float
             log-likehood of given HMM parameters
-        log of forward probabilities: ndarray of shape (n_samples, n_states)
-            Array of the log of forward probabilties at each time step
+        log of forward probabilities : ndarray of shape (n_samples, n_states)
+            Array of the log of forward probabilities at each time step
         """
         n_obs, n_states = self.log_emission_probs_.shape
         log_alphas = np.zeros((n_obs, n_states))
@@ -326,6 +368,12 @@ class BaseHiddenMarkov(BaseEstimator):
                                             np.log(self.tpm),
                                             self.log_emission_probs_)
         return state_sequence.astype(np.int32)
+
+    def fit(self, X):
+        """
+        fit model to data. Defined in respective child classes
+        """
+        pass
 
 
 if __name__ == '__main__':

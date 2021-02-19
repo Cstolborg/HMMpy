@@ -2,14 +2,6 @@ import numpy as np
 from scipy import stats
 import matplotlib.pyplot as plt
 
-""" TODO
-
-We need to be able to sample from a HMM not just from two combined distributions.
-
-Need a sampling function that is easily adapted to N states and any conditional dists.
-  - Incl. t distributions.
-
-"""
 
 def simulate_2state_gaussian(N=200, means=None, std=None, plotting=False, random_state=42):
     '''Simulate data for bull and bear market using Normal distribution

@@ -37,7 +37,6 @@ class JumpHMM(BaseHiddenMarkov):
         self.theta = None
         self.state_seq = None
         self.n_features = None
-        self.is_fitted = False
 
     def _init_params(self, X=None, diag_uniform_dist=(.7, .99), output_hmm_params=False):
         super()._init_params()
