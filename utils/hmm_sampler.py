@@ -1,19 +1,14 @@
 import numpy as np
 from scipy import stats
-from scipy.linalg import fractional_matrix_power
-import matplotlib.pyplot as plt
 
-
-from utils import plotting
-from hmm_models.hmm_base import BaseHiddenMarkov
+from models.hidden_markov.hmm_base import BaseHiddenMarkov
 
 import pyximport; pyximport.install()  # TODO can only be active during development -- must be done through setup.py
-from hmm_models import hmm_cython
 
 
 class SampleHMM(BaseHiddenMarkov):
     """
-    Class to handle sampling from HMM hmm_models with predefined parameters.
+    Class to handle sampling from HMM hidden_markov with predefined parameters.
     
 
     Parameters
@@ -109,7 +104,7 @@ class SampleHMM(BaseHiddenMarkov):
     def sample_with_viterbi(self, n_samples, n_sequences=1):
         samples, true_states = self.sample(n_samples, n_sequences)
 
-        viterbi_states = np.empty(shape=(n_samples, n_sequences), dtype=np.float)
+        viterbi_states = np.empty(shape=(n_samples, n_sequences), dtype=float)
         if n_sequences == 1:
             viterbi_states = self.decode(samples)
         else:
