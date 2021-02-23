@@ -3,7 +3,8 @@ import pandas as pd; pd.set_option('display.max_columns', 10); pd.set_option('di
 import tqdm
 
 from models.hidden_markov.hmm_gaussian_em import EMHiddenMarkov
-from utils.data_prep import load_data_get_logret
+from models.finance.mpc_model import MPC
+from utils.data_prep import load_data_get_ret , load_data_get_logret
 
 import warnings
 warnings.filterwarnings('ignore')
@@ -15,7 +16,7 @@ values of 0 and covariances of 0. Is this a good result ?
 Sometimes a state is not vistited or only has 1 observation in which case covariance matrix will return null results.
 We need a solution for this; currently setting it equal to zero in those cases.
 
-Better integration with MPC step 3-4. Find way to standarize times.
+Double check times match, i.e. no forward bias.
 """
 
 class FinanceHMM:
@@ -201,13 +202,14 @@ class Backtester:
     cov : ndarray of shape(n_samples-window_len, n_preds, n_assets, n_assets)
         predicted covariance matrix h time steps into the future at each time t.
     """
-    def __init__(self):
+    def __init__(self, window_len=1500):
         self.preds = None
         self.cov = None
         self.n_states = None
         self.n_assets = None
+        self.window_len = window_len
 
-    def rolling_backtest_hmm(self, X, df, model, n_preds=15, window_len=1500, verbose=False):
+    def rolling_backtest_hmm(self, X, df_logret, model, n_preds=15, window_len=None, verbose=False):
         """
         Backtest based on rolling windows.
 
@@ -217,9 +219,9 @@ class Backtester:
         Parameters
         ----------
         X : ndarray of shape (n_samples,)
-        Times series data used to train the HMM.
-        df : DataFrame of shape (n_samples, n_assets)
-            Times series data used when estimating expected returns and covariances.
+        Log-returns. Times series data used to train the HMM.
+        df_logret : DataFrame of shape (n_samples, n_assets)
+            Log-returns. Times series data used when estimating expected returns and covariances.
         model : hidden markov model
             Hidden Markov Model object
         n_preds : int, default=15
@@ -236,17 +238,24 @@ class Backtester:
             Unconditional covariance matrix at each time step t, h steps into future
         """
         self.n_states = model.n_states
-        self.n_assets = df.shape[1]
+        self.n_assets = df_logret.shape[1]
+
+        if window_len == None:  # Ensure class and function window_lens match
+            window_len = self.window_len
+        else:
+            self.window_len = window_len
+
         finance_hmm = FinanceHMM(model)  # class for computing asset distributions and predictions.
 
         # Create 3- and 4-D array to store predictions and covariances
-        self.preds = np.empty(shape=(len(df) - window_len, n_preds, self.n_assets))  # 3-D array
-        self.cov = np.empty(shape=(len(df) - window_len, n_preds, self.n_assets, self.n_assets))  # 4-D array
+        self.preds = np.empty(shape=(len(df_logret) - window_len, n_preds, self.n_assets))  # 3-D array
+        self.cov = np.empty(shape=(len(df_logret) - window_len, n_preds, self.n_assets, self.n_assets))  # 4-D array
+        self.timestamp = np.empty(shape=len(df_logret) - window_len, dtype=object)
 
-        for t in tqdm.trange(window_len, len(df)):
+        for t in tqdm.trange(window_len, len(df_logret)):
             # Slice data into rolling sequences
-            df_rolling = df.iloc[t - window_len:t]
-            X_rolling = X.iloc[t - window_len:t]
+            df_rolling = df_logret.iloc[t-window_len: t]
+            X_rolling = X.iloc[t-window_len: t]
 
             # fit rolling data with model, return predicted means and covariances, posteriors and state sequence
             pred_mu, pred_cov, posteriors, state_sequence = \
@@ -261,21 +270,90 @@ class Backtester:
                 self.preds[t - window_len] = self.preds[t - window_len - 1]
                 self.cov[t - window_len] = self.cov[t - window_len - 1]
             else:
+                self.timestamp[t - window_len] = df_rolling.index[-1]
                 self.preds[t - window_len] = pred_mu
                 self.cov[t - window_len] = pred_cov
 
         return self.preds, self.cov
 
+    def backtest_mpc(self, df_rets, preds, covariances, n_preds=15, port_val=1000,
+                     start_weights=None, max_drawdown=0.4, gamma_0=5, kappa1=0.004,
+                     rho2=0.0005, max_holding=0.4, long_only=False, eps=0.0000001):
+        """
+       Wrapper for backtesting MPC models on given data and predictions.
+
+       Parameters
+       ----------
+       df_rets : DataFrame of shape (n_samples, n_assets)
+           Historical returns for each asset i.
+       preds : ndarray of shape (n_samples, n_preds, n_assets)
+           list of return predictions for each asset h time steps into the future. Each element in list contains,
+           from time t, predictions h time steps into the future.
+       covariances : ndarray of shape (n_samples, n_preds, n_assets, n_assets)
+           list of covariance matrix of returns for each time step t.
+       port_val : float, default=1000
+           Current portfolio value.
+       start_weights : ndarray of shape (n_assets,)
+           Current (known) portfolio weights at time t. Default is 100% allocation to cash.
+       """
+        self.port_val = np.array([0, port_val])
+        self.n_assets = df_rets.shape[1]
+        self.n_preds = n_preds
+
+        df_rets = df_rets.iloc[:self.window_len]
+
+        if start_weights == None:  # Standard init with 100% allocated to cash
+            start_weights = np.zeros(self.n_assets)
+            start_weights[-1] = 1.
+        else:
+            start_weights = start_weights
+
+        self.weights = np.zeros(shape=(len(preds) + 1, self.n_assets))
+        self.weights[0] = start_weights
+
+        gamma = np.array([])  # empty array
+
+        # TODO implement covariance predictions
+        # Instantiate MPC object
+        model = MPC(rets=preds[0], covariances=covariances[0, 0], prev_port_vals=self.port_val,
+                    start_weights=self.weights[0],
+                    max_drawdown=max_drawdown, gamma_0=gamma_0, kappa1=kappa1,
+                    rho2=rho2, max_holding=max_holding, long_only=long_only, eps=eps)
+
+        for t in tqdm.trange(preds.shape[0]):
+            # Update MPC object
+            model.rets = np.array(preds[t])
+            model.cov = np.array(covariances[t, 0])
+            model.start_weights = self.weights[t]
+
+            # Solve MPC problem at time t and save weights
+            weights_mpc = model.cvxpy_solver(verbose=False)  # ndarray of shape (n_preds, n_assets)
+            self.weights[t + 1] = weights_mpc[0]  # Only use first forecasted weights
+            gamma = np.append(gamma, model.gamma)
+
+            new_port_val = (self.weights[t + 1] @ (1 + df_rets.iloc[t])) * self.port_val[-1]
+            self.port_val = np.append(self.port_val, new_port_val)  # TODO double check time periods match
+
+        self.port_val = self.port_val[1:]  # Throw away first observations since it is artificially set to zero
+        self.gamma = gamma
+
+        return self.weights, self.port_val, gamma
+
 
 if __name__ == "__main__":
-    df_ret = load_data_get_logret()
+    df_logret = load_data_get_logret()
     #df_ret = df_ret.iloc[-1530:]
-    X = df_ret["MSCI World"]
+    X = df_logret["MSCI World"]
 
     model1 = EMHiddenMarkov(n_states=2, init="random", random_state=42, epochs=20, max_iter=50)
     backtester = Backtester()
 
-    backtester.rolling_backtest_hmm(X, df_ret, model1, verbose=True)
+    #preds, cov = backtester.rolling_backtest_hmm(X, df_logret, model1, verbose=True)
+    #np.save('../data/rolling_preds.npy', backtester.preds)
+    #np.save('../data/rolling_cov.npy', backtester.cov)
 
-    np.save('../data/rolling_preds.npy', backtester.preds)
-    np.save('../data/rolling_cov.npy', backtester.cov)
+    df_ret = load_data_get_ret()
+    preds = np.load('../../data/rolling_preds.npy')
+    cov = np.load('../../data/rolling_cov.npy')
+
+    weights, port_val, gamma = backtester.backtest_mpc(df_ret, preds, cov)
