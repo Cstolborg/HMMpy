@@ -17,6 +17,10 @@ Sometimes a state is not vistited or only has 1 observation in which case covari
 We need a solution for this; currently setting it equal to zero in those cases.
 
 Double check times match, i.e. no forward bias.
+
+Create some way to do in-sample crossvalidation for hyperparameters
+
+TRANSACTION COSTS: Do we subtract transaction_costs() method fom gross returns or multiply by (1-trans_costs)
 """
 
 class FinanceHMM:
@@ -209,7 +213,7 @@ class Backtester:
         self.n_assets = None
         self.window_len = window_len
 
-    def rolling_backtest_hmm(self, X, df_logret, model, n_preds=15, window_len=None, verbose=False):
+    def rolling_preds_cov_from_hmm(self, X, df_logret, model, n_preds=15, window_len=None, verbose=False):
         """
         Backtest based on rolling windows.
 
@@ -258,8 +262,9 @@ class Backtester:
             X_rolling = X.iloc[t-window_len: t]
 
             # fit rolling data with model, return predicted means and covariances, posteriors and state sequence
+            # noinspection PyTupleAssignmentBalance
             pred_mu, pred_cov, posteriors, state_sequence = \
-                finance_hmm.fit_model_get_uncond_dist(X_rolling, df_rolling, n_preds=n_preds, verbose=verbose)  # TODO why is this giving a warning?
+                finance_hmm.fit_model_get_uncond_dist(X_rolling, df_rolling, n_preds=n_preds, verbose=verbose)
 
             if np.any(np.isnan(pred_mu)) == True:
                 print('t: ', t)
@@ -278,14 +283,14 @@ class Backtester:
 
     def backtest_mpc(self, df_rets, preds, covariances, n_preds=15, port_val=1000,
                      start_weights=None, max_drawdown=0.4, gamma_0=5, kappa1=0.004,
-                     rho2=0.0005, max_holding=0.4, long_only=False, eps=0.0000001):
+                     rho2=0.0005, max_holding=0.4, long_only=False, eps=1e-6):
         """
        Wrapper for backtesting MPC models on given data and predictions.
 
        Parameters
        ----------
        df_rets : DataFrame of shape (n_samples, n_assets)
-           Historical returns for each asset i.
+           Historical returns for each asset i. Cash must be at the last column position.
        preds : ndarray of shape (n_samples, n_preds, n_assets)
            list of return predictions for each asset h time steps into the future. Each element in list contains,
            from time t, predictions h time steps into the future.
@@ -294,13 +299,14 @@ class Backtester:
        port_val : float, default=1000
            Current portfolio value.
        start_weights : ndarray of shape (n_assets,)
-           Current (known) portfolio weights at time t. Default is 100% allocation to cash.
+           Current (known) portfolio weights at the start of backtest. Default is 100% allocation to cash.
+           Cash must be the last column in df_rets.
        """
         self.port_val = np.array([0, port_val])
         self.n_assets = df_rets.shape[1]
         self.n_preds = n_preds
 
-        df_rets = df_rets.iloc[:self.window_len]
+        df_rets = df_rets.iloc[-len(preds):]  # Slice returns to match preds
 
         if start_weights == None:  # Standard init with 100% allocated to cash
             start_weights = np.zeros(self.n_assets)
@@ -315,45 +321,60 @@ class Backtester:
 
         # TODO implement covariance predictions
         # Instantiate MPC object
-        model = MPC(rets=preds[0], covariances=covariances[0, 0], prev_port_vals=self.port_val,
-                    start_weights=self.weights[0],
-                    max_drawdown=max_drawdown, gamma_0=gamma_0, kappa1=kappa1,
-                    rho2=rho2, max_holding=max_holding, long_only=long_only, eps=eps)
+        mpc_solver = MPC(rets=preds[0], covariances=covariances[0], prev_port_vals=self.port_val,
+                         start_weights=self.weights[0], max_drawdown=max_drawdown, gamma_0=gamma_0,
+                         kappa1=kappa1, rho2=rho2, max_holding=max_holding, long_only=long_only, eps=eps)
 
         for t in tqdm.trange(preds.shape[0]):
             # Update MPC object
-            model.rets = np.array(preds[t])
-            model.cov = np.array(covariances[t, 0])
-            model.start_weights = self.weights[t]
+            mpc_solver.rets = np.array(preds[t])
+            mpc_solver.cov = np.array(covariances[t])
+            mpc_solver.start_weights = self.weights[t]
 
             # Solve MPC problem at time t and save weights
-            weights_mpc = model.cvxpy_solver(verbose=False)  # ndarray of shape (n_preds, n_assets)
+            weights_mpc = mpc_solver.cvxpy_solver(verbose=False)  # ndarray of shape (n_preds, n_assets)
             self.weights[t + 1] = weights_mpc[0]  # Only use first forecasted weights
-            gamma = np.append(gamma, model.gamma)
+            gamma = np.append(gamma, mpc_solver.gamma)
+            delta_weights = self.weights[t] - self.weights[t-1]
 
-            new_port_val = (self.weights[t + 1] @ (1 + df_rets.iloc[t])) * self.port_val[-1]
-            self.port_val = np.append(self.port_val, new_port_val)  # TODO double check time periods match
+            gross_ret = (self.weights[t + 1] @ (1 + df_rets.iloc[t]))
+            trans_cost = self.transaction_costs(delta_weights, trans_cost=0.001)
+            new_port_val = gross_ret * (1-trans_cost) * self.port_val[-1] # TODO double check time periods match
+            self.port_val = np.append(self.port_val, new_port_val)
 
-        self.port_val = self.port_val[1:]  # Throw away first observations since it is artificially set to zero
+        self.port_val = self.port_val[1:]  # Throw away first observation since it is artificially set to zero
         self.gamma = gamma
 
         return self.weights, self.port_val, gamma
 
+    def transaction_costs(self, delta_weights, trans_cost=0.001):
+        """
+        Compute transaction costs. Assumes no costs in risk-free asset and there is a cost to
+        both buying and selling assets.
+        """
+        delta_weights = delta_weights[-1:]  # Remove risk-free asset as it doens't have trading costs
+        delta_weights = np.abs(delta_weights).sum()  # abs since same price for buying/selling
+
+        return delta_weights * trans_cost
+
 
 if __name__ == "__main__":
     df_logret = load_data_get_logret()
-    #df_ret = df_ret.iloc[-1530:]
     X = df_logret["MSCI World"]
 
     model1 = EMHiddenMarkov(n_states=2, init="random", random_state=42, epochs=20, max_iter=50)
     backtester = Backtester()
 
-    #preds, cov = backtester.rolling_backtest_hmm(X, df_logret, model1, verbose=True)
-    #np.save('../data/rolling_preds.npy', backtester.preds)
-    #np.save('../data/rolling_cov.npy', backtester.cov)
+    preds, cov = backtester.rolling_preds_cov_from_hmm(X, df_logret, model1, window_len=1500, verbose=True)
+    np.save('../../data/rolling_preds.npy', preds)
+    np.save('../../data/rolling_cov.npy', cov)
 
     df_ret = load_data_get_ret()
     preds = np.load('../../data/rolling_preds.npy')
     cov = np.load('../../data/rolling_cov.npy')
 
     weights, port_val, gamma = backtester.backtest_mpc(df_ret, preds, cov)
+
+    np.save('../../data/mpc_weights.npy', weights)
+    np.save('../../data/port_val.npy', port_val)
+    np.save('../../data/gamma.npy', gamma)

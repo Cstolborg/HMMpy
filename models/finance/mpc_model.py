@@ -8,11 +8,7 @@ from utils.data_prep import load_data_get_ret
 
 """ TODO
 
-Trading costs associated with the risk-free asset when solving MPC problem
-
-No trading costs included in backtest.
-
-Create method to compute total changes in weight per time step -- and costs
+Trading costs associated with the risk-free asset when solving MPC problem - FIX !
 """
 
 class MPC:
@@ -49,13 +45,13 @@ class MPC:
         self.cov = np.array(covariances)
         self.prev_port_vals = prev_port_vals
 
-        self.n_assets = self.cov.shape[0]
+        self.n_assets = self.rets.shape[1]
         self.n_preds = len(self.rets)
         self.start_weights = start_weights
 
         self.gamma = self._gamma_from_drawdown_control()
 
-    def single_period_objective_func(self, current_weights, prev_weights, rets):
+    def single_period_objective_func(self, current_weights, prev_weights, rets, cov):
         """
         Compiles all individual components in the objective function into one.
 
@@ -78,7 +74,7 @@ class MPC:
         port_ret = self._port_ret(current_weights, rets)
         trading_cost_ = self._trading_cost(current_weights, prev_weights)
         holding_cost_ = self._holding_cost(current_weights)
-        port_risk = self._port_risk_control(current_weights)
+        port_risk = self._port_risk_control(current_weights, cov)
 
         objctive = port_ret - trading_cost_ - holding_cost_ - self.gamma * port_risk
         return objctive
@@ -121,7 +117,7 @@ class MPC:
         for t in range(1, weights.shape[0]):
             # sum problem objectives. Weights are shifted 1 period forward compared to self.rets
             # Concatenates objective and constraints in lists
-            objective += self.single_period_objective_func(weights[t], weights[t-1], self.rets[t-1])
+            objective += self.single_period_objective_func(weights[t], weights[t-1], self.rets[t-1], self.cov[t-1])
             constr += self.single_period_constraints(weights[t])  # Concatenate constraints
 
         constr += [weights[0] == self.start_weights]  # first weights are fixed at known current portfolio
@@ -151,9 +147,11 @@ class MPC:
     def _trading_cost(self, current_weights, prev_weights):
         """
         Using current and previous portfolio weights computes the trading costs as scalar value.
+
+        Assumes no cost in trading risk-free asset and thus discards last value in delta_weight.
         """
         delta_weight = current_weights - prev_weights
-        delta_weight = cp.abs(delta_weight)
+        delta_weight = cp.abs(delta_weight[-1:])  # No costs associated with risk-free asset
         trading_cost = self.kappa1 * delta_weight  # Vector of trading costs per asset
 
         return cp.sum(trading_cost)
@@ -179,11 +177,11 @@ class MPC:
 
         return gamma
 
-    def _port_risk_control(self, weights):
+    def _port_risk_control(self, weights, cov):
         """
         Computes portfolio risk parameter. Currently set to portfolio variance.
         """
-        port_var = cp.quad_form(weights, self.cov)  # CVXPY method for doing: w^T @ COV @ w
+        port_var = cp.quad_form(weights, cov)  # CVXPY method for doing: w^T @ COV @ w
         return port_var
 
 if __name__ == "__main__":
@@ -205,7 +203,6 @@ if __name__ == "__main__":
     preds = np.load('../../data/rolling_preds.npy')
     cov = np.load('../../data/rolling_cov.npy')
 
-    model = MPCBacktester(df_ret, preds, cov)
     weights, port_val, gamma = model.backtest()
 
     np.save('../../data/mpc_weights.npy', weights)
