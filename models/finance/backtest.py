@@ -16,11 +16,11 @@ values of 0 and covariances of 0. Is this a good result ?
 Sometimes a state is not vistited or only has 1 observation in which case covariance matrix will return null results.
 We need a solution for this; currently setting it equal to zero in those cases.
 
-Double check times match, i.e. no forward bias.
-
 Create some way to do in-sample crossvalidation for hyperparameters
 
 TRANSACTION COSTS: Do we subtract transaction_costs() method fom gross returns or multiply by (1-trans_costs)
+
+Covariance shrinkage
 """
 
 class FinanceHMM:
@@ -150,6 +150,11 @@ class FinanceHMM:
 
         return mu, cov
 
+    def stein_shrinkage(self, cond_cov, shrinkage_factor=0.1):
+        term1 = (1-shrinkage_factor) @ cond_cov
+        term2 = (shrinkage_factor * np.trace(cond_cov) * 1/self.n_assets) * np.eye(self.n_assets)
+        return term1 + term2
+
     def fit_model_get_uncond_dist(self, X, df, n_preds=15, verbose=False):
         """
         From data, fit hmm model, predict posteriors probabilities and return unconditional distribution.
@@ -262,27 +267,17 @@ class Backtester:
             X_rolling = X.iloc[t-window_len: t]
 
             # fit rolling data with model, return predicted means and covariances, posteriors and state sequence
-            # noinspection PyTupleAssignmentBalance
             pred_mu, pred_cov, posteriors, state_sequence = \
                 finance_hmm.fit_model_get_uncond_dist(X_rolling, df_rolling, n_preds=n_preds, verbose=verbose)
 
-            if np.any(np.isnan(pred_mu)) == True:
-                print('t: ', t)
-                print(pred_mu)
-                print(f'NaNs in cov: {np.any(np.isnan(pred_cov))} -- NaNs in posteriors: {np.any(np.isnan(posteriors))} ')
-
-                # TODO this is a quick fix and must be solved better in cases when no solutions are found.
-                self.preds[t - window_len] = self.preds[t - window_len - 1]
-                self.cov[t - window_len] = self.cov[t - window_len - 1]
-            else:
-                self.timestamp[t - window_len] = df_rolling.index[-1]
-                self.preds[t - window_len] = pred_mu
-                self.cov[t - window_len] = pred_cov
+            self.timestamp[t - window_len] = df_rolling.index[-1]
+            self.preds[t - window_len] = pred_mu
+            self.cov[t - window_len] = pred_cov
 
         return self.preds, self.cov
 
     def backtest_mpc(self, df_rets, preds, covariances, n_preds=15, port_val=1000,
-                     start_weights=None, max_drawdown=0.4, gamma_0=5, kappa1=0.004,
+                     start_weights=None, max_drawdown=0.4, max_leverage=2.0, gamma_0=5, kappa1=0.004,
                      rho2=0.0005, max_holding=0.4, long_only=False, eps=1e-6):
         """
        Wrapper for backtesting MPC models on given data and predictions.
@@ -319,11 +314,11 @@ class Backtester:
 
         gamma = np.array([])  # empty array
 
-        # TODO implement covariance predictions
         # Instantiate MPC object
         mpc_solver = MPC(rets=preds[0], covariances=covariances[0], prev_port_vals=self.port_val,
                          start_weights=self.weights[0], max_drawdown=max_drawdown, gamma_0=gamma_0,
-                         kappa1=kappa1, rho2=rho2, max_holding=max_holding, long_only=long_only, eps=eps)
+                         kappa1=kappa1, rho2=rho2, max_holding=max_holding, max_leverage=max_leverage,
+                         long_only=long_only, eps=eps)
 
         for t in tqdm.trange(preds.shape[0]):
             # Update MPC object
@@ -337,9 +332,10 @@ class Backtester:
             gamma = np.append(gamma, mpc_solver.gamma)
             delta_weights = self.weights[t] - self.weights[t-1]
 
+            # self.weights and df_rets are one shifted to each other. Time periods should match.
             gross_ret = (self.weights[t + 1] @ (1 + df_rets.iloc[t]))
             trans_cost = self.transaction_costs(delta_weights, trans_cost=0.001)
-            new_port_val = gross_ret * (1-trans_cost) * self.port_val[-1] # TODO double check time periods match
+            new_port_val = gross_ret * (1-trans_cost) * self.port_val[-1]
             self.port_val = np.append(self.port_val, new_port_val)
 
         self.port_val = self.port_val[1:]  # Throw away first observation since it is artificially set to zero
@@ -352,7 +348,7 @@ class Backtester:
         Compute transaction costs. Assumes no costs in risk-free asset and there is a cost to
         both buying and selling assets.
         """
-        delta_weights = delta_weights[-1:]  # Remove risk-free asset as it doens't have trading costs
+        delta_weights = delta_weights[-1:]  # Remove risk-free asset as it doesn't have trading costs
         delta_weights = np.abs(delta_weights).sum()  # abs since same price for buying/selling
 
         return delta_weights * trans_cost
@@ -365,9 +361,9 @@ if __name__ == "__main__":
     model1 = EMHiddenMarkov(n_states=2, init="random", random_state=42, epochs=20, max_iter=50)
     backtester = Backtester()
 
-    preds, cov = backtester.rolling_preds_cov_from_hmm(X, df_logret, model1, window_len=1500, verbose=True)
-    np.save('../../data/rolling_preds.npy', preds)
-    np.save('../../data/rolling_cov.npy', cov)
+    #preds, cov = backtester.rolling_preds_cov_from_hmm(X, df_logret, model1, window_len=1500, verbose=True)
+    #np.save('../../data/rolling_preds.npy', preds)
+    #np.save('../../data/rolling_cov.npy', cov)
 
     df_ret = load_data_get_ret()
     preds = np.load('../../data/rolling_preds.npy')

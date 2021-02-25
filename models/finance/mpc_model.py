@@ -7,8 +7,9 @@ from utils.hmm_sampler import SampleHMM
 from utils.data_prep import load_data_get_ret
 
 """ TODO
+No holding cost on shorting risk-free asset. Not implemented in backtest either.
 
-Trading costs associated with the risk-free asset when solving MPC problem - FIX !
+
 """
 
 class MPC:
@@ -31,13 +32,16 @@ class MPC:
     """
 
     def __init__(self, rets, covariances, prev_port_vals, start_weights, max_drawdown=0.4, gamma_0=5, kappa1=0.004,
-                 rho2=0.0005, max_holding=0.4, long_only=False, eps=0.0000001):
+                 kappa2=0., rho1=0., rho2=0.0005, max_holding=0.4, max_leverage=2.0, long_only=False, eps=0.0000001):
 
         self.max_drawdown = max_drawdown
         self.gamma_0 = gamma_0
         self.kappa1 = kappa1
+        self.kappa2 = kappa2
+        self.rho1 = rho1
         self.rho2 = rho2
         self.max_holding = max_holding
+        self.max_leverage = max_leverage
         self.long_only = long_only
         self.eps = eps
 
@@ -93,10 +97,12 @@ class MPC:
         constraints : list
             list containing all construct for time period t.
         """
+        constraints = [cp.sum(current_weights) == 1, current_weights <= self.max_holding]
+
+        # Leverage constraint. Exclude risk-free asset from this computation
+        constraints += [cp.sum(cp.abs(current_weights[-1:])) <= self.max_leverage]
         if self.long_only is True:
-            constraints = [cp.sum(current_weights) == 1, current_weights <= self.max_holding, current_weights >= 0]
-        else:
-            constraints = [cp.sum(current_weights) == 1, current_weights <= self.max_holding]
+            constraints += [current_weights >= 0]
 
         return constraints
 
@@ -123,7 +129,7 @@ class MPC:
         constr += [weights[0] == self.start_weights]  # first weights are fixed at known current portfolio
 
         prob = cp.Problem(cp.Maximize(objective), constr) # Construct maximization problem
-        opt_val = prob.solve(verbose=verbose)
+        prob.solve(verbose=verbose)
         opt_var = weights.value
 
         if verbose is True:
@@ -151,8 +157,8 @@ class MPC:
         Assumes no cost in trading risk-free asset and thus discards last value in delta_weight.
         """
         delta_weight = current_weights - prev_weights
-        delta_weight = cp.abs(delta_weight[-1:])  # No costs associated with risk-free asset
-        trading_cost = self.kappa1 * delta_weight  # Vector of trading costs per asset
+        delta_weight = delta_weight[-1:]  # No costs associated with risk-free asset
+        trading_cost = self.kappa1 * cp.abs(delta_weight) + self.kappa2 * cp.square(delta_weight)  # Vector of trading costs per asset
 
         return cp.sum(trading_cost)
 
@@ -160,7 +166,7 @@ class MPC:
         """
         Portfolio holding costs.
         """
-        holding_cost_ = self.rho2 * cp.square(weights)
+        holding_cost_ = self.rho1 * cp.abs(weights) + self.rho2 * cp.square(weights)
         return cp.sum(holding_cost_)
 
     def _gamma_from_drawdown_control(self):
@@ -185,26 +191,15 @@ class MPC:
         return port_var
 
 if __name__ == "__main__":
-    sampler = SampleHMM(n_states=2, random_state=1)
-    X, true_states = sampler.sample(15)
-
     df_ret = load_data_get_ret()
-    #cov = get_cov_mat(df_ret).to_numpy()
+    cov = df_ret.cov().to_numpy()
 
-    #ret_pred = df_ret.iloc[-15:].to_numpy()
-    #weights = np.zeros(len(cov))
-    #weights[-1] = 1.
-    #prev_port_vals = np.array([100, 105,110,100,105,120,130,150,135,160])
+    ret_pred = df_ret.iloc[-15:].to_numpy()
+    weights = np.zeros(len(cov))
+    weights[-1] = 1.
+    prev_port_vals = np.array([100, 105,110,100,105,120,130,150,135,160])
 
-    #model = MPC(ret_pred, cov, prev_port_vals)
-    #weigths = model.cvxpy_solver()
+    model = MPC(ret_pred, cov, prev_port_vals)
+    weigths = model.cvxpy_solver()
 
-    df_ret = df_ret.iloc[1500:]
-    preds = np.load('../../data/rolling_preds.npy')
-    cov = np.load('../../data/rolling_cov.npy')
-
-    weights, port_val, gamma = model.backtest()
-
-    np.save('../../data/mpc_weights.npy', weights)
-    np.save('../../data/port_val.npy', port_val)
 

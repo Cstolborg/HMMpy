@@ -181,7 +181,6 @@ class BaseHiddenMarkov(BaseEstimator):
         """
         self.fit(X)
         if self.is_fitted == False:  # Check if model is fitted
-            print(f'refitting with double max_iter')
             max_iter = self.max_iter
             self.max_iter = max_iter * 2  # Double amount of iterations
             self.fit(X)  # Try fitting again
