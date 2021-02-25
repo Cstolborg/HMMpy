@@ -19,8 +19,6 @@ We need a solution for this; currently setting it equal to zero in those cases.
 Create some way to do in-sample crossvalidation for hyperparameters
 
 TRANSACTION COSTS: Do we subtract transaction_costs() method fom gross returns or multiply by (1-trans_costs)
-
-Covariance shrinkage
 """
 
 class FinanceHMM:
@@ -151,11 +149,12 @@ class FinanceHMM:
         return mu, cov
 
     def stein_shrinkage(self, cond_cov, shrinkage_factor=0.1):
-        term1 = (1-shrinkage_factor) @ cond_cov
+        """Stein-type shrinkage of conditional covariance matrices"""
+        term1 = (1-shrinkage_factor) * cond_cov
         term2 = (shrinkage_factor * np.trace(cond_cov) * 1/self.n_assets) * np.eye(self.n_assets)
         return term1 + term2
 
-    def fit_model_get_uncond_dist(self, X, df, n_preds=15, verbose=False):
+    def fit_model_get_uncond_dist(self, X, df, n_preds=15, shrinkage_factor=0.1, verbose=False):
         """
         From data, fit hmm model, predict posteriors probabilities and return unconditional distribution.
 
@@ -186,8 +185,9 @@ class FinanceHMM:
         state_sequence, posteriors = self.model.fit_predict(X, n_preds=n_preds, verbose=verbose)
 
         # Compute conditional mixture distributions in rolling period
-        cond_mu, cond_cov = self.get_cond_asset_dist(df,
-                                                     state_sequence)  # shapes (n_states, n_assets), (n_states, n_assets, n_assets)
+        cond_mu, cond_cov = \
+            self.get_cond_asset_dist(df, state_sequence)  # shapes (n_states, n_assets), (n_states, n_assets, n_assets)
+        cond_cov = self.stein_shrinkage(cond_cov, shrinkage_factor=shrinkage_factor)
 
         # Transform into unconditional moments at time t
         # Combine with posteriors to also predict moments h steps into future
@@ -195,7 +195,6 @@ class FinanceHMM:
         pred_mu, pred_cov = self.get_uncond_asset_dist(posteriors, cond_mu, cond_cov)
 
         return pred_mu, pred_cov, posteriors, state_sequence
-
 
 class Backtester:
     """
@@ -361,9 +360,9 @@ if __name__ == "__main__":
     model1 = EMHiddenMarkov(n_states=2, init="random", random_state=42, epochs=20, max_iter=50)
     backtester = Backtester()
 
-    #preds, cov = backtester.rolling_preds_cov_from_hmm(X, df_logret, model1, window_len=1500, verbose=True)
-    #np.save('../../data/rolling_preds.npy', preds)
-    #np.save('../../data/rolling_cov.npy', cov)
+    preds, cov = backtester.rolling_preds_cov_from_hmm(X, df_logret, model1, window_len=1500, verbose=True)
+    np.save('../../data/rolling_preds.npy', preds)
+    np.save('../../data/rolling_cov.npy', cov)
 
     df_ret = load_data_get_ret()
     preds = np.load('../../data/rolling_preds.npy')
