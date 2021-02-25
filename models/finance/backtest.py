@@ -19,6 +19,8 @@ We need a solution for this; currently setting it equal to zero in those cases.
 Create some way to do in-sample crossvalidation for hyperparameters
 
 TRANSACTION COSTS: Do we subtract transaction_costs() method fom gross returns or multiply by (1-trans_costs)
+
+SHRINKAGE: Sort portfolios according to variance
 """
 
 class FinanceHMM:
@@ -148,11 +150,16 @@ class FinanceHMM:
 
         return mu, cov
 
-    def stein_shrinkage(self, cond_cov, shrinkage_factor=0.1):
+    def stein_shrinkage(self, cond_cov, shrinkage_factor=(0.2, 0.4)):
         """Stein-type shrinkage of conditional covariance matrices"""
-        term1 = (1-shrinkage_factor) * cond_cov
-        term2 = (shrinkage_factor * np.trace(cond_cov) * 1/self.n_assets) * np.eye(self.n_assets)
-        return term1 + term2
+        shrinkage_factor = np.array(shrinkage_factor)
+        shrink_3d = shrinkage_factor[:, np.newaxis, np.newaxis]
+        term1 = (1-shrink_3d) * cond_cov
+        term2 = (shrinkage_factor * np.trace(cond_cov.T) * 1/self.n_assets)
+        term3 = np.broadcast_to(np.identity(self.n_assets)[..., np.newaxis], (self.n_assets,self.n_assets,self.n_states)).T
+        term4 = term2[:, np.newaxis, np.newaxis] * term3
+        cond_cov = term1 + term4
+        return cond_cov
 
     def fit_model_get_uncond_dist(self, X, df, n_preds=15, shrinkage_factor=0.1, verbose=False):
         """
@@ -217,7 +224,7 @@ class Backtester:
         self.n_assets = None
         self.window_len = window_len
 
-    def rolling_preds_cov_from_hmm(self, X, df_logret, model, n_preds=15, window_len=None, verbose=False):
+    def rolling_preds_cov_from_hmm(self, X, df_logret, model, n_preds=15, window_len=None, shrinkage_factor=(0.2, 0.4), verbose=False):
         """
         Backtest based on rolling windows.
 
@@ -267,7 +274,8 @@ class Backtester:
 
             # fit rolling data with model, return predicted means and covariances, posteriors and state sequence
             pred_mu, pred_cov, posteriors, state_sequence = \
-                finance_hmm.fit_model_get_uncond_dist(X_rolling, df_rolling, n_preds=n_preds, verbose=verbose)
+                finance_hmm.fit_model_get_uncond_dist(
+                    X_rolling, df_rolling, shrinkage_factor=shrinkage_factor, n_preds=n_preds, verbose=verbose)
 
             self.timestamp[t - window_len] = df_rolling.index[-1]
             self.preds[t - window_len] = pred_mu
@@ -360,7 +368,7 @@ if __name__ == "__main__":
     model1 = EMHiddenMarkov(n_states=2, init="random", random_state=42, epochs=20, max_iter=50)
     backtester = Backtester()
 
-    preds, cov = backtester.rolling_preds_cov_from_hmm(X, df_logret, model1, window_len=1500, verbose=True)
+    preds, cov = backtester.rolling_preds_cov_from_hmm(X, df_logret, model1, window_len=1500, shrinkage_factor=(0.3, 0.3), verbose=True)
     np.save('../../data/rolling_preds.npy', preds)
     np.save('../../data/rolling_cov.npy', cov)
 
