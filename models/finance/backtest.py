@@ -4,7 +4,7 @@ import tqdm
 
 from models.hidden_markov.hmm_gaussian_em import EMHiddenMarkov
 from models.finance.mpc_model import MPC
-from utils.data_prep import load_data_get_ret , load_data_get_logret
+from utils.data_prep import load_data_get_ret , load_data_get_logret, load_data
 
 import warnings
 warnings.filterwarnings('ignore')
@@ -367,19 +367,59 @@ class Backtester:
 
         return delta_weights * trans_cost
 
-    def performance_metrics(self, port_val):
+    def performance_metrics(self, df, port_val, compare_assets=False):
         """Compute performance metrics for a given portfolio/asset"""
+        # Merge port_val with data
+        df = df.iloc[-len(port_val):]
+        df['port_val'] = port_val
+        df.dropna(inplace=True)
+        df_ret = df.pct_change().dropna()
+
         # Annual returns, std
         n_years = len(port_val) / 252
-        ret = (port_val[-1] / port_val[0])**(1/n_years) - 1
-        std = port_val.std(ddof=1) * np.sqrt(252)
-        sharpe = ret / std  # TODO has to be excess returns and excess risk
+        excess_ret = df_ret['port_val'] - df_ret['T-bills rf']
+
+        cagr = ((1+excess_ret).prod())**(1/n_years) - 1
+        std = excess_ret.std(ddof=1) * np.sqrt(252)
+        sharpe = cagr / std
 
         # Drawdown
         peaks = np.maximum.accumulate(port_val)
-        drawdown = (port_val-peaks) / peaks
+        drawdown = -(port_val-peaks) / peaks
         max_drawdown = np.max(drawdown)
-        calmar = ret / max_drawdown  # TODO has to be excess return
+        max_drawdown_end = np.argmax(drawdown)
+        max_drawdown_beg = np.argmax(port_val[:max_drawdown_end])
+        drawdown_dur = max_drawdown_end - max_drawdown_beg  # TODO not showing correct values
+        calmar = cagr / max_drawdown
+
+        if compare_assets == True:
+            excess_ret = df_ret.subtract(df_ret['T-bills rf'], axis=0).drop('T-bills rf', axis=1)
+            cagr = ((1 + excess_ret).prod(axis=0)) ** (1 / n_years) - 1
+            std = excess_ret.std(axis=0 ,ddof=1) * np.sqrt(252)
+            sharpe = cagr / std
+
+            df = df.drop('T-bills rf', axis=1)
+            peaks = df.cummax(axis=0)
+            drawdown = -(df - peaks) / peaks
+            max_drawdown = drawdown.max(axis=0)
+            calmar = cagr / max_drawdown
+
+            metrics = {'excess_return': cagr,
+                       'std': std,
+                       'sharpe': sharpe,
+                       'max_drawdown': max_drawdown,
+                       'calmar_ratio': calmar}
+
+            metrics = pd.DataFrame(metrics)
+        else:
+            metrics = {'excess_return': cagr,
+                       'std': std,
+                       'sharpe': sharpe,
+                       'max_drawdown': max_drawdown,
+                       'max_drawdown_dur': drawdown_dur,
+                       'calmar_ratio': calmar}
+
+        return metrics
 
 
 if __name__ == "__main__":
@@ -389,16 +429,23 @@ if __name__ == "__main__":
     model1 = EMHiddenMarkov(n_states=2, init="random", random_state=42, epochs=20, max_iter=50)
     backtester = Backtester()
 
-    preds, cov = backtester.rolling_preds_cov_from_hmm(X, df_logret, model1, window_len=1500, shrinkage_factor=(0.3, 0.3), verbose=True)
-    np.save('../../data/rolling_preds.npy', preds)
-    np.save('../../data/rolling_cov.npy', cov)
+    #preds, cov = backtester.rolling_preds_cov_from_hmm(X, df_logret, model1, window_len=1500, shrinkage_factor=(0.3, 0.3), verbose=True)
+    #np.save('../../data/rolling_preds.npy', preds)
+    #np.save('../../data/rolling_cov.npy', cov)
 
-    df_ret = load_data_get_ret()
-    preds = np.load('../../data/rolling_preds.npy')
-    cov = np.load('../../data/rolling_cov.npy')
+    #df_ret = load_data_get_ret()
+    #preds = np.load('../../data/rolling_preds.npy')
+    #cov = np.load('../../data/rolling_cov.npy')
 
-    weights, port_val, gamma = backtester.backtest_mpc(df_ret, preds, cov)
+    #weights, port_val, gamma = backtester.backtest_mpc(df_ret, preds, cov)
 
-    np.save('../../data/mpc_weights.npy', weights)
-    np.save('../../data/port_val.npy', port_val)
-    np.save('../../data/gamma.npy', gamma)
+    #np.save('../../data/mpc_weights.npy', weights)
+    #np.save('../../data/port_val.npy', port_val)
+    #np.save('../../data/gamma.npy', gamma)
+
+    port_val = np.load('../../data/port_val.npy')
+    df = load_data()
+
+    metrics = backtester.performance_metrics(df, port_val, compare_assets=True)
+    metrics1 = backtester.performance_metrics(df, port_val, compare_assets=False)
+
