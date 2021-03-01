@@ -21,6 +21,8 @@ Create some way to do in-sample crossvalidation for hyperparameters
 TRANSACTION COSTS: Do we subtract transaction_costs() method fom gross returns or multiply by (1-trans_costs)
 
 SHRINKAGE: Sort portfolios according to variance
+
+METRICS: Create function to compute return, std, max drawdown, sharpe, calmar ratio etc.
 """
 
 class FinanceHMM:
@@ -153,15 +155,20 @@ class FinanceHMM:
     def stein_shrinkage(self, cond_cov, shrinkage_factor=(0.2, 0.4)):
         """Stein-type shrinkage of conditional covariance matrices"""
         shrinkage_factor = np.array(shrinkage_factor)
+
+        # Turn it into 3D to make it broadcastable with cond_cov
         shrink_3d = shrinkage_factor[:, np.newaxis, np.newaxis]
         term1 = (1-shrink_3d) * cond_cov
-        term2 = (shrinkage_factor * np.trace(cond_cov.T) * 1/self.n_assets)
-        term3 = np.broadcast_to(np.identity(self.n_assets)[..., np.newaxis], (self.n_assets,self.n_assets,self.n_states)).T
+
+        # Turn term2 into 3D to make it broadcastable with term3
+        term2 = (shrinkage_factor * np.trace(cond_cov.T) * 1/self.n_assets)  # Shape (n_states,)
+        term3 = np.broadcast_to(np.identity(self.n_assets)[..., np.newaxis],
+                                (self.n_assets,self.n_assets,self.n_states)).T  # Shape (n_states, n_assets, n_assets)
         term4 = term2[:, np.newaxis, np.newaxis] * term3
         cond_cov = term1 + term4
         return cond_cov
 
-    def fit_model_get_uncond_dist(self, X, df, n_preds=15, shrinkage_factor=0.1, verbose=False):
+    def fit_model_get_uncond_dist(self, X, df, n_preds=15, shrinkage_factor=(0.2, 0.4), verbose=False):
         """
         From data, fit hmm model, predict posteriors probabilities and return unconditional distribution.
 
@@ -359,6 +366,20 @@ class Backtester:
         delta_weights = np.abs(delta_weights).sum()  # abs since same price for buying/selling
 
         return delta_weights * trans_cost
+
+    def performance_metrics(self, port_val):
+        """Compute performance metrics for a given portfolio/asset"""
+        # Annual returns, std
+        n_years = len(port_val) / 252
+        ret = (port_val[-1] / port_val[0])**(1/n_years) - 1
+        std = port_val.std(ddof=1) * np.sqrt(252)
+        sharpe = ret / std  # TODO has to be excess returns and excess risk
+
+        # Drawdown
+        peaks = np.maximum.accumulate(port_val)
+        drawdown = (port_val-peaks) / peaks
+        max_drawdown = np.max(drawdown)
+        calmar = ret / max_drawdown  # TODO has to be excess return
 
 
 if __name__ == "__main__":
