@@ -16,7 +16,7 @@ from models.hidden_markov import hmm_cython
 ''' TODO:
 
 Consider reusing previous fitted hidden_markov in rolling windows to minimize no. of epochs.
- 
+
 True states in jump_penalty crossval must be true states -> Currently the Viterbi State....
 '''
 

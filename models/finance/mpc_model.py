@@ -3,12 +3,9 @@ import pandas as pd; pd.set_option('display.max_columns', 10); pd.set_option('di
 import matplotlib.pyplot as plt
 import cvxpy as cp
 
-from utils.hmm_sampler import SampleHMM
 from utils.data_prep import load_data_get_ret
 
 """ TODO
-No holding cost on shorting risk-free asset. Not implemented in backtest either.
-
 
 """
 
@@ -29,10 +26,18 @@ class MPC:
         Times series of portfolio value at all previous time steps
     start_weights : ndarray of shape (n_assets,)
         Current (known) portfolio weights at time t.
+    short_cons : str, default='LLO'
+        How portfolio shorting is determined.
+        'LLO': Leveraged-Long-Only, allowed to short risk-free asset.
+        'long_only': No shorting allowed.
+        'max_leverage': Shorting constraint entirely determined by max_leverage parameter
+    max_leverage : float, default=2.0
+        Maximum tolerable leverage defined as the sum of absolute values of the
+        decimal weight in each asset apart from the risk-free asset.
     """
 
     def __init__(self, rets, covariances, prev_port_vals, start_weights, max_drawdown=0.4, gamma_0=5, kappa1=0.004,
-                 kappa2=0., rho1=0., rho2=0.0005, max_holding=0.4, max_leverage=2.0, long_only=False, eps=0.0000001):
+                 kappa2=0., rho1=0., rho2=0.0005, max_holding=0.4, max_leverage=2.0, short_cons='LLO', eps=0.0000001):
 
         self.max_drawdown = max_drawdown
         self.gamma_0 = gamma_0
@@ -42,7 +47,7 @@ class MPC:
         self.rho2 = rho2
         self.max_holding = max_holding
         self.max_leverage = max_leverage
-        self.long_only = long_only
+        self.short_cons = short_cons
         self.eps = eps
 
         self.rets = np.array(rets)
@@ -52,8 +57,6 @@ class MPC:
         self.n_assets = self.rets.shape[1]
         self.n_preds = len(self.rets)
         self.start_weights = start_weights
-
-        self.gamma = self._gamma_from_drawdown_control()
 
     def single_period_objective_func(self, current_weights, prev_weights, rets, cov):
         """
@@ -97,12 +100,16 @@ class MPC:
         constraints : list
             list containing all construct for time period t.
         """
-        constraints = [cp.sum(current_weights) == 1, current_weights <= self.max_holding]
+        constraints = [cp.sum(current_weights) == 1, cp.abs(current_weights) <= self.max_holding]
 
         # Leverage constraint. Exclude risk-free asset from this computation
-        constraints += [cp.sum(cp.abs(current_weights[-1:])) <= self.max_leverage]
-        if self.long_only is True:
+        constraints += [cp.sum(cp.abs(current_weights[:-1])) <= self.max_leverage]
+        if self.short_cons == 'LLO':  # Can only short risk-free asset
+            constraints += [current_weights[:-1] >= 0]
+        elif self.short_cons == 'long_only':
             constraints += [current_weights >= 0]
+        elif self.short_cons == 'max_leverage':
+            pass
 
         return constraints
 
@@ -114,6 +121,8 @@ class MPC:
         """
         # variable with shape h+1 predictions so first row
         # can be the known (non-variable) portfolio weight at time t
+        self.gamma = self._gamma_from_drawdown_control()
+
         weights = cp.Variable(shape=(self.n_preds + 1, self.n_assets))
         objective = 0
         constr = []

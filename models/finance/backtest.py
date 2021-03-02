@@ -5,6 +5,7 @@ import tqdm
 from models.hidden_markov.hmm_gaussian_em import EMHiddenMarkov
 from models.finance.mpc_model import MPC
 from utils.data_prep import load_data_get_ret , load_data_get_logret, load_data
+from utils.plotting.plot_asset_vals import plot_performance
 
 import warnings
 warnings.filterwarnings('ignore')
@@ -21,8 +22,6 @@ Create some way to do in-sample crossvalidation for hyperparameters
 TRANSACTION COSTS: Do we subtract transaction_costs() method fom gross returns or multiply by (1-trans_costs)
 
 SHRINKAGE: Sort portfolios according to variance
-
-Long Only: Allow shorting the risk-free asset with pricing
 """
 
 class FinanceHMM:
@@ -224,7 +223,7 @@ class Backtester:
         self.n_assets = None
         self.window_len = window_len
 
-    def rolling_preds_cov_from_hmm(self, X, df_logret, model, n_preds=15, window_len=None, shrinkage_factor=(0.2, 0.4), verbose=False):
+    def rolling_preds_cov_from_hmm(self, X, df_logret, model, n_preds=15, window_len=None, shrinkage_factor=(0.3, 0.3), verbose=False):
         """
         Backtest based on rolling windows.
 
@@ -285,7 +284,7 @@ class Backtester:
 
     def backtest_mpc(self, df_rets, preds, covariances, n_preds=15, port_val=1000,
                      start_weights=None, max_drawdown=0.4, max_leverage=2.0, gamma_0=5, kappa1=0.004,
-                     rho2=0.0005, max_holding=0.4, long_only=False, eps=1e-6):
+                     rho2=0.0005, max_holding=0.4, short_cons="LLO", eps=1e-6):
         """
        Wrapper for backtesting MPC models on given data and predictions.
 
@@ -316,7 +315,7 @@ class Backtester:
         else:
             start_weights = start_weights
 
-        self.weights = np.zeros(shape=(len(preds) + 1, self.n_assets))
+        self.weights = np.zeros(shape=(len(preds) + 1, self.n_assets))  # len(preds) + 1 to include start weights
         self.weights[0] = start_weights
 
         gamma = np.array([])  # empty array
@@ -325,13 +324,14 @@ class Backtester:
         mpc_solver = MPC(rets=preds[0], covariances=covariances[0], prev_port_vals=self.port_val,
                          start_weights=self.weights[0], max_drawdown=max_drawdown, gamma_0=gamma_0,
                          kappa1=kappa1, rho2=rho2, max_holding=max_holding, max_leverage=max_leverage,
-                         long_only=long_only, eps=eps)
+                         short_cons=short_cons, eps=eps)
 
         for t in tqdm.trange(preds.shape[0]):
             # Update MPC object
             mpc_solver.rets = np.array(preds[t])
             mpc_solver.cov = np.array(covariances[t])
             mpc_solver.start_weights = self.weights[t]
+            mpc_solver.prev_port_vals = self.port_val
 
             # Solve MPC problem at time t and save weights
             weights_mpc = mpc_solver.cvxpy_solver(verbose=False)  # ndarray of shape (n_preds, n_assets)
@@ -341,14 +341,22 @@ class Backtester:
 
             # self.weights and df_rets are one shifted to each other. Time periods should match.
             gross_ret = (self.weights[t + 1] @ (1 + df_rets.iloc[t]))
+            shorting_cost = self.short_costs(self.weights[t + 1], rf_return=df_rets.iloc[t, -1])
             trans_cost = self.transaction_costs(delta_weights, trans_cost=0.001)
-            new_port_val = gross_ret * (1-trans_cost) * self.port_val[-1]
+            new_port_val = gross_ret * (1-trans_cost) * (1-shorting_cost) * self.port_val[-1]  # TODO trans+short costs???
             self.port_val = np.append(self.port_val, new_port_val)
 
         self.port_val = self.port_val[1:]  # Throw away first observation since it is artificially set to zero
         self.gamma = gamma
 
         return self.weights, self.port_val, gamma
+
+    def short_costs(self, weights, rf_return):
+        """
+        Compute shorting costs, assuming a fee equal to the risk-free asset is paid.
+        """
+        short_weights = weights[:-1][weights[:-1] < 0.0].sum()  # Sum of all port weights below 0.0
+        return -short_weights * rf_return
 
     def transaction_costs(self, delta_weights, trans_cost=0.001):
         """
@@ -416,7 +424,7 @@ class Backtester:
 
 
 if __name__ == "__main__":
-    path = '/analysis/portfolio_exercise/output_data/'
+    path = '../../analysis/portfolio_exercise/output_data/'
     df_logret = load_data_get_logret()
     X = df_logret["MSCI World"]
 
@@ -427,19 +435,22 @@ if __name__ == "__main__":
     #np.save(path + 'rolling_preds.npy', preds)
     #np.save(path + 'rolling_cov.npy', cov)
 
-    #df_ret = load_data_get_ret()
-    #preds = np.load(path + 'rolling_preds.npy')
-    #cov = np.load(path + 'rolling_cov.npy')
+    df_ret = load_data_get_ret()
+    preds = np.load(path + 'rolling_preds.npy')
+    cov = np.load(path + 'rolling_cov.npy')
 
-    #weights, port_val, gamma = backtester.backtest_mpc(df_ret, preds, cov)
+    weights, port_val, gamma = backtester.backtest_mpc(df_ret, preds, cov, short_cons='LLO')
 
     #np.save(path + 'mpc_weights.npy', weights)
     #np.save(path + 'port_val.npy', port_val)
     #np.save(path + 'gamma.npy', gamma)
 
-    port_val = np.load(path + 'port_val.npy')
+    #port_val = np.load(path + 'port_val.npy')
     df = load_data()
 
     metrics = backtester.performance_metrics(df, port_val, compare_assets=True)
-    metrics1 = backtester.performance_metrics(df, port_val, compare_assets=False)
+
+    df = df.iloc[-len(port_val):]
+
+    plot_performance(df, port_val, weights)
 
