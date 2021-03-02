@@ -22,7 +22,7 @@ TRANSACTION COSTS: Do we subtract transaction_costs() method fom gross returns o
 
 SHRINKAGE: Sort portfolios according to variance
 
-METRICS: Create function to compute return, std, max drawdown, sharpe, calmar ratio etc.
+Long Only: Allow shorting the risk-free asset with pricing
 """
 
 class FinanceHMM:
@@ -88,14 +88,7 @@ class FinanceHMM:
         for s in log_mu.index:
             if state_count[s] > 1:  # If state_count not >1, covariance will return NaN
                 mu[s], cov[s] = self.logcov_to_cov(log_mu.loc[s], log_cov.loc[s])
-            """
-            except:
-                print('s: ', s)
-                print('log mu:')
-                print(log_mu)
-                print('log COV:')
-                print(log_cov)
-            """
+
         return mu, cov
 
     def get_uncond_asset_dist(self, posteriors, cond_mu, cond_cov):
@@ -423,6 +416,7 @@ class Backtester:
 
 
 if __name__ == "__main__":
+    path = '/analysis/portfolio_exercise/output_data/'
     df_logret = load_data_get_logret()
     X = df_logret["MSCI World"]
 
@@ -430,20 +424,20 @@ if __name__ == "__main__":
     backtester = Backtester()
 
     #preds, cov = backtester.rolling_preds_cov_from_hmm(X, df_logret, model1, window_len=1500, shrinkage_factor=(0.3, 0.3), verbose=True)
-    #np.save('../../data/rolling_preds.npy', preds)
-    #np.save('../../data/rolling_cov.npy', cov)
+    #np.save(path + 'rolling_preds.npy', preds)
+    #np.save(path + 'rolling_cov.npy', cov)
 
     #df_ret = load_data_get_ret()
-    #preds = np.load('../../data/rolling_preds.npy')
-    #cov = np.load('../../data/rolling_cov.npy')
+    #preds = np.load(path + 'rolling_preds.npy')
+    #cov = np.load(path + 'rolling_cov.npy')
 
     #weights, port_val, gamma = backtester.backtest_mpc(df_ret, preds, cov)
 
-    #np.save('../../data/mpc_weights.npy', weights)
-    #np.save('../../data/port_val.npy', port_val)
-    #np.save('../../data/gamma.npy', gamma)
+    #np.save(path + 'mpc_weights.npy', weights)
+    #np.save(path + 'port_val.npy', port_val)
+    #np.save(path + 'gamma.npy', gamma)
 
-    port_val = np.load('../../data/port_val.npy')
+    port_val = np.load(path + 'port_val.npy')
     df = load_data()
 
     metrics = backtester.performance_metrics(df, port_val, compare_assets=True)
