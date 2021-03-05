@@ -55,7 +55,6 @@ class EMHiddenMarkov(BaseHiddenMarkov):
     def compute_posteriors(self, log_alphas, log_betas):
         """
         Expectation of being in state j at time t given observations, P(S_t = j | x^T).
-        Note to self: Same as gamma in Rabiners notation.
 
         Parameters
         ----------

@@ -16,8 +16,8 @@ from models.hidden_markov import hmm_cython
 ''' TODO:
 
 Consider reusing previous fitted hidden_markov in rolling windows to minimize no. of epochs.
- 
-Problems with fitting thetas due to no state changes. 
+
+True states in jump_penalty crossval must be true states -> Currently the Viterbi State....
 '''
 
 
@@ -297,7 +297,7 @@ class JumpHMM(BaseHiddenMarkov):
                                   'X': X})
 
         state_groupby = df_states.groupby('state_seq')
-        self.mu = state_groupby['X'].mean().values.T  # transform mean back into 1darray
+        self.mu = state_groupby['X'].mean().values.T  # transform mean back into 1D-array
         self.std = state_groupby['X'].std(ddof=1).values.T
 
         # Sort array ascending and check if order is changed
