@@ -36,8 +36,12 @@ class MPC:
         decimal weight in each asset apart from the risk-free asset.
     """
 
-    def __init__(self, rets, covariances, prev_port_vals, start_weights, max_drawdown=0.4, gamma_0=5, kappa1=0.004,
-                 kappa2=0., rho1=0., rho2=0.0005, max_holding=0.4, max_leverage=2.0, short_cons='LLO', eps=0.0000001):
+    def __init__(self, rets, covariances, prev_port_vals, start_weights,
+                 max_drawdown=0.4, gamma_0=5, kappa1=0.004, kappa2=0.,
+                 rho1=0., rho2=0.0005, max_holding=0.4, max_leverage=2.0,
+                 short_cons='LLO', eps=0.0000001):
+        if not short_cons in ['LLO', 'long_only', 'max_leverage']:
+            raise Exception('short_cons must be declared as a str. Options include "LLO", "long_only", "max_leverage".')
 
         self.max_drawdown = max_drawdown
         self.gamma_0 = gamma_0

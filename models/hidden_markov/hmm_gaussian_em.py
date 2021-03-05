@@ -1,11 +1,14 @@
 import numpy as np
 from numpy import ndarray
+from scipy import stats
 from scipy.special import logsumexp
 
 from utils.simulate_returns import simulate_2state_gaussian
+from utils.hmm_sampler import SampleHMM
 from models.hidden_markov.hmm_base import BaseHiddenMarkov
 
 from multiprocessing import Pool
+from functools import partial
 
 
 class EMHiddenMarkov(BaseHiddenMarkov):
@@ -144,6 +147,7 @@ class EMHiddenMarkov(BaseHiddenMarkov):
                         # Compute AIC and BIC and print model results
                         # AIC & BIC computed as shown on
                         # https://rdrr.io/cran/HMMpa/man/AIC_HMM.html
+                        self.best_epoch = llk
                         num_independent_params = self.n_states ** 2 + 2 * self.n_states - 1  # True for normal distributions
                         self.aic_ = -2 * llk + 2 * num_independent_params
                         self.bic_ = -2 * llk + num_independent_params * np.log(len(X))
@@ -154,9 +158,9 @@ class EMHiddenMarkov(BaseHiddenMarkov):
                         self.best_mu = self.mu
                         self.best_std = self.std
 
-                    if verbose == 1:
-                        print(
-                            f'Iteration {iter} - LLK {llk} - Means: {self.mu} - STD {self.std} - Gamma {np.diag(self.tpm)} - Delta {self.start_proba}')
+                        if verbose == 1:
+                            print(
+                                f'Iteration {iter} - LLK {llk} - Means: {self.mu} - STD {self.std} - TPM {np.diag(self.tpm)} - Delta {self.start_proba}')
                     break
 
                 elif iter == self.max_iter - 1 and verbose == 1:
@@ -169,31 +173,66 @@ class EMHiddenMarkov(BaseHiddenMarkov):
         self.mu = self.best_mu
         self.std = self.best_std
 
+class OnlineHMM(BaseHiddenMarkov):
+
+    def __init__(self, n_states: int = 2, init: str = 'random', max_iter: int = 100, tol: float = 1e-6,
+                 epochs: int = 10, random_state: int = 42):
+        super().__init__(n_states, init, max_iter, tol, epochs, random_state)
+
+    def train(self, X, forget_fac=0.9925):
+        self._init_params()
+        self.forward_prob = self.start_proba * stats.norm.pdf(X[0], loc=self.mu, scale=self.std)
+        self.prev_forward_prob = self.forward_prob
+
+        self.posteriors = np.zeros(shape=(len(X)-1, self.n_states))
+
+        self.rec = 0
+        self.prev_rec = 0
+        self.rec_2_t = 0
+        self.rec_2_t1 = 0
+
+        for t in range(1, len(X)):
+
+            self.forward_prob = (self.prev_forward_prob * self.tpm.T).T.sum(axis=0) \
+                                * stats.norm.pdf(X[t], loc=self.mu, scale=self.std)
+
+            self.posteriors[t] = self.forward_prob / self.forward_prob.sum()
+
+            self.trans_proba = np.zeros((2,2))
+            for i in range(self.n_states):
+                for j in range(self.n_states):
+                    self.trans_proba[i,j] = self.prev_forward_prob[i] * self.tpm[i,j] \
+                    * stats.norm.pdf(X[t], loc=self.mu[j], scale=self.std[j]) / self.forward_prob.sum()
+
+            self.prev_rec = self.rec
+            self.rec = forget_fac * self.rec + (1 - forget_fac) * self.posteriors[t]
+            #self.rec_2_t = forget_fac * self.rec_1_t + (1 - forget_fac) * self.posteriors[t]
+            #self.rec_2_t1 = forget_fac * self.rec_1_t + (1 - forget_fac) * self.posteriors[t]
+
+            if t > 1:
+                self.tpm = (self.prev_rec / self.rec * self.tpm.T).T + (self.trans_proba.T / self.rec).T
+
+
+
+
+
 
 
 if __name__ == '__main__':
-    model = EMHiddenMarkov(n_states=2, init="random", random_state=42, epochs=1, max_iter=100)
-    returns, true_regimes = simulate_2state_gaussian(plotting=False)  # Simulate some data from two normal distributions
+    sampler = SampleHMM(n_states=2)
+    X, viterbi_states, true_states = sampler.sample_with_viterbi(1000, 1)
+    model = EMHiddenMarkov(n_states=2, init="random", random_state=42, epochs=20, max_iter=100)
 
-    pool = Pool()
+    model.fit(X, verbose=True)
+    #print(model.tpm.sum(axis=1))
+    #print(model.emission_probs(X))
 
-    result = pool.map(model.fit, [returns]*10)
-
-    #plot_samples_states(sample_rets, sample_states)
-
-
-
-
+    model = OnlineHMM(n_states=2, init='random', random_state=1)
+    model.train(X)
 
 
-    check_hmmlearn = False
-    if check_hmmlearn == True:
-        from hmmlearn import hmm
 
-        hmmlearn = hmm.GaussianHMM(n_components=2, covariance_type="full", n_iter=1000).fit(returns.reshape(-1, 1))
 
-        print(hmmlearn.transmat_)
-        print(hmmlearn.means_)
-        print(hmmlearn.covars_)
-
-        predictions = hmmlearn.predict(returns.reshape(-1, 1))
+    #pool = Pool()
+    #mapfunc = partial(model.fit, verbose=False)
+    #result = pool.map(mapfunc, [X]*20)
