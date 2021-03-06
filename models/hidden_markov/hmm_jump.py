@@ -57,24 +57,41 @@ class JumpHMM(BaseHiddenMarkov):
             return state_seq, theta
 
     def construct_features(self, X: ndarray, window_len: int):  # TODO remove forward-looking params and slice X accordingly
-        df = pd.DataFrame(X)
 
-        df['Left local mean'] = df.rolling(window_len).mean()
-        df['Left local std'] = df[0].rolling(window_len).std(ddof=1)
+        df = pd.DataFrame({'raw_input': X})
 
-        df['Right local mean'] = df[0].rolling(window_len).mean().shift(-window_len + 1)
-        df['Right local std'] = df[0].rolling(window_len).std(ddof=1).shift(-window_len + 1)
+        df['left_local_mean'] = df['raw_input'].rolling(window_len).mean()
+        df['left_local_std'] = df['raw_input'].rolling(window_len).std(ddof=1)
 
-        look_ahead = df[0].rolling(window_len).sum().shift(-window_len)  # Looks forward with window_len (Helper 1)
-        look_back = df[0].rolling(
+        df['right_local_mean'] = df['raw_input'].rolling(window_len).mean().shift(-window_len + 1)  #Look forward
+        df['right_local_std'] = df['raw_input'].rolling(window_len).std(ddof=1).shift(-window_len + 1) # Look forward
+
+        look_ahead = df['raw_input'].rolling(window_len).sum().shift(-window_len)  # Looks forward with window_len (Helper 1)
+        look_back = df['raw_input'].rolling(
             window_len).sum()  # Includes current position and looks window_len - 1 backward (Helper 2)
-        df['Central local mean'] = (look_ahead + look_back) / (2 * window_len)
-        df['Centered local std'] = df[0].rolling(window_len * 2).std(ddof=1).shift(
+        df['central_local_mean'] = (look_ahead + look_back) / (2 * window_len)
+        df['centered_local_std'] = df['raw_input'].rolling(window_len * 2).std(ddof=1).shift(
             -window_len)  # Rolls from 0 and 2x length iteratively, then shifts back 1x window length
 
         # Absolute changes
-        df['left_abs_change'] = np.abs(df[0].diff())  # np.abs(np.diff(X))
-        df['right_abs_change'] = df['left_abs_change'].shift(-1)
+        df['left_abs_change'] = np.abs(df['raw_input'].diff())  # np.abs(np.diff(X))
+        df['right_abs_change'] = df['left_abs_change'].shift(-1) #Forward looking
+
+        # Absoloute previous change
+        df['prev_left_abs_change'] = df['left_abs_change'].shift(1) #Henning uses this
+
+        #Median
+        df['left_local_median'] = df['raw_input'].rolling(window_len).median() #
+
+        #Rolling difference between min and max
+        df['min_max_diff'] = df['raw_input'].rolling(window_len).max() - df['raw_input'].rolling(window_len).min() #Also gives error, but code should be ok
+
+
+        print(df)
+
+
+        # Rolling Min
+
 
         Z = df.dropna().to_numpy()
         # Scale features
@@ -84,6 +101,8 @@ class JumpHMM(BaseHiddenMarkov):
         self.n_features = Z.shape[1]
 
         return Z
+
+
 
     def _l2_norm_squared(self, z, theta):
         """
@@ -345,15 +364,23 @@ class JumpHMM(BaseHiddenMarkov):
 
 
 if __name__ == '__main__':
-    model = JumpHMM(n_states=2, jump_penalty=2, random_state=42)
-    sampler = SampleHMM(n_states=2, random_state=1)
+    #model = JumpHMM(n_states=2, jump_penalty=2, random_state=42)
+    #sampler = SampleHMM(n_states=2, random_state=1)
 
-    n_samples = 250
-    n_sequences = 50
-    X, viterbi_states, true_states = sampler.sample_with_viterbi(n_samples, n_sequences)
+    #n_samples = 250
+    #n_sequences = 50
+    #X, viterbi_states, true_states = sampler.sample_with_viterbi(n_samples, n_sequences)
 
 
     #plotting.plot_samples_states_viterbi(X[:,0], viterbi_states[:,0], true_states[:,0])
 
-    for i in range(50):
-        bac = model.bac_score_1d(X[:,i], viterbi_states[:, i] , 30)
+    #for i in range(50):
+       # bac = model.bac_score_1d(X[:,i], viterbi_states[:, i] , 30)
+    model = JumpHMM(n_states=2)
+    X = np.array([1,2,3,4,5,6,7,8,9])
+    model.construct_features(X, window_len=3)
+
+
+
+
+
