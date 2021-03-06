@@ -181,41 +181,33 @@ class OnlineHMM(BaseHiddenMarkov):
 
     def train(self, X, forget_fac=0.9925):
         self._init_params()
-        self.forward_prob = self.start_proba * stats.norm.pdf(X[0], loc=self.mu, scale=self.std)
-        self.prev_forward_prob = self.forward_prob
 
-        self.posteriors = np.zeros(shape=(len(X)-1, self.n_states))
+        self.log_forward_proba = np.zeros(shape=(len(X), self.n_states))
+        self.posteriors = np.zeros(shape=(len(X), self.n_states))
+        self.rec = np.zeros(shape=(len(X), self.n_states))
 
-        self.rec = 0
-        self.prev_rec = 0
-        self.rec_2_t = 0
-        self.rec_2_t1 = 0
+        self.log_forward_proba[0] = np.log(self.start_proba) + stats.norm.logpdf(X[0], loc=self.mu, scale=self.std)
+        self.posteriors[0] = np.exp(self.log_forward_proba[0] - logsumexp(self.log_forward_proba[0]))
+        self.rec[0] = (1 - forget_fac) * self.posteriors[0]
 
         for t in range(1, len(X)):
 
-            self.forward_prob = (self.prev_forward_prob * self.tpm.T).T.sum(axis=0) \
-                                * stats.norm.pdf(X[t], loc=self.mu, scale=self.std)
+            log_tpm = np.log(self.tpm)
+            log_proba = stats.norm.logpdf(X[t], loc=self.mu, scale=self.std)
+            self.log_forward_proba[t] = logsumexp((self.log_forward_proba[t - 1] + log_tpm.T).T, axis=0) + log_proba
+            llk = logsumexp(self.log_forward_proba[t])
 
-            self.posteriors[t] = self.forward_prob / self.forward_prob.sum()
+            self.posteriors[t] = np.exp(self.log_forward_proba[t] - llk)
+            self.rec[t] = forget_fac * self.rec[t - 1] + (1 - forget_fac) * self.posteriors[t]
 
-            self.trans_proba = np.zeros((2,2))
+            self.trans_proba = np.zeros((2,2))  # TODO move outside loop?
             for i in range(self.n_states):
                 for j in range(self.n_states):
-                    self.trans_proba[i,j] = self.prev_forward_prob[i] * self.tpm[i,j] \
-                    * stats.norm.pdf(X[t], loc=self.mu[j], scale=self.std[j]) / self.forward_prob.sum()
+                    self.trans_proba[i,j] = self.log_forward_proba[t - 1, i] + log_tpm[i, j] \
+                                            + log_proba[j] - llk
 
-            self.prev_rec = self.rec
-            self.rec = forget_fac * self.rec + (1 - forget_fac) * self.posteriors[t]
-            #self.rec_2_t = forget_fac * self.rec_1_t + (1 - forget_fac) * self.posteriors[t]
-            #self.rec_2_t1 = forget_fac * self.rec_1_t + (1 - forget_fac) * self.posteriors[t]
-
-            if t > 1:
-                self.tpm = (self.prev_rec / self.rec * self.tpm.T).T + (self.trans_proba.T / self.rec).T
-
-
-
-
-
+            self.trans_proba = np.exp(self.trans_proba)
+            self.tpm = (self.rec[t-1] / self.rec[t] * self.tpm.T).T + (self.trans_proba.T / self.rec[t]).T
 
 
 if __name__ == '__main__':
@@ -223,12 +215,14 @@ if __name__ == '__main__':
     X, viterbi_states, true_states = sampler.sample_with_viterbi(1000, 1)
     model = EMHiddenMarkov(n_states=2, init="random", random_state=42, epochs=20, max_iter=100)
 
-    model.fit(X, verbose=True)
+    #model.fit(X, verbose=True)
     #print(model.tpm.sum(axis=1))
     #print(model.emission_probs(X))
 
     model = OnlineHMM(n_states=2, init='random', random_state=1)
     model.train(X)
+
+    print(model.tpm)
 
 
 
