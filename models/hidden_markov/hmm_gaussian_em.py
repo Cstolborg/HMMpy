@@ -55,7 +55,7 @@ class EMHiddenMarkov(BaseHiddenMarkov):
                  epochs: int = 10, random_state: int = 42):
         super().__init__(n_states, init, max_iter, tol, epochs, random_state)
 
-    def compute_posteriors(self, log_alphas, log_betas):
+    def compute_log_posteriors(self, log_alphas, log_betas):
         """
         Expectation of being in state j at time t given observations, P(S_t = j | x^T).
 
@@ -72,7 +72,23 @@ class EMHiddenMarkov(BaseHiddenMarkov):
         gamma = log_alphas + log_betas
         normalizer = logsumexp(gamma, axis=1, keepdims=True)
         gamma -= normalizer
-        return np.exp(gamma)
+        return gamma
+
+    def compute_log_xi(self, log_alphas, log_betas):
+        """Expected number of transitions from state i to j, (P(S_t-1 = j, S_t = i | x^T)"""
+        # Initialize matrix of shape j X j
+        # Number of expected transitions from state i to j
+        log_xi = np.zeros(shape=(len(log_alphas)-1, self.n_states, self.n_states))
+        normalizer = np.zeros(shape=(self.n_states, self.n_states))
+        log_tpm = np.log(self.tpm)
+        for i in range(self.n_states):
+            for j in range(self.n_states):
+                log_xi[:, i, j] = log_tpm[i, j] + log_alphas[:-1, i] + \
+                                 log_betas[1:, j] + self.log_emission_probs_[1:, j]
+
+        normalizer = logsumexp(log_xi, axis=(1,2))  # Take log sum over last two axes and keep first one.
+        xi = log_xi - normalizer[:, np.newaxis, np.newaxis]
+        return xi
 
     def _e_step(self, X: ndarray):
         '''
@@ -82,8 +98,10 @@ class EMHiddenMarkov(BaseHiddenMarkov):
         llk, log_alphas = self._log_forward_proba()
         log_betas = self._log_backward_proba()
 
-        gamma = self.compute_posteriors(log_alphas, log_betas)
+        gamma = self.compute_log_posteriors(log_alphas, log_betas)  # Shape (n_samples, n_states)
+        xi = self.compute_log_xi(log_alphas, log_betas)  # Shape (n_samples, n_states, n_states)
 
+        """
         # Initialize matrix of shape j X j
         # Number of expected transitions from state i to j
         xi = np.zeros(shape=(self.n_states, self.n_states))
@@ -91,16 +109,22 @@ class EMHiddenMarkov(BaseHiddenMarkov):
             for k in range(self.n_states):
                 xi[j, k] = self.tpm[j, k] * np.sum(
                     np.exp(log_alphas[:-1, j] + log_betas[1:, k] + self.log_emission_probs_[1:, k] - llk))
+        """
 
         return gamma, xi, llk
 
     def _m_step(self, X: ndarray, gamma, xi):
-        ''' 
+        '''
         Given u and f do an m-step.
         Updates the model parameters delta, Transition matrix and state dependent distributions.
          '''
         # Update transition matrix and initial probs
-        self.tpm = xi / np.sum(xi, axis=1).reshape((-1, 1))  # Check if this actually sums correct and to 1 on rows
+        #self.tpm = xi / np.sum(xi, axis=1).reshape((-1, 1))  # Check if this actually sums correct and to 1 on rows
+
+        self.tpm = np.exp(logsumexp(xi, axis=0) - logsumexp(gamma, axis=0).reshape(-1,1))
+
+        gamma = np.exp(gamma)
+
         self.start_proba = gamma[0, :] / np.sum(gamma[0, :])
 
         # Update state-dependent distributions
@@ -173,14 +197,28 @@ class EMHiddenMarkov(BaseHiddenMarkov):
         self.mu = self.best_mu
         self.std = self.best_std
 
-class OnlineHMM(BaseHiddenMarkov):
+class OnlineHMM(EMHiddenMarkov, BaseHiddenMarkov):
 
     def __init__(self, n_states: int = 2, init: str = 'random', max_iter: int = 100, tol: float = 1e-6,
                  epochs: int = 10, random_state: int = 42):
         super().__init__(n_states, init, max_iter, tol, epochs, random_state)
 
-    def train(self, X, forget_fac=0.9925):
+    def _init_posteriors(self, X, forget_fac):
+        self.emission_probs(X)
+        llk, log_alphas = self._log_forward_proba()
+        log_betas = self._log_backward_proba()
+        posteriors = self.compute_log_posteriors(log_alphas, log_betas)  # 2-D array (n_samples, n_states)
+
+        multipliers = np.arange(1, len(X)+1, 1)[::-1]
+        posteriors_exp = posteriors * multipliers[:, np.newaxis]
+
+        return posteriors_exp
+
+    def train(self, X, n_init_obs=250, forget_fac=0.9925):
         self._init_params()
+
+        #posteriors_exp = self._init_posteriors(X[:250], forget_fac=forget_fac)
+        #X = X[250:]
 
         self.log_forward_proba = np.zeros(shape=(len(X), self.n_states))
         self.posteriors = np.zeros(shape=(len(X), self.n_states))
@@ -188,7 +226,7 @@ class OnlineHMM(BaseHiddenMarkov):
 
         self.log_forward_proba[0] = np.log(self.start_proba) + stats.norm.logpdf(X[0], loc=self.mu, scale=self.std)
         self.posteriors[0] = np.exp(self.log_forward_proba[0] - logsumexp(self.log_forward_proba[0]))
-        self.rec[0] = (1 - forget_fac) * self.posteriors[0]
+        #self.rec[0] = forget_fac * posteriors_exp[-1] + (1 - forget_fac) * self.posteriors[0]
 
         for t in range(1, len(X)):
 
@@ -198,7 +236,7 @@ class OnlineHMM(BaseHiddenMarkov):
             llk = logsumexp(self.log_forward_proba[t])
 
             self.posteriors[t] = np.exp(self.log_forward_proba[t] - llk)
-            self.rec[t] = forget_fac * self.rec[t - 1] + (1 - forget_fac) * self.posteriors[t]
+            #self.rec[t] = forget_fac * self.rec[t - 1] + (1 - forget_fac) * self.posteriors[t]
 
             self.trans_proba = np.zeros((2,2))  # TODO move outside loop?
             for i in range(self.n_states):
@@ -207,7 +245,26 @@ class OnlineHMM(BaseHiddenMarkov):
                                             + log_proba[j] - llk
 
             self.trans_proba = np.exp(self.trans_proba)
-            self.tpm = (self.rec[t-1] / self.rec[t] * self.tpm.T).T + (self.trans_proba.T / self.rec[t]).T
+
+            sum1 = np.sum(self.posteriors[1:t], axis=0)
+            sum2 = np.sum(self.posteriors[1:t+1], axis=0)
+
+            print(sum1)
+            print(sum2)
+            print(self.trans_proba)
+            print('___')
+            print(self.tpm)
+            print(self.tpm.sum(axis=1))
+            print('-'*40)
+
+            if t > 2:
+                self.tpm = (sum1 / sum2 * self.tpm.T).T \
+                      (self.trans_proba.T / sum2).T
+            else:
+                self.tpm = (self.trans_proba.T / sum2).T
+
+            #self.tpm = (self.rec[t-1] / self.rec[t] * self.tpm.T).T + (self.trans_proba.T / self.rec[t]).T
+            #self.tpm = self.tpm / np.sum(self.tpm, axis=1).reshape((-1, 1))
 
 
 if __name__ == '__main__':
@@ -215,14 +272,13 @@ if __name__ == '__main__':
     X, viterbi_states, true_states = sampler.sample_with_viterbi(1000, 1)
     model = EMHiddenMarkov(n_states=2, init="random", random_state=42, epochs=20, max_iter=100)
 
-    #model.fit(X, verbose=True)
-    #print(model.tpm.sum(axis=1))
-    #print(model.emission_probs(X))
+    model.fit(X, verbose=True)
+    print(model.tpm.sum(axis=1))
 
-    model = OnlineHMM(n_states=2, init='random', random_state=1)
-    model.train(X)
+    #model = OnlineHMM(n_states=2, init='random', random_state=42)
+    #model.train(X)
 
-    print(model.tpm)
+    #print(model.tpm)
 
 
 
