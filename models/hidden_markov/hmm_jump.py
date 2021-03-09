@@ -4,6 +4,7 @@ import pandas as pd
 from sklearn.cluster._kmeans import kmeans_plusplus
 from sklearn.metrics import confusion_matrix
 from sklearn.preprocessing import StandardScaler
+from scipy.stats import mode
 
 from utils.hmm_sampler import SampleHMM
 from models.hidden_markov.hmm_base import BaseHiddenMarkov
@@ -63,9 +64,6 @@ class JumpHMM(BaseHiddenMarkov):
         df['left_local_mean'] = df['raw_input'].rolling(window_len).mean()
         df['left_local_std'] = df['raw_input'].rolling(window_len).std(ddof=1)
 
-        df['right_local_mean'] = df['raw_input'].rolling(window_len).mean().shift(-window_len + 1)  #Look forward
-        df['right_local_std'] = df['raw_input'].rolling(window_len).std(ddof=1).shift(-window_len + 1) # Look forward
-
         look_ahead = df['raw_input'].rolling(window_len).sum().shift(-window_len)  # Looks forward with window_len (Helper 1)
         look_back = df['raw_input'].rolling(
             window_len).sum()  # Includes current position and looks window_len - 1 backward (Helper 2)
@@ -75,7 +73,6 @@ class JumpHMM(BaseHiddenMarkov):
 
         # Absolute changes
         df['left_abs_change'] = np.abs(df['raw_input'].diff())  # np.abs(np.diff(X))
-        df['right_abs_change'] = df['left_abs_change'].shift(-1) #Forward looking
 
         # Absoloute previous change
         df['prev_left_abs_change'] = df['left_abs_change'].shift(1) #Henning uses this
@@ -86,11 +83,8 @@ class JumpHMM(BaseHiddenMarkov):
         #Rolling difference between min and max
         df['min_max_diff'] = df['raw_input'].rolling(window_len).max() - df['raw_input'].rolling(window_len).min() #Also gives error, but code should be ok
 
-
-        print(df)
-
-
-        # Rolling Min
+        #Rolling sum
+        df['left_local_sum'] = df['raw_input'].rolling(window_len).sum()
 
 
         Z = df.dropna().to_numpy()
