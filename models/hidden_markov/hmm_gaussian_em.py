@@ -164,8 +164,8 @@ class EMHiddenMarkov(BaseHiddenMarkov):
 
             for iter in range(self.max_iter):
                 # Do e- and m-step
-                gamma, xi, llk = self._e_step(X)
-                self._m_step(X, gamma, xi)
+                log_gamma, log_xi, llk = self._e_step(X)
+                self._m_step(X, log_gamma, log_xi)
 
                 # Check convergence criterion
                 crit = np.abs(llk - self.old_llk)  # Improvement in log likelihood
@@ -202,7 +202,7 @@ class EMHiddenMarkov(BaseHiddenMarkov):
         self.std = self.best_std
 
 if __name__ == '__main__':
-    sampler = SampleHMM(n_states=2, random_state=42, hmm_params=hmm_params)
+    sampler = SampleHMM(n_states=2, random_state=42)
     X, viterbi_states, true_states = sampler.sample_with_viterbi(1000, 1)
     model = EMHiddenMarkov(n_states=2, init="random", random_state=42, epochs=20, max_iter=100)
 
