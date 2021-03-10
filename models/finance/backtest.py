@@ -22,6 +22,10 @@ Create some way to do in-sample crossvalidation for hyperparameters
 TRANSACTION COSTS: Do we subtract transaction_costs() method fom gross returns or multiply by (1-trans_costs)
 
 SHRINKAGE: Sort portfolios according to variance
+    EVMA OR Hyperbolic
+    Eksponentielt vægtet
+    
+
 """
 
 class FinanceHMM:
@@ -29,6 +33,7 @@ class FinanceHMM:
     Class to compute multivariate mixture distributions from n_assets based on a given HMM.
 
     Computes posteriors, state sequences as well as expected and forecasted returns and standard deviations.
+    Transforms lognormal multivariate distributions into normal distributions and combines them into mixtures.
 
     Parameters
     ----------
@@ -283,7 +288,7 @@ class Backtester:
         return self.preds, self.cov
 
     def backtest_mpc(self, df_rets, preds, covariances, n_preds=15, port_val=1000,
-                     start_weights=None, max_drawdown=0.4, max_leverage=2.0, gamma_0=5, kappa1=0.004,
+                     start_weights=None, max_drawdown=0.4, max_leverage=2.0, gamma_0=5, kappa1=0.008,
                      rho2=0.0005, max_holding=0.4, short_cons="LLO", eps=1e-6):
         """
        Wrapper for backtesting MPC models on given data and predictions.
@@ -319,6 +324,7 @@ class Backtester:
         self.weights[0] = start_weights
 
         gamma = np.array([])  # empty array
+        trade_cost = []
 
         # Instantiate MPC object
         mpc_solver = MPC(rets=preds[0], covariances=covariances[0], prev_port_vals=self.port_val,
@@ -343,11 +349,14 @@ class Backtester:
             gross_ret = (self.weights[t + 1] @ (1 + df_rets.iloc[t]))
             shorting_cost = self.short_costs(self.weights[t + 1], rf_return=df_rets.iloc[t, -1])
             trans_cost = self.transaction_costs(delta_weights, trans_cost=0.001)
-            new_port_val = gross_ret * (1-trans_cost) * (1-shorting_cost) * self.port_val[-1]  # TODO trans+short costs???
+            new_port_val = (gross_ret-shorting_cost) * (1-trans_cost) * self.port_val[-1]  # TODO trans+short costs???
             self.port_val = np.append(self.port_val, new_port_val)
+
+            trade_cost.append(trans_cost)
 
         self.port_val = self.port_val[1:]  # Throw away first observation since it is artificially set to zero
         self.gamma = gamma
+        self.trans_cost = np.array(trade_cost)
 
         return self.weights, self.port_val, gamma
 
@@ -360,10 +369,10 @@ class Backtester:
 
     def transaction_costs(self, delta_weights, trans_cost=0.001):
         """
-        Compute transaction costs. Assumes no costs in risk-free asset and there is a cost to
-        both buying and selling assets.
+        Compute transaction costs. Assumes no costs in risk-free asset and equal cost to
+        buying and selling assets.
         """
-        delta_weights = delta_weights[-1:]  # Remove risk-free asset as it doesn't have trading costs
+        delta_weights = delta_weights[:-1]  # Remove risk-free asset as it doesn't have trading costs
         delta_weights = np.abs(delta_weights).sum()  # abs since same price for buying/selling
 
         return delta_weights * trans_cost
@@ -380,9 +389,9 @@ class Backtester:
         n_years = len(port_val) / 252
         excess_ret = df_ret['port_val'] - df_ret['T-bills rf']
 
-        cagr = ((1+excess_ret).prod())**(1/n_years) - 1
-        std = excess_ret.std(ddof=1) * np.sqrt(252)
-        sharpe = cagr / std
+        excess_cagr = ((1+excess_ret).prod())**(1/n_years) - 1
+        excess_std = excess_ret.std(ddof=1) * np.sqrt(252)
+        sharpe = excess_cagr / excess_std
 
         # Drawdown
         peaks = np.maximum.accumulate(port_val)
@@ -391,30 +400,36 @@ class Backtester:
         max_drawdown_end = np.argmax(drawdown)
         max_drawdown_beg = np.argmax(port_val[:max_drawdown_end])
         drawdown_dur = max_drawdown_end - max_drawdown_beg  # TODO not showing correct values
-        calmar = cagr / max_drawdown
+        calmar = excess_cagr / max_drawdown
 
         if compare_assets == True:
+            ret = df_ret.drop('T-bills rf', axis=1)
+            cagr = ((1 + ret).prod(axis=0)) ** (1 / n_years) - 1
+            std = ret.std(axis=0, ddof=1) * np.sqrt(252)
+
             excess_ret = df_ret.subtract(df_ret['T-bills rf'], axis=0).drop('T-bills rf', axis=1)
-            cagr = ((1 + excess_ret).prod(axis=0)) ** (1 / n_years) - 1
-            std = excess_ret.std(axis=0 ,ddof=1) * np.sqrt(252)
-            sharpe = cagr / std
+            excess_cagr = ((1 + excess_ret).prod(axis=0)) ** (1 / n_years) - 1
+            excess_std = excess_ret.std(axis=0 ,ddof=1) * np.sqrt(252)
+            sharpe = excess_cagr / excess_std
 
             df = df.drop('T-bills rf', axis=1)
             peaks = df.cummax(axis=0)
             drawdown = -(df - peaks) / peaks
             max_drawdown = drawdown.max(axis=0)
-            calmar = cagr / max_drawdown
+            calmar = excess_cagr / max_drawdown
 
-            metrics = {'excess_return': cagr,
+            metrics = {'return': cagr,
                        'std': std,
+                       'excess_return': excess_cagr,
+                       'excess_std': excess_std,
                        'sharpe': sharpe,
                        'max_drawdown': max_drawdown,
                        'calmar_ratio': calmar}
 
             metrics = pd.DataFrame(metrics)
         else:
-            metrics = {'excess_return': cagr,
-                       'std': std,
+            metrics = {'excess_return': excess_cagr,
+                       'std': excess_std,
                        'sharpe': sharpe,
                        'max_drawdown': max_drawdown,
                        'max_drawdown_dur': drawdown_dur,
@@ -449,6 +464,10 @@ if __name__ == "__main__":
     df = load_data()
 
     metrics = backtester.performance_metrics(df, port_val, compare_assets=True)
+
+    print(metrics)
+    print('transaction costs:', (1-backtester.trans_cost).prod())
+    print('highest trans cost', backtester.trans_cost.max())
 
     df = df.iloc[-len(port_val):]
 
