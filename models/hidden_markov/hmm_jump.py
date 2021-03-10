@@ -64,13 +64,6 @@ class JumpHMM(BaseHiddenMarkov):
         df['left_local_mean'] = df['raw_input'].rolling(window_len).mean()
         df['left_local_std'] = df['raw_input'].rolling(window_len).std(ddof=1)
 
-        look_ahead = df['raw_input'].rolling(window_len).sum().shift(-window_len)  # Looks forward with window_len (Helper 1)
-        look_back = df['raw_input'].rolling(
-            window_len).sum()  # Includes current position and looks window_len - 1 backward (Helper 2)
-        df['central_local_mean'] = (look_ahead + look_back) / (2 * window_len)
-        df['centered_local_std'] = df['raw_input'].rolling(window_len * 2).std(ddof=1).shift(
-            -window_len)  # Rolls from 0 and 2x length iteratively, then shifts back 1x window length
-
         # Absolute changes
         df['left_abs_change'] = np.abs(df['raw_input'].diff())  # np.abs(np.diff(X))
 
