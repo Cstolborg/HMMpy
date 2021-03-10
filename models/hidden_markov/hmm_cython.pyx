@@ -1,4 +1,5 @@
-# cython: language_level = 3
+# cython: language_level = 3, boundscheck=False, wraparound=False
+
 cimport cython
 from cython cimport view
 from libc.math cimport exp, log, INFINITY, isinf

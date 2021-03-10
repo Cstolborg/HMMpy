@@ -17,7 +17,7 @@ class SampleHMM(BaseHiddenMarkov):
         Number of hidden states
     hmm_params: dict
         hmm model parameters to sample from.
-        To set params, create a dict with 'mu', 'std', 'tpm' and 'stationary distribution' as kwds
+        To set params, create a dict with 'mu', 'std' and 'tpm' as kwds
         and their values in lists or ndarrays.
     random_state : int, default = 42
         Parameter set to recreate output
