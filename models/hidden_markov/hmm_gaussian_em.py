@@ -81,8 +81,10 @@ class EMHiddenMarkov(BaseHiddenMarkov):
         # Initialize matrix of shape j X j
         # Number of expected transitions from state i to j
         log_xi = np.zeros(shape=(len(log_alphas)-1, self.n_states, self.n_states))
-        normalizer = np.zeros(shape=(self.n_states, self.n_states))
-        log_tpm = np.log(self.tpm)
+
+        with np.errstate(divide='ignore'):
+            log_tpm = np.log(self.tpm)
+
         for i in range(self.n_states):
             for j in range(self.n_states):
                 log_xi[:, i, j] = log_tpm[i, j] + log_alphas[:-1, i] + \
@@ -136,7 +138,7 @@ class EMHiddenMarkov(BaseHiddenMarkov):
             self.mu[j] = np.sum(gamma[:, j] * X) / np.sum(gamma[:, j])
             self.std[j] = np.sqrt(np.sum(gamma[:, j] * np.square(X - self.mu[j])) / np.sum(gamma[:, j]))
 
-    def fit(self, X: ndarray, verbose=0):
+    def fit(self, X: ndarray, sort_state_seq=False, verbose=False):
         """
         Function iterates through the e-step and the m-step recursively to find the optimal model parameters.
 
@@ -165,7 +167,7 @@ class EMHiddenMarkov(BaseHiddenMarkov):
             for iter in range(self.max_iter):
                 # Do e- and m-step
                 log_gamma, log_xi, llk = self._e_step(X)
-                self._m_step(X, log_gamma, log_xi)
+                self._m_step(X, log_gamma, log_xi)  # Updates mu, std and tpm
 
                 # Check convergence criterion
                 crit = np.abs(llk - self.old_llk)  # Improvement in log likelihood
@@ -200,6 +202,20 @@ class EMHiddenMarkov(BaseHiddenMarkov):
         self.start_proba = self.best_delta
         self.mu = self.best_mu
         self.std = self.best_std
+
+        if sort_state_seq is True:
+            self._check_state_sort()  # Ensures low variance state is first
+
+    def _check_state_sort(self):
+        # Sort array ascending and check if order is changed
+        # If the order is changed then states are reversed
+        if np.sort(self.std)[0] != self.std[0]:
+            # TODO only works for 2-states
+            self.mu = self.mu[::-1]
+            self.std = self.std[::-1]
+            self.tpm = self.tpm[::-1]
+            self.start_proba = self.start_proba[::-1]
+
 
 if __name__ == '__main__':
     sampler = SampleHMM(n_states=2, random_state=42)

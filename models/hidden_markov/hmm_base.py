@@ -71,7 +71,7 @@ class BaseHiddenMarkov(BaseEstimator):
 
         np.random.seed(self.random_state)
 
-    def _init_params(self, X=None, diag_uniform_dist = (.7, .99), output_hmm_params=True):
+    def _init_params(self, X=None, diag_uniform_dist = (.95, .99), output_hmm_params=True):
         """
         Function to initialize HMM parameters. Can do so using kmeans++, randomly or deterministic.
 
@@ -334,11 +334,12 @@ class BaseHiddenMarkov(BaseEstimator):
         log_alphas = np.zeros((n_obs, n_states))
 
         # Do the pass in cython
-        hmm_cython.forward_proba(n_obs, n_states,
-                                 np.log(self.start_proba),
-                                 np.log(self.tpm),
-                                 self.log_emission_probs_, log_alphas)
-        return logsumexp(log_alphas[-1]), log_alphas  # log-likelihood and forward probabilities
+        with np.errstate(divide='ignore'):
+            hmm_cython.forward_proba(n_obs, n_states,
+                                     np.log(self.start_proba),
+                                     np.log(self.tpm),
+                                     self.log_emission_probs_, log_alphas)
+            return logsumexp(log_alphas[-1]), log_alphas  # log-likelihood and forward probabilities
 
     def _log_backward_proba(self):
         """
@@ -353,11 +354,12 @@ class BaseHiddenMarkov(BaseEstimator):
         log_betas = np.zeros((n_obs, n_states))
 
         # Do the pass in cython
-        hmm_cython.backward_proba(n_obs, n_states,
-                                  np.log(self.start_proba),
-                                  np.log(self.tpm),
-                                  self.log_emission_probs_, log_betas)
-        return log_betas
+        with np.errstate(divide='ignore'):
+            hmm_cython.backward_proba(n_obs, n_states,
+                                      np.log(self.start_proba),
+                                      np.log(self.tpm),
+                                      self.log_emission_probs_, log_betas)
+            return log_betas
 
     def _viterbi(self, X):
         self.emission_probs_, self.log_emission_probs_ = self.emission_probs(X)

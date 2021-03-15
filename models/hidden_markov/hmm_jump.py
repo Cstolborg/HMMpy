@@ -1,18 +1,16 @@
 import numpy as np
-from numpy import ndarray
 import pandas as pd
+import pyximport;
+from numpy import ndarray
 from sklearn.cluster._kmeans import kmeans_plusplus
 from sklearn.metrics import confusion_matrix
 from sklearn.preprocessing import StandardScaler
-from scipy.stats import mode
 
 from utils.hmm_sampler import SampleHMM
 from models.hidden_markov.hmm_base import BaseHiddenMarkov
-
-import pyximport;
+from models.hidden_markov import hmm_cython
 
 pyximport.install()  # TODO can only be active during development -- must be done through setup.py
-from models.hidden_markov import hmm_cython
 
 ''' TODO:
 
@@ -24,7 +22,7 @@ True states in jump_penalty crossval must be true states -> Currently the Viterb
 
 class JumpHMM(BaseHiddenMarkov):
 
-    def __init__(self, n_states: int = 2, jump_penalty: float = 25, window_len: int = 6,
+    def __init__(self, n_states: int = 2, jump_penalty: float = 16, window_len: int = 6,
                  init: str = 'kmeans++', max_iter: int = 30, tol: int = 1e-6,
                  epochs: int = 10, random_state: int = 42):
         super().__init__(n_states, init, max_iter, tol, epochs, random_state)
@@ -184,7 +182,7 @@ class JumpHMM(BaseHiddenMarkov):
 
         return state_preds, objective_score
 
-    def fit(self, X, get_hmm_params=True, verbose=0):
+    def fit(self, X, get_hmm_params=True, sort_state_seq=False, verbose=False):
         self.is_fitted = False
         best_objective_score = np.inf
 
@@ -223,6 +221,8 @@ class JumpHMM(BaseHiddenMarkov):
                     old_objective_score = objective_score
 
         if get_hmm_params is True:
+            if sort_state_seq is True:
+                self.state_seq = self._check_state_sort(X, self.state_seq)
             self.get_params_from_seq(X, state_sequence=self.state_seq)
 
         if self.is_fitted is False:
@@ -243,7 +243,6 @@ class JumpHMM(BaseHiddenMarkov):
         ----------
         Hmm parameters
         """
-
         # Slice data
         if X.ndim == 1:  # Makes function compatible on higher dimensions
             X = X[(self.window_len - 1):]
@@ -259,22 +258,31 @@ class JumpHMM(BaseHiddenMarkov):
 
         state_groupby = df_states.groupby('state_seq')
 
+        # Conditional distributions
+        self.mu = state_groupby['X'].mean().values.T  # transform mean back into 1darray
+        self.std = state_groupby['X'].std(ddof=1).values.T
+
         # Transition probabilities
         # TODO only works for a 2-state HMM
-        self.tpm = np.diag(state_groupby['state_sojourns'].sum())
+        tpm = np.diag(state_groupby['state_sojourns'].sum())
         state_changes = state_groupby['state_changes'].sum()
-        self.tpm[0, 1] = state_changes[0]
-        self.tpm[1, 0] = state_changes[1]
-        self.tpm = self.tpm / self.tpm.sum(axis=1).reshape(-1, 1)  # make rows sum to 1
+
+        # if only 1 state is detected make the other state zero
+        if state_changes.sum() > 0:
+            tpm[0, 1] = state_changes[0]
+            tpm[1, 0] = state_changes[1]
+
+        else:
+            tpm = np.array([[1., 0.], [1., 0.]])
+            self.mu = np.append(self.mu, 0.)
+            self.std = np.append(self.std, 0.)
+
+        self.tpm = tpm / tpm.sum(axis=1).reshape(-1, 1)  # make rows sum to 1
 
         # init dist and stationary dist
         self.start_proba = np.zeros(self.n_states)
         self.start_proba[state_sequence[0]] = 1.
         self.stationary_dist = self.get_stationary_dist(tpm=self.tpm)
-
-        # Conditional distributions
-        self.mu = state_groupby['X'].mean().values.T  # transform mean back into 1darray
-        self.std = state_groupby['X'].std(ddof=1).values.T
 
     def _check_state_sort(self, X, state_sequence):
         """
@@ -304,7 +312,6 @@ class JumpHMM(BaseHiddenMarkov):
                                   'X': X})
 
         state_groupby = df_states.groupby('state_seq')
-        self.mu = state_groupby['X'].mean().values.T  # transform mean back into 1D-array
         self.std = state_groupby['X'].std(ddof=1).values.T
 
         # Sort array ascending and check if order is changed
@@ -314,7 +321,7 @@ class JumpHMM(BaseHiddenMarkov):
 
         return state_sequence
 
-    def bac_score_1d(self, X, y_true, jump_penalty, window_len=6):
+    def bac_score_1d(self, X, y_true, jump_penalty, window_len=6, verbose=False):
         self.jump_penalty = jump_penalty
         self.fit(X, get_hmm_params=False)  # Updates self.state_seq
         self.state_seq = self._check_state_sort(X, self.state_seq)
@@ -331,16 +338,15 @@ class JumpHMM(BaseHiddenMarkov):
         tpr = tp / (tp + fn)
         bac = np.mean(tpr)
 
-        logical_1 = bac < 0.5
-        logical_2 = conf_matrix.ndim > 1 and \
-                    (np.any(conf_matrix.sum(axis=1)==0) and \
-                    jump_penalty < 100)
+        if verbose is True:
+            logical_1 = bac < 0.5
+            logical_2 = conf_matrix.ndim > 1 and \
+                        (np.any(conf_matrix.sum(axis=1)==0) and \
+                        jump_penalty < 100)
 
-        """
-        if logical_1 or logical_2:
-            print(f'bac {bac} -- tpr {tpr} -- jump_penalty {jump_penalty}')
-            print(conf_matrix)
-        """
+            if logical_1 or logical_2:
+                print(f'bac {bac} -- tpr {tpr} -- jump_penalty {jump_penalty}')
+                print(conf_matrix)
 
         return bac
 
@@ -354,7 +360,7 @@ class JumpHMM(BaseHiddenMarkov):
 
 
 if __name__ == '__main__':
-    model = JumpHMM(n_states=2, jump_penalty=25, window_len=6, random_state=2)
+    model = JumpHMM(n_states=2, jump_penalty=16, window_len=6, random_state=2)
     sampler = SampleHMM(n_states=2, random_state=2)
 
     n_samples = 1000
