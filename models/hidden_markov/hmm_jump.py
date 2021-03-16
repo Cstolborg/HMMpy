@@ -1,18 +1,16 @@
 import numpy as np
-from numpy import ndarray
 import pandas as pd
+import pyximport;
+from numpy import ndarray
 from sklearn.cluster._kmeans import kmeans_plusplus
 from sklearn.metrics import confusion_matrix
 from sklearn.preprocessing import StandardScaler
-from scipy.stats import mode
 
 from utils.hmm_sampler import SampleHMM
 from models.hidden_markov.hmm_base import BaseHiddenMarkov
-
-import pyximport;
+from models.hidden_markov import hmm_cython
 
 pyximport.install()  # TODO can only be active during development -- must be done through setup.py
-from models.hidden_markov import hmm_cython
 
 ''' TODO:
 
@@ -24,7 +22,7 @@ True states in jump_penalty crossval must be true states -> Currently the Viterb
 
 class JumpHMM(BaseHiddenMarkov):
 
-    def __init__(self, n_states: int = 2, jump_penalty: float = .2, window_len: int = 6,
+    def __init__(self, n_states: int = 2, jump_penalty: float = 16, window_len: tuple = (6, 14),
                  init: str = 'kmeans++', max_iter: int = 30, tol: int = 1e-6,
                  epochs: int = 10, random_state: int = 42):
         super().__init__(n_states, init, max_iter, tol, epochs, random_state)
@@ -36,49 +34,50 @@ class JumpHMM(BaseHiddenMarkov):
         self.state_seq = None
         self.n_features = None
 
-    def _init_params(self, X=None, diag_uniform_dist=(.7, .99), output_hmm_params=False):
+    def _init_params(self, Z, X=None, diag_uniform_dist=(.95, .99), output_hmm_params=False):
         super()._init_params()
 
         if self.init == "kmeans++":
-            if not isinstance(X, np.ndarray):
+            if not isinstance(Z, np.ndarray):
                 raise Exception("To initialize with kmeans++ a sequence of data must be provided in an ndarray")
-            if X.ndim == 1:
-                X = X.reshape(-1, 1)  # Compatible with sklearn
+            if Z.ndim == 1:
+                Z = Z.reshape(-1, 1)  # Compatible with sklearn
 
             # Theta
-            centroids, _ = kmeans_plusplus(X, self.n_states)  # Use sklearns kmeans++ algorithm
-            theta = self.theta = centroids.T  # Transpose to get shape (n_features, n_states)
+            centroids, _ = kmeans_plusplus(Z, self.n_states)  # Use sklearns kmeans++ algorithm
+            theta = centroids.T  # Transpose to get shape (n_features, n_states)
 
             # State sequence
-            state_seq, _ = self.state_seq, _ = self._fit_state_seq(X, theta)
+            state_seq, _ = self._fit_state_seq(Z, theta)
 
             if output_hmm_params == True:  # output all hmm parameters from state sequence
-                self.get_params_from_seq(X, state_sequence=self.state_seq)
+                if not X == None:
+                    self.get_params_from_seq(X, state_sequence=self.state_seq)
+                else:
+                    raise Exception('''To output hmm-params from sequence, X must be provided as a 1D-array.
+                                    X has to be non-standardized data otherwise it will return standardized results''')
 
             return state_seq, theta
 
-    def construct_features(self, X: ndarray, window_len: int):  # TODO remove forward-looking params and slice X accordingly
+    def construct_features(self, X: ndarray, window_len: tuple):
 
         df = pd.DataFrame({'raw_input': X})
 
-        df['left_local_mean'] = df['raw_input'].rolling(window_len).mean()
-        df['left_local_std'] = df['raw_input'].rolling(window_len).std(ddof=1)
-
         # Absolute changes
         df['left_abs_change'] = np.abs(df['raw_input'].diff())  # np.abs(np.diff(X))
+        df['prev_left_abs_change'] = df['left_abs_change'].shift(1)
 
-        # Absoloute previous change
-        df['prev_left_abs_change'] = df['left_abs_change'].shift(1) #Henning uses this
+        # Rolling features
+        for i in range(len(window_len)):
+            rolling_window = df['raw_input'].rolling(window_len[i])
 
-        #Median
-        df['left_local_median'] = df['raw_input'].rolling(window_len).median() #
-
-        #Rolling difference between min and max
-        df['min_max_diff'] = df['raw_input'].rolling(window_len).max() - df['raw_input'].rolling(window_len).min() #Also gives error, but code should be ok
+            df['left_local_mean_'+str(i)] = rolling_window.mean()
+            df['left_local_std_'+str(i)] = rolling_window.std(ddof=1)
+            df['left_local_median_'+str(i)] = rolling_window.median() #
+            df['min_max_diff_'+str(i)] = rolling_window.max() - rolling_window.min() # TODO Also gives error, but code should be ok
 
         #Rolling sum
-        df['left_local_sum'] = df['raw_input'].rolling(window_len).sum()
-
+        #df['left_local_sum'] = df['raw_input'].rolling(window_len).sum()
 
         Z = df.dropna().to_numpy()
         # Scale features
@@ -88,8 +87,6 @@ class JumpHMM(BaseHiddenMarkov):
         self.n_features = Z.shape[1]
 
         return Z
-
-
 
     def _l2_norm_squared(self, z, theta):
         """
@@ -182,22 +179,20 @@ class JumpHMM(BaseHiddenMarkov):
 
         return state_preds, objective_score
 
-    def fit(self, X, auto_construct_features=True, get_hmm_params=True, verbose=0):
-        self.is_fitted = False
-        old_objective_score = best_objective_score = np.inf
-
-        if auto_construct_features is True:
-            X = self.construct_features(X, window_len=self.window_len)
+    def _fit(self, X, Z, verbose=False):
+        """ Container for the loop where fitting happens"""
+        best_objective_score = np.inf
 
         # Each epoch independently inits and fits a new model to the same data
         for epoch in range(self.epochs):  # TODO consider parallel processing
             # Do new init at each epoch
-            state_seq, theta = self._init_params(X, output_hmm_params=False)
+            state_seq, theta = self._init_params(Z, output_hmm_params=False, X=X)
             old_state_seq = state_seq
+            old_objective_score = np.inf
 
             for iter in range(self.max_iter):
-                theta = self._fit_theta(X, state_seq)
-                state_seq, objective_score = self._fit_state_seq(X, theta)
+                theta = self._fit_theta(Z, state_seq)
+                state_seq, objective_score = self._fit_state_seq(Z, theta)
 
                 # Check convergence criterion
                 crit1 = np.array_equal(state_seq, old_state_seq)  # No change in state sequence
@@ -211,8 +206,9 @@ class JumpHMM(BaseHiddenMarkov):
                         self.theta = theta
                         self.state_seq = state_seq
 
-                    if verbose == 1:
-                        print(f'Epoch {epoch} -- Iter {iter} -- likelihood {objective_score} -- Theta {self.theta[0]} ')
+                        if verbose == 2:
+                            print(
+                                f'Epoch {epoch} -- Iter {iter} -- likelihood {objective_score} -- Theta {self.theta[0]} ')
 
                     break  # Break out of inner loop and go to next epoch
 
@@ -220,14 +216,27 @@ class JumpHMM(BaseHiddenMarkov):
                     old_state_seq = state_seq
                     old_objective_score = objective_score
 
+    def fit(self, X, get_hmm_params=True, sort_state_seq=False, verbose=False):
+        self.is_fitted = False
+        Z = self.construct_features(X, window_len=self.window_len)
 
-        if get_hmm_params is True:
+        self._fit(X=X, Z=Z, verbose=verbose)  # Container for loop where fitting happens
+
+        if get_hmm_params is True and self.is_fitted is True:
+            if sort_state_seq is True:
+                self.state_seq = self._check_state_sort(X, self.state_seq)
             self.get_params_from_seq(X, state_sequence=self.state_seq)
 
         if self.is_fitted is False:
-            print(f'No convergence in any epoch out of {self.epochs} epochs')
+            max_iter = self.max_iter
+            self.max_iter = max_iter * 2  # Double amount of iterations
+            self._fit(X, Z)  # Try fitting again
+            self.max_iter = max_iter  # Reset max_iter back to user-input
+            if self.is_fitted == False and verbose == True:
+                print(
+                    f'Jump NOT FITTED -- epochs {self.epochs} -- iters {self.max_iter * 2}')
 
-    def get_params_from_seq(self, X, state_sequence):  # TODO remove forward-looking params and slice X accordingly for X.ndim == 1
+    def get_params_from_seq(self, X, state_sequence):
         """
         Stores and outputs the model parameters based on the input sequence.
 
@@ -242,12 +251,11 @@ class JumpHMM(BaseHiddenMarkov):
         ----------
         Hmm parameters
         """
-
         # Slice data
         if X.ndim == 1:  # Makes function compatible on higher dimensions
-            X = X[(self.window_len - 1): -self.window_len]
-        elif X.ndim > 1:
-            X = X[:, 0]
+            X = X[(self.window_len[-1] - 1):]
+        else:
+            raise Exception('''X must be one-dimensional. Pass raw data as 1-D array.''')
 
         # group by states
         diff = np.diff(state_sequence)
@@ -258,22 +266,31 @@ class JumpHMM(BaseHiddenMarkov):
 
         state_groupby = df_states.groupby('state_seq')
 
+        # Conditional distributions
+        self.mu = state_groupby['X'].mean().values.T  # transform mean back into 1darray
+        self.std = state_groupby['X'].std(ddof=1).values.T
+
         # Transition probabilities
         # TODO only works for a 2-state HMM
-        self.tpm = np.diag(state_groupby['state_sojourns'].sum())
+        tpm = np.diag(state_groupby['state_sojourns'].sum())
         state_changes = state_groupby['state_changes'].sum()
-        self.tpm[0, 1] = state_changes[0]
-        self.tpm[1, 0] = state_changes[1]
-        self.tpm = self.tpm / self.tpm.sum(axis=1).reshape(-1, 1)  # make rows sum to 1
+
+        # if only 1 state is detected make the other state zero
+        if state_changes.sum() > 0:
+            tpm[0, 1] = state_changes[0]
+            tpm[1, 0] = state_changes[1]
+
+        else:
+            tpm = np.array([[1., 0.], [1., 0.]])
+            self.mu = np.append(self.mu, 0.)
+            self.std = np.append(self.std, 0.)
+
+        self.tpm = tpm / tpm.sum(axis=1).reshape(-1, 1)  # make rows sum to 1
 
         # init dist and stationary dist
         self.start_proba = np.zeros(self.n_states)
         self.start_proba[state_sequence[0]] = 1.
         self.stationary_dist = self.get_stationary_dist(tpm=self.tpm)
-
-        # Conditional distributions
-        self.mu = state_groupby['X'].mean().values.T  # transform mean back into 1darray
-        self.std = state_groupby['X'].std(ddof=1).values.T
 
     def _check_state_sort(self, X, state_sequence):
         """
@@ -295,15 +312,14 @@ class JumpHMM(BaseHiddenMarkov):
         """
         # Slice data
         if X.ndim == 1:  # Makes function compatible on higher dimensions
-            X = X[(self.window_len - 1): -self.window_len]
-        elif X.ndim > 1:
-            X = X[:, 0]
+            X = X[(self.window_len[-1] - 1):]
+        else:
+            raise Exception('''X must be one-dimensional. Pass raw data as 1-D array.''')
 
         df_states = pd.DataFrame({'state_seq': state_sequence,
                                   'X': X})
 
         state_groupby = df_states.groupby('state_seq')
-        self.mu = state_groupby['X'].mean().values.T  # transform mean back into 1D-array
         self.std = state_groupby['X'].std(ddof=1).values.T
 
         # Sort array ascending and check if order is changed
@@ -313,13 +329,13 @@ class JumpHMM(BaseHiddenMarkov):
 
         return state_sequence
 
-    def bac_score_1d(self, X, y_true, jump_penalty, window_len=6):
+    def bac_score_1d(self, X, y_true, jump_penalty, window_len=(6,14), verbose=False):
         self.jump_penalty = jump_penalty
         self.fit(X, get_hmm_params=False)  # Updates self.state_seq
         self.state_seq = self._check_state_sort(X, self.state_seq)
 
         y_pred = self.state_seq
-        y_true = y_true[(self.window_len - 1): -self.window_len]  # slice y_true to have same dim as y_pred
+        y_true = y_true[(self.window_len[-1] - 1):]  # slice y_true to have same dim as y_pred
 
         conf_matrix = confusion_matrix(y_true, y_pred)
         keep_idx = conf_matrix.sum(axis=1) != 0
@@ -330,42 +346,42 @@ class JumpHMM(BaseHiddenMarkov):
         tpr = tp / (tp + fn)
         bac = np.mean(tpr)
 
-        logical_1 = bac < 0.5
-        logical_2 = conf_matrix.ndim > 1 and \
-                    (np.any(conf_matrix.sum(axis=1)==0) and \
-                    jump_penalty < 100)
+        if verbose is True:
+            logical_1 = bac < 0.5
+            logical_2 = conf_matrix.ndim > 1 and \
+                        (np.any(conf_matrix.sum(axis=1)==0) and \
+                        jump_penalty < 100)
 
-        if logical_1 or logical_2:
-            print(f'bac {bac} -- tpr {tpr} -- jump_penalty {jump_penalty}')
-            print(conf_matrix)
+            if logical_1 or logical_2:
+                print(f'bac {bac} -- tpr {tpr} -- jump_penalty {jump_penalty}')
+                print(conf_matrix)
 
         return bac
 
-    def bac_score_nd(self, X, y_true, jump_penalty, window_len=6):
+    def bac_score_nd(self, X, y_true, jump_penalty, window_len=(6, 14)):
         bac = []
         for seq in range(X.shape[1]):
-            bac_temp = self.bac_score_1d(X[:, seq], y_true[:, seq], jump_penalty, window_len=6)
+            bac_temp = self.bac_score_1d(X[:, seq], y_true[:, seq], jump_penalty, window_len=self.window_len)
             bac.append(bac_temp)
 
         return bac
 
 
 if __name__ == '__main__':
-    #model = JumpHMM(n_states=2, jump_penalty=2, random_state=42)
-    #sampler = SampleHMM(n_states=2, random_state=1)
+    model = JumpHMM(n_states=2, jump_penalty=0.0025, window_len=(6, 14), random_state=2)
+    sampler = SampleHMM(n_states=2, random_state=2)
 
-    #n_samples = 250
-    #n_sequences = 50
-    #X, viterbi_states, true_states = sampler.sample_with_viterbi(n_samples, n_sequences)
+    n_samples = 1000
+    n_sequences = 1
+    X, viterbi_states, true_states = sampler.sample_with_viterbi(n_samples, n_sequences)
 
 
     #plotting.plot_samples_states_viterbi(X[:,0], viterbi_states[:,0], true_states[:,0])
 
     #for i in range(50):
        # bac = model.bac_score_1d(X[:,i], viterbi_states[:, i] , 30)
-    model = JumpHMM(n_states=2)
-    X = np.array([1,2,3,4,5,6,7,8,9])
-    model.construct_features(X, window_len=3)
+
+    model.fit(X, verbose=True)
 
 
 

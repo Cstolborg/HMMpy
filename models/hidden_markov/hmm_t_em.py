@@ -4,8 +4,6 @@ from scipy.special import digamma
 import scipy.optimize as opt
 import matplotlib.pyplot as plt
 
-from typing import List
-
 from utils.simulate_returns import simulate_2state_gaussian
 from hmm_gaussian_em import EMHiddenMarkov
 
@@ -45,12 +43,12 @@ class EMTHiddenMarkov(EMHiddenMarkov):
         return probs, log_probs
 
     def _m_step(self, X, log_gamma, log_xi, iterations: int = 2):
-        ''' Given u and f do an m-step.
-          Update degrees of freedom iteratively.
-         Updates the model parameters delta, Transition matrix and state dependent distributions.
+        '''
+        Given log_gamma and log_xi do an m-step.
+
+        Update degrees of freedom iteratively.
+        Updates the model parameters delta, Transition matrix and state dependent distributions.
          '''
-        X = np.array(X)
-        T = len(X)
 
         # init u_it
         u_it = np.square(self.std[-1]) * (self.dof + 1) / ((np.square(self.std[-1]) * self.dof) + np.square(X - self.mu[-1]))
