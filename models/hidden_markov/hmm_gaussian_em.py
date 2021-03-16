@@ -138,6 +138,40 @@ class EMHiddenMarkov(BaseHiddenMarkov):
             self.mu[j] = np.sum(gamma[:, j] * X) / np.sum(gamma[:, j])
             self.std[j] = np.sqrt(np.sum(gamma[:, j] * np.square(X - self.mu[j])) / np.sum(gamma[:, j]))
 
+    def _fit(self, X: ndarray, verbose=False):
+        """ Container for looping part of fit-method"""
+        self.old_llk = -np.inf  # Used to check model convergence
+        self.best_epoch = -np.inf
+
+        for epoch in range(self.epochs):
+            # Do new init at each epoch
+            self._init_params(X, output_hmm_params=True)
+
+            for iter in range(self.max_iter):
+                # Do e- and m-step
+                log_gamma, log_xi, llk = self._e_step(X)
+                self._m_step(X, log_gamma, log_xi)  # Updates mu, std and tpm
+
+                # Check convergence criterion
+                crit = np.abs(llk - self.old_llk)  # Improvement in log likelihood
+                if crit < self.tol:
+                    self.is_fitted = True
+                    if llk > self.best_epoch:
+                        self.best_epoch = llk
+                        self.stationary_dist = self.get_stationary_dist(tpm=self.tpm)
+
+                        self.best_tpm = self.tpm
+                        self.best_delta = self.start_proba
+                        self.best_mu = self.mu
+                        self.best_std = self.std
+
+                        if verbose == 2:
+                            print(
+                                f'Iteration {iter} - LLK {llk} - Means: {self.mu} - STD {self.std} - TPM {np.diag(self.tpm)} - Delta {self.start_proba}')
+                    break
+                else:
+                    self.old_llk = llk
+
     def fit(self, X: ndarray, sort_state_seq=False, verbose=False):
         """
         Function iterates through the e-step and the m-step recursively to find the optimal model parameters.
@@ -155,56 +189,23 @@ class EMHiddenMarkov(BaseHiddenMarkov):
         """
         # Init parameters initial distribution, transition matrix and state-dependent distributions
         self.is_fitted = False
-        self._init_params(X, output_hmm_params=True)
-        self.old_llk = -np.inf  # Used to check model convergence
-        self.best_epoch = -np.inf
+        self._fit(X, verbose=verbose)
 
-        for epoch in range(self.epochs):
-            # Do new init at each epoch
-            if epoch > 0:
-                self._init_params(X, output_hmm_params=True)
+        if sort_state_seq is True:
+            self._check_state_sort()  # Ensures low variance state is first
 
-            for iter in range(self.max_iter):
-                # Do e- and m-step
-                log_gamma, log_xi, llk = self._e_step(X)
-                self._m_step(X, log_gamma, log_xi)  # Updates mu, std and tpm
-
-                # Check convergence criterion
-                crit = np.abs(llk - self.old_llk)  # Improvement in log likelihood
-                if crit < self.tol:
-                    self.is_fitted = True
-                    if llk > self.best_epoch:
-                        # Compute AIC and BIC and print model results
-                        # AIC & BIC computed as shown on
-                        # https://rdrr.io/cran/HMMpa/man/AIC_HMM.html
-                        self.best_epoch = llk
-                        num_independent_params = self.n_states ** 2 + 2 * self.n_states - 1  # True for normal distributions
-                        self.aic_ = -2 * llk + 2 * num_independent_params
-                        self.bic_ = -2 * llk + num_independent_params * np.log(len(X))
-                        self.stationary_dist = self.get_stationary_dist(tpm=self.tpm)
-
-                        self.best_tpm = self.tpm
-                        self.best_delta = self.start_proba
-                        self.best_mu = self.mu
-                        self.best_std = self.std
-
-                        if verbose == 1:
-                            print(
-                                f'Iteration {iter} - LLK {llk} - Means: {self.mu} - STD {self.std} - TPM {np.diag(self.tpm)} - Delta {self.start_proba}')
-                    break
-
-                elif iter == self.max_iter - 1 and verbose == 1:
-                    print(f'No convergence after {iter} iterations')
-                else:
-                    self.old_llk = llk
+        if self.is_fitted is False:
+            max_iter = self.max_iter
+            self.max_iter = max_iter * 2  # Double amount of iterations
+            self._fit(X)  # Try fitting again
+            self.max_iter = max_iter  # Reset max_iter back to user-input
+            if self.is_fitted == False and verbose == True:
+                print(f'MLE NOT FITTED -- epochs {self.epochs} -- iters {self.max_iter*2} -- mu {self.mu} -- std {self.std} -- tpm {np.diag(self.tpm)}')
 
         self.tpm = self.best_tpm
         self.start_proba = self.best_delta
         self.mu = self.best_mu
         self.std = self.best_std
-
-        if sort_state_seq is True:
-            self._check_state_sort()  # Ensures low variance state is first
 
     def _check_state_sort(self):
         # Sort array ascending and check if order is changed
@@ -213,7 +214,7 @@ class EMHiddenMarkov(BaseHiddenMarkov):
             # TODO only works for 2-states
             self.mu = self.mu[::-1]
             self.std = self.std[::-1]
-            self.tpm = self.tpm[::-1]
+            self.tpm = np.flip(self.tpm)
             self.start_proba = self.start_proba[::-1]
 
 
