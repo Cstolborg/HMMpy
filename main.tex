@@ -1,0 +1,152 @@
+\documentclass{article}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Loading packages that alter the style
+\usepackage[]{graphicx}
+\usepackage[]{color}
+\usepackage{alltt}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+
+% Math
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+
+% Fonts
+\usepackage{sectsty}
+\def\@seccntformat#1{\#\csname the#1\endcsname \quad} %Active Tabor-font with \cs
+
+\sectionfont{\centering\sc\Large}
+\subsectionfont{\centering\sc\large\noindent}
+\subsubsectionfont{\sc\normalsize}
+\paragraphfont{\sc\normalsize}
+\subparagraphfont{\sc\small}
+
+\renewcommand{\rmdefault}{ptm}
+\renewcommand{\sfdefault}{phv}
+
+% Paragraph setup
+\usepackage{indentfirst}
+\usepackage[skip=1\baselineskip plus 2pt]{parskip}
+%\setlength{\parskip}{\smallskipamount}
+%\setlength{\parindent}{12pt}
+
+% Set page margins
+\usepackage[top=3.0cm,bottom=3.0cm,left=2.0cm,right=2.0cm]{geometry}
+\linespread{1.3} %This makes 1.5 line spacing (yeah, 1.3=1.5).
+\usepackage{subcaption}
+
+% Prevents LaTeX from filling out a page to the bottom
+\raggedbottom
+
+% Format table of contents
+\setcounter{secnumdepth}{3} % How many levels of sections
+\setcounter{tocdepth}{3} % How many levels to include in table of contents
+%\usepackage{tocloft}
+%\cftsetindents{section}{0em}{2em}
+%\cftsetindents{subsection}{2em}{2em}
+
+% Adding languages
+\usepackage[english]{babel}
+
+% All page numbers positioned at the bottom of the page
+\usepackage{fancyhdr}
+\fancyhf{} % clear all header and footers
+\fancyfoot[C]{\thepage}
+\pagestyle{fancy}
+
+
+% Adds table captions above the table per default
+\usepackage{booktabs} % compatible with Pandas
+\usepackage{float}
+\floatstyle{plaintop}
+\restylefloat{table}
+\usepackage[tableposition=top]{caption} % Space between caption and table
+
+% Figure format
+\usepackage[labelfont=bf]{caption} % Caption in bold
+%\numberwithin{equation}{subsection}
+%\numberwithin{figure}{subsection}
+%\numberwithin{table}{subsection}
+
+
+% Adds hyperlinks to references and ToC
+\usepackage[backref=page]{hyperref} % hyperlinks
+\renewcommand*{\backref}[1]{}
+\renewcommand*{\backrefalt}[4]{{\footnotesize [%
+		\ifcase #1 Not cited.%
+		\or Cited on page~#2%
+		\else Cited on pages #2%
+		\fi%
+		]}}
+\usepackage[capitalise]{cleveref}
+
+% Uncomment the line below this block to set all hyperlink color to black
+\hypersetup{
+	colorlinks,
+	linkcolor={black},
+	citecolor={green!90!black},
+	urlcolor={red!70!black}
+}
+
+% Set specific color for hyperref
+\usepackage{xcolor}
+
+
+% tcolorbox; Notice! add "-shell-escape" to the compile command
+\usepackage{tcolorbox}
+
+% If multiple images are to be added, a folder (path) with all the images can be added here 
+\graphicspath{ {Images/} }
+
+\overfullrule=0.1cm   %LateX shows where the overfull hbox problem is
+
+%SIDEHOVED, SIDEFOD
+\usepackage{lastpage}
+\pagestyle{fancy}   %Allows creating header and footer with the commands below
+\cfoot{Page \thepage\ of \pageref{LastPage}} 
+
+\lhead{Copenhagen Business School}
+\chead{Master Thesis}
+\rhead{15. May 2021}
+
+
+
+
+\begin{document}
+
+% Title page
+\input{Title_Page} % load title page
+\thispagestyle{empty}
+\newpage
+
+% Table of contents
+\renewcommand{\contentsname}{Table of contents}
+\tableofcontents
+\thispagestyle{empty}
+
+\newpage
+\pagenumbering{arabic}% Arabic page numbers (and reset to 1)
+
+    \input{Sections/1. Introduction}
+    \input{Sections/2. Method}
+    \input{Sections/4. Markov Switching Mixtures}
+    \input{Sections/5. Model training}
+    \input{Sections/3. Data}
+    \input{Sections/6. Stylized Facts}
+    \input{Sections/7. Regime Based Asset Allocation}
+    \input{Sections/8. Conclusion}
+    
+    % Adding a bibliography if citations are used in the report
+	%\renewcommand{\bibname}{References}
+	%\bibliographystyle{plain}
+	%\bibliography{Sections/References}
+    %\addcontentsline{toc}{Section}{\bibname}
+    \input{Sections/References}
+    \input{Sections/Appendix}
+    %\addcontentsline{toc}{section}{Appendix}
+    
+    
+    
+    
+\end{document}
