@@ -23,7 +23,7 @@ The MSCI World Index captures large and mid cap representation across 23 Develop
  
 \begin{figure}[H] 
     \centering
-    \includegraphics[width=0.5\textwidth]{analysis/data_description/MSCI_index.png}
+    \includegraphics[width=0.5\textwidth]{analysis/data_description/images/MSCI_index.png}
     \caption{Development MSCI.}
     \label{fig:MSCI_index}
 \end{figure}
@@ -52,14 +52,14 @@ The S\&P 500 is a stock index comprising 500 companies from the U.S. which was f
  
 \begin{figure}[H] 
     \centering
-    \includegraphics[width=1\textwidth]{analysis/data_description/SP500_index.png}
-    \caption{Development S\&P 500}
+    \includegraphics[width=1\textwidth]{analysis/data_description/images/SP500_index.png}
+    \caption{Development S\&P 500.}
     \label{fig: SP500_index}
 \end{figure}
 
-As is evident from figure (REF til ovenstående udvikling) the 44 year data period has been impacted by the major market movements including black monday in 1987 as well as the dot-com bubble of the late 90s and early 2000s. Furthermore the attractive bull market leading up to the GFC has been well-captured by the development of the S\&P 500 Index. Lastly, the long bull market following the GFC as well as the recent COVID-19 correction and rebound appears to be well-captured by the S\&P 500 Index, thereby indicating that it will serve well for model estimation purposes.  
+As is evident from figure \ref{fig: SP500_index} the 44 year data period has been impacted by the major market movements including black monday in 1987 as well as the dot-com bubble of the late 90s and early 2000s. Furthermore the attractive bull market leading up to the GFC has been well-captured by the development of the S\&P 500 Index. Lastly, the long bull market following the GFC as well as the recent COVID-19 correction and rebound appears to be well-captured by the S\&P 500 Index, thereby indicating that it will serve well for model estimation purposes.  
 
-It is unlikely that the recent bullish environment for stocks will continue in perpetuity, since interest rates and inflation, at some point, are likely to start increasing. When that happens, investments towards stocks and indexes can procure short to mid-term monetary losses, however, it is evident from figure (ref til index graf) that there appears to be a strong upwards trend historically, thus supporting the argument for capital allocation towards stocks in general.
+It is unlikely that the recent bullish environment for stocks will continue in perpetuity, since interest rates and inflation, at some point, are likely to start increasing. When that happens, investments towards stocks and indexes can procure short to mid-term monetary losses, however, it is evident from figure \ref{fig: SP500_index} that there appears to be a strong upwards trend historically, thus supporting the argument for capital allocation towards stocks in general.
 
 
 \begin{table}[H]
@@ -81,9 +81,14 @@ Compared to the MSCI Index it is evident by table \ref{tab:summary_stats_S&P500}
 \label{subsection: DAX 30}
 The DAX is a blue chip stock market index comprising the 30 largest listed German companies. It is similar in nature to FTSE 100 and the Dow Jones Industrial Average. The index is included in the analysis in order to get an estimate for, whether the model parameters will change significantly when trained on the DAX as opposed to the aforementioned indexes. As such, the DAX becomes particularly interesting since its composition of a small number of firms and a restrictive geographical focus on Germany means that it might not necessarily represent the vitality of the economy as a whole. 
 
-%INDSÆT figurer af DAX 30 Index udvikling % 
+\begin{figure}[H] 
+    \centering
+    \includegraphics[width=1\textwidth]{analysis/data_description/images/DAX_index.png}
+    \caption{Development DAX 30.}
+    \label{fig: DAX_index}
+\end{figure}
 
-As is evident by figure (ref til DAX 30 index), the availability of daily data is significantly shorter compared to the MSCI World and the S\&P 500 Index. This is primarily due to the fact that the DAX 30 was originated in the late 1987. However, figure (ref til index for DAX) also showcases that recent financial bear markets such as the dot-com bubble of the early 2000s, the GFC of 2008 as well as the COVID-19 rebound in Q1/Q2 2020 are well captured by DAX 30 Index. 
+As is evident by figure \ref{fig: DAX_index}, the availability of daily data is significantly shorter compared to the MSCI World and the S\&P 500 Index. This is primarily due to the fact that the DAX 30 was originated in the late 1987. However, figure \ref{fig: DAX_index} also showcases that recent financial bear markets such as the dot-com bubble of the early 2000s, the GFC of 2008 as well as the COVID-19 rebound in Q1/Q2 2020 are well captured by DAX 30 Index. 
 
 Since January 2006, the index is refreshed every second, however, the thesis will continue to rely on daily data frequencies as discussed in section \ref{subsection: Data frequency}. The index is capitalization-weighted and holds a total market capitalization of 1,017.7 billion EUR as of 21st of September 2020. In response to the recent accounting scandal related to Wirecard, Deutshce Börse announced an expansion of the DAX 30 to include 40 members. The expansion is set to occur in the third quarter of 2021.
 
