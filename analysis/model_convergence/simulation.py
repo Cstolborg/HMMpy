@@ -122,6 +122,8 @@ if __name__ == '__main__':
 
     ax[0, 0].legend()
 
+    ax[-1, 0].set_xlabel('Simulation length')
+    ax[-1, 1].set_xlabel('Simulation length')
     plt.tight_layout()
     #plt.savefig('./images/simulation_normal.png')
     plt.show()

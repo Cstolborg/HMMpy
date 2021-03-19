@@ -85,8 +85,8 @@ if __name__ == '__main__':
     X = np.load(path + 'sampled_t_returns.npy')
     true_states = np.load(path + 'sampled_t_true_states.npy')
 
-    #df = pd.read_csv(path + 'simulation_normal.csv')
-    df = test_model_convergence(jump, mle, X, sample_lengths=(250, 500, 1000, 2000))
+    df = pd.read_csv(path + 'simulation_t.csv')
+    #df = test_model_convergence(jump, mle, X, sample_lengths=(250, 500, 1000, 2000))
 
     # Plotting
     plt.rcParams.update({'font.size': 15})
@@ -119,11 +119,13 @@ if __name__ == '__main__':
         ax[2, i].axhline(y=sampler.tpm[i, i], ls="--", color="black", label='True')
 
     ax[0, 0].legend()
+    ax[-1, 0].set_xlabel('Simulation length')
+    ax[-1, 1].set_xlabel('Simulation length')
     plt.tight_layout()
-    plt.savefig('./images/simulation_t.png')
+    #plt.savefig('./images/simulation_t.png')
     plt.show()
 
 
     data_table = df.groupby(['sample_size', 'model']).mean().sort_index(ascending=[True, False])
-    data_table.to_latex(path + 'simulation_t.tex')
+    #data_table.to_latex(path + 'simulation_t.tex')
     print(data_table)
