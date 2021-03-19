@@ -19,16 +19,14 @@ The following sections will include details on selected indices used for trainin
 
 \subsection{The MSCI}
 \label{subsection: MSCI Index}
-The MSCI World Index captures large and mid cap representation across 23 Developmed Markets (DM) countries. As such, the difference compared to the well-known MSCI ACWI Index is the exclusive weight on assets from developed economies. With 1,600 constituents, the index covers approximately 85\% of the free-float-adjusted market captilization in each country. The weights across country and sectors are shown in figure XXXXY as of November 2020. The historical development of the index is depicted in figure XXXX. 
+The MSCI World Index captures large and mid cap representation across 23 Developmed Markets (DM) countries. As such, the difference compared to the well-known MSCI ACWI Index is the exclusive weight on assets from developed economies. With 1,600 constituents, the index covers approximately 85\% of the free-float-adjusted market captilization in each country. The weights across country and sectors are shown in figure XXXXY as of November 2020. The historical development of the index is depicted in figure \ref{fig:MSCI_index}. 
  
 \begin{figure}[H] 
     \centering
-    \includegraphics[width=1\textwidth]{analysis/d}
-    \caption{Hyper-tuning.}
-    \label{fig:jump_penalties}
+    \includegraphics[width=0.5\textwidth]{analysis/data_description/MSCI_index.png}
+    \caption{Development MSCI.}
+    \label{fig:MSCI_index}
 \end{figure}
-%#### INDSÆT FIGUR AF INDEX DATA for MSCI WORLD #### SHOW DEVELOPMENT
-
 
 %##### INDSÆT FIGUR AF Sector og region focus ####### # VIS split
 
@@ -50,9 +48,14 @@ Observations & Mean & STD & Skewness & Excess Kurtosis & Min & Max & First ACF &
 Table \ref{tab:summary_stats_MSCI} shows the first four central moments together with the minimum and maximum observation, the first-order autocorrelation and the annual Sharpe ratio (SR). The SR is the excess return per unit risk, i.e. the excess return divided by the standard deviation (SD). The first observations originates from 1969-12-31 and the final included observations is the date 2021-02-12. It appears that the daily log-returns for the MSCI World Index are negatively skewed and the distribution is also characterised by being highly leptokurtic as the excess kurtosis is positive. As such, the summary statistics indicate that the log return series for the MSCI World Index, are characterised by the set of stylized facts that are commonly associated with financial returns. The range of the observations has a span of 0.1953, thereby indicating that the index can change significantly in high-volatility periods.    
  
 \subsection{The S\&P 500}
-The S\&P 500 is a stock index comprising 500 companies from the U.S. which was founded in 1957. The stocks that make up the index are selected by a committee which include representation from all major segments in American industry. As such, contrary to prevailing public sentiment, the index is not simply made up of the 500 largest companies in the U.S. The S\&P 500 Index is a market-capitalization-weighted index in which the 10 largest companies account for 27.5\% of the capitalization of the index as of per December 2020. Figure XXXX showcases the development of the S\&P 500 Index since origination. 
+The S\&P 500 is a stock index comprising 500 companies from the U.S. which was founded in 1957. The stocks that make up the index are selected by a committee which include representation from all major segments in American industry. As such, contrary to prevailing public sentiment, the index is not simply made up of the 500 largest companies in the U.S. The S\&P 500 Index is a market-capitalization-weighted index in which the 10 largest companies account for 27.5\% of the capitalization of the index as of per December 2020. Figure \ref{fig: SP500_index} showcases the development of the S\&P 500 Index since origination. 
  
-% #### INDSÆT figur med indekseret tal over udvikling i SP500 ##
+\begin{figure}[H] 
+    \centering
+    \includegraphics[width=1\textwidth]{analysis/data_description/SP500_index.png}
+    \caption{Development S\&P 500}
+    \label{fig: SP500_index}
+\end{figure}
 
 As is evident from figure (REF til ovenstående udvikling) the 44 year data period has been impacted by the major market movements including black monday in 1987 as well as the dot-com bubble of the late 90s and early 2000s. Furthermore the attractive bull market leading up to the GFC has been well-captured by the development of the S\&P 500 Index. Lastly, the long bull market following the GFC as well as the recent COVID-19 correction and rebound appears to be well-captured by the S\&P 500 Index, thereby indicating that it will serve well for model estimation purposes.  
 

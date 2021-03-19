@@ -378,19 +378,42 @@ By utilising the logarithmic transformation formulas just presented, it is possi
 \subsection{Jump estimation}
 \label{subsection: Jump theory}
 
-Apart from maximum likelihood estimation, other ways to estimate HMM's include jump estimation as shown by Bemporad et al. (2018). When given data $o_t\in O$, $t=1,\ldots,T$, then for $O = \mathbb{R}^d$, $o$ is a feature vector. We are additionally given model parameters $\theta_s\in \mathbb{R}^d$, $s=1...,K$ and the latent state variable $s_t\in\mathbb{N}$, which determines which model parameter $\theta_{s_t}$ is active at time t. Then the loss function $\ell: O\times\mathbb{R}^d \rightarrow\mathbb{R}$, regularizer term $r: \mathbb{R}^d \rightarrow \mathbb{R}$ and state sequence loss $\mathcal{L}$ defines the generalized jump model fitting objective
+Apart from maximum likelihood estimation, other ways to estimate HMM's include jump estimation as shown by Bemporad et al. (2018). When given data $o_t\in O$, $t=1,\ldots,T$, then for $O = \mathbb{R}^d$, $o$ is a feature vector, which can be both univariate and multivariate. We are additionally given model parameters $\theta_s\in \mathbb{R}^d$, $s=1...,K$ and the latent state variable $s_t\in\mathbb{N}$, which determines which model parameter $\theta_{s_t}$ is active at time t. Then the loss function $\ell: O\times\mathbb{R}^d \rightarrow\mathbb{R}$, regularizer term $r: \mathbb{R}^d \rightarrow \mathbb{R}$ and state sequence loss $\mathcal{L}$ defines the generalized jump model fitting objective
 \begin{equation}
     J(O, \Theta, S) = \sum_{t=1}^T \ell(o_t,\theta_{s_t}) + \sum_{k=1}^K r(\theta_{s_t}) + \mathcal{L(S)}
 \label{eq:jump_gen_objective}    
 \end{equation}
-which is minimized with respect to $\Theta=(\theta_1,\ldots,\theta_K)$ and where $\mathcal{S}=(s_0,\ldots,s_T)$ is the state sequence. Bemporad et al. (2018) showed how HMM's can be seen as a special case of \cref{eq:jump_gen_objective} and for $\mathcal{L(S)} = \lambda\mathbf{1}_{\{ s_t\ne s_{t+1}}$, $\lambda $, and $r(\theta_{s_t})=0$, Nystrup et al. (2020) proposed the following alteration of \cref{eq:jump_gen_objective} for fitting fitting HMM's
+which is minimized with respect to $\Theta=(\theta_1,\ldots,\theta_K)$ and the latent state sequence $\mathcal{S}=(s_0,\ldots,s_T)$. Thus, the general idea is that based on data O, we choose a number of K states and then minimize $J(O, \Theta, S)$ after which the distributional properties of each state $s$ will be fully explained by the model. Viewing the elements of $\Theta$ as cluster centers, the similarities to K-models models such as the K-means are clear. Bemporad et al. (2018) showed how HMM's can be seen as a special case of \cref{eq:jump_gen_objective} and for $\mathcal{L(S)} = \lambda\mathbf{1}_{\{ s_t\ne s_{t+1}\}}$, $\lambda \in \mathbb{R}$, and $r(\theta_{s_t})=0$, Nystrup et al. (2020) proposed the following alteration of \cref{eq:jump_gen_objective} for fitting fitting HMM's
 \begin{equation}
     \sum_{t=1}^{T-1}[\ell(o_t, \theta_{s_t}) + \lambda\mathbf{1}_{\{ s_t\ne s_{t+1} \}}]
     + \ell(o_T, \theta_{s_T})
-    \quad \lambda \geq 0
+    ,\quad \lambda \geq 0
+\label{eq:jump_objective}
 \end{equation}
 
-where $\lambda \in\mathbb{R}$ is a penalty applied when state switches occurs. 
+In \cref{eq:jump_objective}, $\lambda$ is a penalty that applies each time a state switch occur. Note that for $\lambda=0$, \cref{eq:jump_objective} reduces to a generalized K-means model (Lloyd, 1982), as the time ordering of observations become irrelevant. For $\lambda$ large enough, the model will converge towards a single state which will cover the entire dataset, thus $\lambda$ can be used to tune the persistence of states. The same loss as used by Nystrup et al. (2020) will be used in this analysis, making the loss function equal to the squared L2 norm $\ell(o_t, \theta_{s_t}) = \| o_t - \theta_{s_t} \|_2^2$, which is equivalent to the loss in K-means clustering.
+
+\begin{algorithm}[H]
+\SetAlgoLined
+\SetKwInOut{Input}{Input}  % Set the name of input in latex in first brackets, then how to display it in text as 2
+\SetKwInOut{Output}{Output}
+\Input{ Time series O, number of latent states K and initial state sequence $\mathcal{S}^0=(s_0^0,\ldots,s_T^0)$.} \newline
+\Indp{ % indents block
+    1. Construct a set of standardized features Z from O. \newline
+    2. Iterate for $i=1,\ldots$ until $S^i=S^{i-1}$ \newline
+    %\Indp
+    (a: Model fitting) $\Theta^i = arg\min_{\Theta} \sum_{t=1}^T \ell(z_t, \theta_{s_t^{i-1}})$ \newline
+    (b: state sequence fitting) $S^i = arg\min_s \sum_{t=1}^{T-1} [\ell(o_t, \theta_{s_t}) + \lambda\mathbf{1}_{\{ s_t\ne s_{t+1} \}}]
+        + \ell(o_T, \theta_{s_T})$
+    %\Indm
+    3. Compute transition probabilities and distributional properties in each state. \newline
+}
+\Indm
+\Output{HMM parameters and prediction of latent states.}
+
+\caption{Jump estimation of HMM (Nystrup et al., 2020)}
+\label{algo:jump_fit}
+\end{algorithm}
 
 \subsubsection{Input and features of the model}
 
