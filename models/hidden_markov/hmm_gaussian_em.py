@@ -1,11 +1,16 @@
 import numpy as np
 from numpy import ndarray
+from scipy import stats
 from scipy.special import logsumexp
+import matplotlib.pyplot as plt
 
 from utils.simulate_returns import simulate_2state_gaussian
+from utils.hmm_sampler import SampleHMM
 from models.hidden_markov.hmm_base import BaseHiddenMarkov
 
 from multiprocessing import Pool
+from functools import partial
+from loguru import logger
 
 
 class EMHiddenMarkov(BaseHiddenMarkov):
@@ -52,7 +57,7 @@ class EMHiddenMarkov(BaseHiddenMarkov):
                  epochs: int = 10, random_state: int = 42):
         super().__init__(n_states, init, max_iter, tol, epochs, random_state)
 
-    def compute_posteriors(self, log_alphas, log_betas):
+    def compute_log_posteriors(self, log_alphas, log_betas):
         """
         Expectation of being in state j at time t given observations, P(S_t = j | x^T).
 
@@ -66,10 +71,28 @@ class EMHiddenMarkov(BaseHiddenMarkov):
         gamma : ndarray of shape (n_samples, n_states)
             Expectation of being in state j at time t given observations, P(S_t = j | x^T)
         """
-        gamma = log_alphas + log_betas
-        normalizer = logsumexp(gamma, axis=1, keepdims=True)
-        gamma -= normalizer
-        return np.exp(gamma)
+        log_gamma = log_alphas + log_betas
+        normalizer = logsumexp(log_gamma, axis=1, keepdims=True)
+        log_gamma -= normalizer
+        return log_gamma
+
+    def compute_log_xi(self, log_alphas, log_betas):
+        """Expected number of transitions from state i to j, (P(S_t-1 = j, S_t = i | x^T)"""
+        # Initialize matrix of shape j X j
+        # Number of expected transitions from state i to j
+        log_xi = np.zeros(shape=(len(log_alphas)-1, self.n_states, self.n_states))
+
+        with np.errstate(divide='ignore'):
+            log_tpm = np.log(self.tpm)
+
+        for i in range(self.n_states):
+            for j in range(self.n_states):
+                log_xi[:, i, j] = log_tpm[i, j] + log_alphas[:-1, i] + \
+                                 log_betas[1:, j] + self.log_emission_probs_[1:, j]
+
+        normalizer = logsumexp(log_xi, axis=(1,2))  # Take log sum over last two axes and keep first one.
+        log_xi = log_xi - normalizer[:, np.newaxis, np.newaxis]
+        return log_xi
 
     def _e_step(self, X: ndarray):
         '''
@@ -79,8 +102,10 @@ class EMHiddenMarkov(BaseHiddenMarkov):
         llk, log_alphas = self._log_forward_proba()
         log_betas = self._log_backward_proba()
 
-        gamma = self.compute_posteriors(log_alphas, log_betas)
+        log_gamma = self.compute_log_posteriors(log_alphas, log_betas)  # Shape (n_samples, n_states)
+        log_xi = self.compute_log_xi(log_alphas, log_betas)  # Shape (n_samples, n_states, n_states)
 
+        """
         # Initialize matrix of shape j X j
         # Number of expected transitions from state i to j
         xi = np.zeros(shape=(self.n_states, self.n_states))
@@ -88,16 +113,24 @@ class EMHiddenMarkov(BaseHiddenMarkov):
             for k in range(self.n_states):
                 xi[j, k] = self.tpm[j, k] * np.sum(
                     np.exp(log_alphas[:-1, j] + log_betas[1:, k] + self.log_emission_probs_[1:, k] - llk))
+        """
 
-        return gamma, xi, llk
+        return log_gamma, log_xi, llk
 
-    def _m_step(self, X: ndarray, gamma, xi):
-        ''' 
+    def _m_step(self, X: ndarray, log_gamma, log_xi):
+        '''
         Given u and f do an m-step.
         Updates the model parameters delta, Transition matrix and state dependent distributions.
          '''
         # Update transition matrix and initial probs
-        self.tpm = xi / np.sum(xi, axis=1).reshape((-1, 1))  # Check if this actually sums correct and to 1 on rows
+        #self.tpm = xi / np.sum(xi, axis=1).reshape((-1, 1))  # Check if this actually sums correct and to 1 on rows
+
+        trans_probs = logsumexp(log_xi, axis=0) - logsumexp(log_gamma, axis=0).reshape(-1, 1)
+        trans_probs = np.exp(trans_probs)
+        self.tpm = trans_probs / np.sum(trans_probs, axis=1).reshape(-1,1)  # Make rows sum to 1
+
+        gamma = np.exp(log_gamma)
+
         self.start_proba = gamma[0, :] / np.sum(gamma[0, :])
 
         # Update state-dependent distributions
@@ -105,7 +138,41 @@ class EMHiddenMarkov(BaseHiddenMarkov):
             self.mu[j] = np.sum(gamma[:, j] * X) / np.sum(gamma[:, j])
             self.std[j] = np.sqrt(np.sum(gamma[:, j] * np.square(X - self.mu[j])) / np.sum(gamma[:, j]))
 
-    def fit(self, X: ndarray, verbose=0):
+    def _fit(self, X: ndarray, verbose=False):
+        """ Container for looping part of fit-method"""
+        self.old_llk = -np.inf  # Used to check model convergence
+        self.best_epoch = -np.inf
+
+        for epoch in range(self.epochs):
+            # Do new init at each epoch
+            self._init_params(X, output_hmm_params=True)
+
+            for iter in range(self.max_iter):
+                # Do e- and m-step
+                log_gamma, log_xi, llk = self._e_step(X)
+                self._m_step(X, log_gamma, log_xi)  # Updates mu, std and tpm
+
+                # Check convergence criterion
+                crit = np.abs(llk - self.old_llk)  # Improvement in log likelihood
+                if crit < self.tol:
+                    self.is_fitted = True
+                    if llk > self.best_epoch:
+                        self.best_epoch = llk
+                        self.stationary_dist = self.get_stationary_dist(tpm=self.tpm)
+
+                        self.best_tpm = self.tpm
+                        self.best_delta = self.start_proba
+                        self.best_mu = self.mu
+                        self.best_std = self.std
+
+                        if verbose == 2:
+                            print(
+                                f'Iteration {iter} - LLK {llk} - Means: {self.mu} - STD {self.std} - TPM {np.diag(self.tpm)} - Delta {self.start_proba}')
+                    break
+                else:
+                    self.old_llk = llk
+
+    def fit(self, X: ndarray, sort_state_seq=False, verbose=False):
         """
         Function iterates through the e-step and the m-step recursively to find the optimal model parameters.
 
@@ -122,78 +189,43 @@ class EMHiddenMarkov(BaseHiddenMarkov):
         """
         # Init parameters initial distribution, transition matrix and state-dependent distributions
         self.is_fitted = False
-        self._init_params(X, output_hmm_params=True)
-        self.old_llk = -np.inf  # Used to check model convergence
-        self.best_epoch = -np.inf
+        self._fit(X, verbose=verbose)
 
-        for epoch in range(self.epochs):
-            # Do new init at each epoch
-            if epoch > 0:
-                self._init_params(X, output_hmm_params=True)
+        if sort_state_seq is True:
+            self._check_state_sort()  # Ensures low variance state is first
 
-            for iter in range(self.max_iter):
-                # Do e- and m-step
-                gamma, xi, llk = self._e_step(X)
-                self._m_step(X, gamma, xi)
-
-                # Check convergence criterion
-                crit = np.abs(llk - self.old_llk)  # Improvement in log likelihood
-                if crit < self.tol:
-                    self.is_fitted = True
-                    if llk > self.best_epoch:
-                        # Compute AIC and BIC and print model results
-                        # AIC & BIC computed as shown on
-                        # https://rdrr.io/cran/HMMpa/man/AIC_HMM.html
-                        num_independent_params = self.n_states ** 2 + 2 * self.n_states - 1  # True for normal distributions
-                        self.aic_ = -2 * llk + 2 * num_independent_params
-                        self.bic_ = -2 * llk + num_independent_params * np.log(len(X))
-                        self.stationary_dist = self.get_stationary_dist(tpm=self.tpm)
-
-                        self.best_tpm = self.tpm
-                        self.best_delta = self.start_proba
-                        self.best_mu = self.mu
-                        self.best_std = self.std
-
-                    if verbose == 1:
-                        print(
-                            f'Iteration {iter} - LLK {llk} - Means: {self.mu} - STD {self.std} - Gamma {np.diag(self.tpm)} - Delta {self.start_proba}')
-                    break
-
-                elif iter == self.max_iter - 1 and verbose == 1:
-                    print(f'No convergence after {iter} iterations')
-                else:
-                    self.old_llk = llk
+        if self.is_fitted is False:
+            max_iter = self.max_iter
+            self.max_iter = max_iter * 2  # Double amount of iterations
+            self._fit(X)  # Try fitting again
+            self.max_iter = max_iter  # Reset max_iter back to user-input
+            if self.is_fitted == False and verbose == True:
+                print(f'MLE NOT FITTED -- epochs {self.epochs} -- iters {self.max_iter*2} -- mu {self.mu} -- std {self.std} -- tpm {np.diag(self.tpm)}')
 
         self.tpm = self.best_tpm
         self.start_proba = self.best_delta
         self.mu = self.best_mu
         self.std = self.best_std
 
+    def _check_state_sort(self):
+        # Sort array ascending and check if order is changed
+        # If the order is changed then states are reversed
+        if np.sort(self.std)[0] != self.std[0]:
+            # TODO only works for 2-states
+            self.mu = self.mu[::-1]
+            self.std = self.std[::-1]
+            self.tpm = np.flip(self.tpm)
+            self.start_proba = self.start_proba[::-1]
 
 
 if __name__ == '__main__':
-    model = EMHiddenMarkov(n_states=2, init="random", random_state=42, epochs=1, max_iter=100)
-    returns, true_regimes = simulate_2state_gaussian(plotting=False)  # Simulate some data from two normal distributions
+    sampler = SampleHMM(n_states=2, random_state=42)
+    X, viterbi_states, true_states = sampler.sample_with_viterbi(1000, 1)
+    model = EMHiddenMarkov(n_states=2, init="random", random_state=42, epochs=20, max_iter=100)
 
-    pool = Pool()
+    model.fit(X, verbose=True)
+    print(model.tpm.sum(axis=1))
 
-    result = pool.map(model.fit, [returns]*10)
-
-    #plot_samples_states(sample_rets, sample_states)
-
-
-
-
-
-
-    check_hmmlearn = False
-    if check_hmmlearn == True:
-        from hmmlearn import hmm
-
-        hmmlearn = hmm.GaussianHMM(n_components=2, covariance_type="full", n_iter=1000).fit(returns.reshape(-1, 1))
-
-        print(hmmlearn.transmat_)
-        print(hmmlearn.means_)
-        print(hmmlearn.covars_)
-
-        predictions = hmmlearn.predict(returns.reshape(-1, 1))
+    #pool = Pool()
+    #mapfunc = partial(model.fit, verbose=False)
+    #result = pool.map(mapfunc, [X]*20)

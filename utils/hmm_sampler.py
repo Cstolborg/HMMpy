@@ -5,7 +5,6 @@ from models.hidden_markov.hmm_base import BaseHiddenMarkov
 
 import pyximport; pyximport.install()  # TODO can only be active during development -- must be done through setup.py
 
-
 class SampleHMM(BaseHiddenMarkov):
     """
     Class to handle sampling from HMM hidden_markov with predefined parameters.
@@ -17,7 +16,7 @@ class SampleHMM(BaseHiddenMarkov):
         Number of hidden states
     hmm_params: dict
         hmm model parameters to sample from.
-        To set params, create a dict with 'mu', 'std', 'tpm' and 'stationary distribution' as kwds
+        To set params, create a dict with 'mu', 'std' and 'tpm' as kwds
         and their values in lists or ndarrays.
     random_state : int, default = 42
         Parameter set to recreate output
@@ -94,6 +93,49 @@ class SampleHMM(BaseHiddenMarkov):
                 sample_states[t, seq] = np.random.choice(a=state_index, size=1, p=tpm[sample_states[t - 1, seq], :])
 
             samples[:, seq] = stats.norm.rvs(loc=mu[sample_states[:, seq]], scale=std[sample_states[:, seq]], size=n_samples)
+
+        if n_sequences == 1:
+            sample_states = sample_states[:, 0]
+            samples = samples[:, 0]
+
+        return samples, sample_states
+
+    def sample_t(self, n_samples, n_sequences=1, dof=5):
+        '''
+        Sample states from a fitted Hidden Markov Model.
+
+        Parameters
+        ----------
+        n_samples : int
+            Amount of samples to generate
+        n_sequences : int, default=1
+            Number of independent sequences to sample from, e.g. if n_samples=100 and n_sequences=3
+            then 3 different sequences of length 100 are sampled
+
+        Returns
+        -------
+        samples : ndarray of shape (n_samples, n_sequences)
+            Outputs the generated samples of size n_samples
+        sample_states : ndarray of shape (n_samples, n_sequences)
+            Outputs sampled states
+        '''
+        mu = self.mu
+        std = self.std
+        tpm = self.tpm
+        stationary_dist = self.stationary_dist
+
+        state_index = np.arange(start=0, stop=self.n_states, step=1, dtype=np.int32)  # Array of possible states
+        sample_states = np.zeros(shape=(n_samples, n_sequences), dtype=np.int32) # Init sample vector
+        samples = np.zeros(shape=(n_samples, n_sequences))  # Init sample vector
+
+        for seq in range(n_sequences):
+            sample_states[0, seq] = np.random.choice(a=state_index, size=1, p=stationary_dist)
+
+            for t in range(1, n_samples):
+                # Each new state is chosen using the transition probs corresponding to the previous state sojourn.
+                sample_states[t, seq] = np.random.choice(a=state_index, size=1, p=tpm[sample_states[t - 1, seq], :])
+
+            samples[:, seq] = stats.t.rvs(loc=mu[sample_states[:, seq]], scale=std[sample_states[:, seq]], size=n_samples, df=5)
 
         if n_sequences == 1:
             sample_states = sample_states[:, 0]
