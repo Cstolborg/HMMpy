@@ -394,6 +394,33 @@ which is minimized with respect to $\Theta=(\theta_1,\ldots,\theta_K)$ and the l
 In \cref{eq:jump_objective}, $\lambda$ is a penalty that applies each time a state switch occur. Note that for $\lambda=0$, \cref{eq:jump_objective} reduces to a generalized K-means model (Lloyd, 1982), as the time ordering of observations become irrelevant. For $\lambda$ large enough, the model will converge towards a single state which will cover the entire dataset, thus $\lambda$ can be used to tune the persistence of states. The same loss as used by Nystrup et al. (2020) will be used in this analysis, making the loss function equal to the squared L2 norm $\ell(o_t, \theta_{s_t}) = \| o_t - \theta_{s_t} \|_2^2$, which is equivalent to the loss in K-means clustering.
 
 
+\begin{algorithm}
+\caption{Put your caption here}
+\begin{algorithmic}[1]
+
+\Procedure{Roy}{$a,b$}       \Comment{This is a test}
+    \State System Initialization
+    \State Read the value 
+    \If{$condition = True$}
+        \State Do this
+        \If{$Condition \geq 1$}
+        \State Do that
+        \ElsIf{$Condition \neq 5$}
+        \State Do another
+        \State Do that as well
+        \Else
+        \State Do otherwise
+        \EndIf
+    \EndIf
+
+    \While{$something \not= 0$}  \Comment{put some comments here}
+        \State $var1 \leftarrow var2$  \Comment{another comment}
+        \State $var3 \leftarrow var4$
+    \EndWhile  \label{roy's loop}
+\EndProcedure
+
+\end{algorithmic}
+\end{algorithm}
 
 \begin{algorithm}[H]
 \SetAlgoLined
