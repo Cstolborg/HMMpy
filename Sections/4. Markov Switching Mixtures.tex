@@ -375,18 +375,19 @@ By utilising the logarithmic transformation formulas just presented, it is possi
 \end{equation}
 
 
-
-
-
-
-
-
 \subsection{Jump estimation}
 \label{subsection: Jump theory}
+
+Apart from maximum likelihood estimation, other ways to estimate HMM's include jump estimation as shown by Bemporad et al. (2018). When given data $o_t\in O$, $t=1,\ldots,T$, then for $O = \mathbb{R}^d$, $o$ is a feature vector. We are additionally given model parameters $\theta_s\in \mathbb{R}^d$, $s=1...,K$ and the latent state variable $s_t\in\mathbb{N}$, which determines which model parameter $\theta_{st}$ is active at time t. Then the loss function $\ell: O\times\mathbb{R}^d \rightarrow\mathbb{R}$, regularizer term $r: \mathbb{R}^d \rightarrow \mathbb{R}$ and state sequence loss $\mathcal{L}$ defines the generalized jump model fitting objective
+\begin{equation}
+    J(O, \Theta, S) = \sum_{t=1}^T \ell(o_t,\theta_{st}) + \sum_{k=1}^K r(\theta_{st}) + \mathcal{L(S)}
+\label{eq:jump_gen_objective}    
+\end{equation}
+which is minimized with respect to $\Theta=(\theta_1,\ldots,\theta_K)$ and where $\mathcal{S}=(s_0,\ldots,s_T)$ is the state sequence. Bemporad et al. (2018) showed how HMM's can be seen as a special case of \cref{eq:jump_gen_objective} and Nystrup et al. (2020) proposed the following alteration of \cref{eq:jump_gen_objective} for fitting fitting HMM's
+\begin{equation}
+    
+\end{equation}
 
 \subsubsection{Input and features of the model}
 
 \subsubsection{Model initialization}
- 
- 
-\subsection*{Model selection}
