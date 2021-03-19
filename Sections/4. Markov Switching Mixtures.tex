@@ -393,23 +393,24 @@ which is minimized with respect to $\Theta=(\theta_1,\ldots,\theta_K)$ and the l
 
 In \cref{eq:jump_objective}, $\lambda$ is a penalty that applies each time a state switch occur. Note that for $\lambda=0$, \cref{eq:jump_objective} reduces to a generalized K-means model (Lloyd, 1982), as the time ordering of observations become irrelevant. For $\lambda$ large enough, the model will converge towards a single state which will cover the entire dataset, thus $\lambda$ can be used to tune the persistence of states. The same loss as used by Nystrup et al. (2020) will be used in this analysis, making the loss function equal to the squared L2 norm $\ell(o_t, \theta_{s_t}) = \| o_t - \theta_{s_t} \|_2^2$, which is equivalent to the loss in K-means clustering.
 
+
+
 \begin{algorithm}[H]
 \SetAlgoLined
-\SetKwInOut{Input}{Input}  % Set the name of input in latex in first brackets, then how to display it in text as 2
-\SetKwInOut{Output}{Output}
-\Input{ Time series O, number of latent states K and initial state sequence $\mathcal{S}^0=(s_0^0,\ldots,s_T^0)$.} \newline
-\Indp{ % indents block
+\KwInput{Time series O, number of latent states K and initial state sequence $\mathcal{S}^0=(s_0^0,\ldots,s_T^0)$.}
+
     1. Construct a set of standardized features Z from O. \newline
     2. Iterate for $i=1,\ldots$ until $S^i=S^{i-1}$ \newline
     %\Indp
     (a: Model fitting) $\Theta^i = arg\min_{\Theta} \sum_{t=1}^T \ell(z_t, \theta_{s_t^{i-1}})$ \newline
     (b: state sequence fitting) $S^i = arg\min_s \sum_{t=1}^{T-1} [\ell(o_t, \theta_{s_t}) + \lambda\mathbf{1}_{\{ s_t\ne s_{t+1} \}}]
         + \ell(o_T, \theta_{s_T})$
-    %\Indm
+    \newline
     3. Compute transition probabilities and distributional properties in each state. \newline
-}
-\Indm
-\Output{HMM parameters and prediction of latent states.}
+    
+
+
+\KwOutput{HMM parameters and prediction of latent states.}
 
 \caption{Jump estimation of HMM (Nystrup et al., 2020)}
 \label{algo:jump_fit}
