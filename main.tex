@@ -10,14 +10,15 @@
 % Math
 \usepackage{amsmath}
 \usepackage{amssymb}
+\DeclareMathOperator{\argmin}{argmin}
+\DeclareMathOperator{\argmax}{argmax}
 
 % Algorithms
-\usepackage[ruled,vlined]{algorithm2e}
+\usepackage[ruled]{algorithm2e}
+\DontPrintSemicolon
 \SetKwInput{KwInput}{Input} % Set the Input
 \SetKwInput{KwOutput}{Output}% set the Output
 
-\usepackage{algorithm}
-\usepackage[noend]{algpseudocode}
 
 % Fonts
 \usepackage{sectsty}
@@ -99,6 +100,8 @@
 % Set specific color for hyperref
 \usepackage{xcolor}
 
+% Control figures
+%\usepackage{subfig}
 
 % tcolorbox; Notice! add "-shell-escape" to the compile command
 \usepackage{tcolorbox}
