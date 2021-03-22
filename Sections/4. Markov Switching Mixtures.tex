@@ -217,7 +217,7 @@ Now, the idea underlying the methodology of the EM algorithm is to replace the q
 \end{equation}
 and
 \begin{equation}
-    \hat{\xi_{ij}(t)} = Pr(s_{t-1}=i, s_t=j|o^{(T)}) = \frac{\alpha_{t-1}(i)*\alpha_{ij}b_j(o_{t+1}\beta_{t+1}(j)}{\sum_{i=1}^m\sum_{j=1}^m\alpha_{t-1}(i)*\alpha_{ij}b_j(o_{t+1}\beta_{t+1}(j)} = \frac{\alpha_{t-1}(i)*\alpha_{ij}b_j(o_{t+1}\beta_{t+1}(j)}{P(O_T|\Theta)}
+    \hat{\xi_{ij}(t)} = Pr(s_{t-1}=i, s_t=j|o^{(T)}) = \frac{\alpha_{t-1}(i)*\alpha_{ij}b_j(o_{t+1}\beta_{t+1}(j)}{\sum_{i=1}^m\sum_{j=1}^m\alpha_{t-1}(i)*\alpha_{ij}b_j(o_{t+1}\beta_{t+1}(j)} = \frac{\alpha_{t-1}(i)*\alpha_{ij}b_j(o_{t+1})\beta_{t+1}(j)}{P(O_T|\Theta)}
     \label{eq: xi}
 \end{equation}
 
@@ -333,13 +333,14 @@ The theory above have outlined the mathematics comprising HMMs, however, a cruci
 For discrete state-dependent distributions, the element of the forward probabilities $\alpha_t$ ,as seen in equation \ref{eq: inductive step forward prob}, become progressively smaller as $t$ increase because the forward probabilities are made up of products of probabilities, hence these will eventually be rounded to 0. The remedy needed to circumvent this issue is the same for overflow and underflow, hence the authors confine their attention to underflow.
 
 A circumvention of the challenges related to underflow can be implemented by computing the logarithm of $L_T$ in equation \ref{eq: motive fb} which involves using a strategy of scaling the vector of forward and backward probabilities $\alpha_t$ and $\beta_t$. As such, a scaling of the vector of forward and backward probabilities can be conducted by log-transforming the  traditional formulas presented in section \ref{Section: Forward backward}. This methodology does not change the workings of the algorithms, however, it reduces the problem associated with underflow as the forward and backward probabilities no longer becomes excessively small when $t$ increases. Since the log-transformation will be rooted in the formulas presented in \ref{Section: Forward backward}, one can separate the transformations into a base, inductive and termination step.  
+
 \begin{equation}
-    \text{Log Base case}: \log\alpha_1(i) = \log\delta_i + \log b_i(o_1),  1 \leq i \leq m
+    \text{Log Base case}: \log\alpha_1(i) = \log\delta_i + \log b_i(o_1) \quad  1 \leq i \leq m
     \label{eq: log base case forward prob}
 \end{equation}
 
 \begin{equation}
-    \log\alpha_{t+1}(j) = \log\Big[\sum_{i=1}^m \exp^{\log a_t(i)+\log a_{ij}}\Big] + \log b_j(o_{t+1}), 1\leq t \leq T - 1,
+    \log\alpha_{t+1}(j) = \log\Big[\sum_{i=1}^m \exp^{\log a_t(i)+\log a_{ij}}\Big] + \log b_j(o_{t+1}) \quad 1\leq t \leq T - 1, \quad
     1 \leq j \leq m
     \label{eq: log inductive step forward prob}
 \end{equation}
@@ -351,7 +352,7 @@ A circumvention of the challenges related to underflow can be implemented by com
 
 As should be evident by equation \ref{eq: log base case forward prob}, \ref{eq: log inductive step forward prob} and \ref{eq: log termination step} a large part of the transformation relies on the following mathematics $log(ab) = log(a) + log(b)$. Furthermore, the transformation, particularly the transformation in the inductive step from equation \ref{eq: log inductive step forward prob}, relies on the mathematics guiding the LogSumExp (LSE) function. The LSE is defined as $LSE(x_1,...,x_n) = log(exp^{(x_1)}+...+exp^{(x_n)})$. One of the most common purposes of relying on log-transformations for algorithmic computations is to increase accuracy and avoid underflow. 
 
-Yet, the utilization of the LSE function directly, as depicted in equation \ref{eq: log inductive step forward prob}, can result in additional problems related to overflow/underflow. Therefore, the following formula, which provides equivalent results as the provided LSE formula, must be used instead. The revised LSE formula is defined as $LSE(x_1,....,x_n) = x^* + log(exp(x_1-x^*)+....+exp(x_n-x^*))$ where $x^* = max(x_1,.....,x_n)$. Despite having more than one variable, the procedure remains the same, yet the $x^*$ will be selected from range of multiple vectors. This mathematical trick is done in order to ensure that the number of which the logarithm is taken is above 0, since the natural logarithm is undefined for values below 0. 
+Yet, the utilization of the LSE function directly, as depicted in equation \ref{eq: log inductive step forward prob}, can result in additional problems related to overflow/underflow. Therefore, the following formula, which provides equivalent results as the provided LSE formula, must be used instead. The revised LSE formula is defined as $LSE(x_1,....,x_n) = x^* + log(exp(x_1-x^*)+....+exp(x_n-x^*))$ where $x^* = max(x_1,.....,x_n)$. Despite having more than one variable, the procedure remains the same, yet the $x^*$ will be selected from a range of multiple vectors. This mathematical trick is done in order to ensure that the number of which the logarithm is taken is above 0, since the natural logarithm is undefined for values below 0. 
 
 By utilising the logarithmic transformation formulas just presented, it is possible to conduct a similar transformation for the backward probabilities derived from equation \ref{eq: base backward} and \ref{eq: Inductive backward}. 
 
@@ -364,6 +365,32 @@ By utilising the logarithmic transformation formulas just presented, it is possi
     \textit{Inductive step}: \beta_t(i) = \log\sum_{j=1}^m \exp^{\log a_{ij}+\log b_j(o_{t+1})+\log \beta_{t+1}(j)}
     \label{eq: log inductive backward}
 \end{equation}
+
+As such, given equation \ref{eq: log inductive backward} and \ref{eq: log inductive step forward prob} it is possible to derive the probability of being in a specific state at time $t$. Furthermore, in order to avoid the issues related to underflow, one needs to transform the posterior probabilities as well. This can be completed as shown in equation \ref{eq: base log posterior} and \ref{eq: inductive log posterior}.
+
+\begin{equation}
+    \textit{Base case}: \log \pi_1(i) = \log P(S_i = s_i | o_1) = \log \delta_1 + \log b_j(o_{t1}) 
+    \label{eq: base log posterior}
+\end{equation}
+
+\begin{equation}
+    \textit{Inductive step}: \max_{1\leq i \leq m} \Big[\pi_{t-1}(i) + \alpha_{ij}\Big] + \log b_j(o_t) \quad 2\leq t \leq T
+    \label{eq: inductive log posterior}
+\end{equation}
+
+As such, equation \ref{eq: base log posterior} and \ref{eq: inductive log posterior} captures the optimal state for each time step $t$, while ensuring that all the inputs are log-scaled, thereby avoiding underflow. It should be noted that similar to the procedure presented in equation \ref{eq: inductive viterbi 2}, the result produced from equation \ref{eq: inductive log posterior} for each time step $t$ should be stored in a variable such that the solutions can be back-traced in the decoding procedure. Lastly, in order to fully implement and capitalize on the log-scaling, it is necessary to adjust the re-estimation procedure presented in the EM-algorithm which were introduced by equation \ref{eq: gamma} and \ref{eq: xi}. The associated log transformation can be conducted as per below.
+
+\begin{equation}
+    \log\gamma_i(t) = \log Pr(s_t=i|o^{(T)}) = \frac{\log\alpha_i(t) + \log\beta_i(t)}{\log\Big[\sum_{i=1}^m \exp^{\log a_t(i)+\log a_{ij}}\Big]}  
+    \label{eq: log gamma}
+\end{equation}
+
+\begin{equation}
+    \log\xi_{ij}(t) = \log Pr(s_{t-1}=i, s_t=j|o^{(T)}) =  \frac{\log\alpha_{t-1}(i) + \log\alpha_{ij} + \log b_j(o_{t+1}) + \log \beta_{t+1}(j)}{\log\Big[\sum_{i=1}^m \exp^{\log a_t(i)+\log a_{ij}}\Big]}
+    \label{eq: log xi}
+\end{equation}
+
+As such, it should be evident that by relying on the methodology introduced above it becomes feasible to implement the algorithms comprising the HMM, particularly in situation and environments where both $T$ and $m$ are large. The following section will introduce another approach to estimating HMMs which is known as jump estimation.
 
 
 \subsection{Jump estimation}
@@ -382,13 +409,11 @@ which is minimized with respect to $\Theta=(\theta_1,\ldots,\theta_K)$ and the l
 \label{eq:jump_objective}
 \end{equation}
 
-In \cref{eq:jump_objective}, $\lambda$ is a penalty that applies each time a state switch occur. Note that for $\lambda=0$, \cref{eq:jump_objective} reduces to a generalized K-means model (Lloyd, 1982), as the time ordering of observations become irrelevant. For $\lambda$ large enough, the model will converge towards a single state which will cover the entire dataset, thus $\lambda$ can be used to tune the persistence of states. The same loss as used by Nystrup et al. (2020) will be used in this analysis, making the loss function equal to the squared L2 norm\footnote{The squared L2 norm is defined as $\|\mathbf{x}\|_2^2 = (\sqrt{\sum_i x_i^2})^2 = \sum_i x_i^2 = \mathbf{x'x} $} $\ell(o_t, \theta_{s_t}) = \| o_t - \theta_{s_t} \|_2^2$, which is equivalent to the loss in K-means clustering.
+In \cref{eq:jump_objective}, $\lambda$ is a penalty that applies each time a state switch occur. It is essentially a hyper-parameter of the model, and potential tuning methods is shown in \cref{subsection: jump_penalizer}. Note that for $\lambda=0$, \cref{eq:jump_objective} reduces to a generalized K-means model (Lloyd, 1982), as the time ordering of observations become irrelevant. For $\lambda$ large enough, the model will converge towards a single state which will cover the entire dataset, thus $\lambda$ can be used to tune the persistence of states. The same loss as used by Nystrup et al. (2020) will be used in this analysis, making the loss function equal to the squared L2 norm\footnote{The squared L2 norm is defined as $\|\mathbf{x}\|_2^2 = (\sqrt{\sum_i x_i^2})^2 = \sum_i x_i^2 = \mathbf{x'x} $} $\ell(o_t, \theta_{s_t}) = \| o_t - \theta_{s_t} \|_2^2$, which is equivalent to the loss in K-means clustering.
 
 \cref{algo:jump_fit} describes our estimation approach to fitting jump models. From a univariate time series $O$, a number of standardized features $Z$ are constructed and inputted to the algorithm along with the number of latent states K and an initial guess of the state sequence $\mathcal{S}$. Then, the algorithm iterates between fitting the model that minimizes the loss function for a given state sequence, and finding the state sequence that minimize the objective given in \cref{eq:jump_objective}. The algorithm is terminated once the state sequence doesn't change from one iteration to the next, or when the change in the objective function is below some tolerance level. Upon termination, transition probabilities are found by counting the number of state transitions and sojourns from the final state sequence $\mathcal{S}^i$. The distributional properties of the HMM is estimated from the sample mean and sample variance in each state.
 
 \begin{algorithm}[H]
-\DontPrintSemicolon
-
 \KwInput{Time series O, number of latent states K and initial state sequence $\mathcal{S}^0=(s_0^0,\ldots,s_T^0)$.}
 \BlankLine
 
@@ -409,29 +434,28 @@ In \cref{eq:jump_objective}, $\lambda$ is a penalty that applies each time a sta
 
 The objective function in \cref{eq:jump_objective} is guaranteed to stay the same or decrease for every iteration in \cref{algo:jump_fit}, yet just as the EM algorithm from previous sections, \cref{algo:jump_fit} is sensitive towards initial starting values and may converge towards local minima. As a result, we run \cref{algo:jump_fit} from 10 different starting values generated using K-means++ (Arthur \& Vassilvitskii, 2007) the same way as proposed by Nystrup et al. (2020).
 
-In part 1 of \cref{algo:jump_fit}, we construct a number of standardized features from the observed data $O$. The point of this exercise is that the inclusion of time series features might reveal additional information which we can use in making the model better respond to state switches. Zheng et al. (2019) originally introduced a feature set, with the purpose of better characterising their conditional distributions in a spectral clustering estimator for HMM's. We will build on these features, however, we will exclude all forward looking variables. Using windows length of of $l=6$ and $l=14$, the features are summarized in \cref{algo:jump_features}.
+In part 1 of \cref{algo:jump_fit}, we construct a number of standardized features from the observed data $O$. The point of this exercise is that the inclusion of time series features might reveal additional information which we can use in making the model better respond to state switches. Zheng et al. (2019) originally introduced a feature set, with the purpose of better characterising their conditional distributions in a spectral clustering estimator for HMMs. We will build on these features, however, we will exclude all forward looking variables. Using windows length of of $l=6$ and $l=14$, the features are summarized in \cref{algo:jump_features}.
 
 \begin{algorithm}[H]
-\DontPrintSemicolon
 
-\KwInput{Time series O, number of latent states K and initial state sequence $\mathcal{S}^0=(s_0^0,\ldots,s_T^0)$.}
+\KwInput{Time series O, and window length $l$}
 \BlankLine
 
-1. Construct a set of standardized features Z from O.\;
-2. Iterate for $i=1,\ldots$ until $S^i=S^{i-1}$ \;
-\Indp
-(a) $\Theta^i = arg\min_{\Theta} \sum_{t=1}^T \ell(z_t, \theta_{s_t^{i-1}})$ (model fitting)\;
-(b) $S^i = arg\min_s \sum_{t=1}^{T-1} [\ell(o_t, \theta_{s_t}) + \lambda\mathbf{1}_{\{ s_t\ne s_{t+1} \}}]
-    + \ell(o_T, \theta_{s_T})$ (state sequence fitting)\;
-\Indm
-3. Compute transition probabilities and distributional properties in each state.\;
+1. Observation: $o_t$\;
+2. Left absolute change: $|o_t-o_{t-1}|$ \;
+3. Previous left absoulte change: $|o_{t-1}-o_{t-2}|$ \;
+4. Left local mean: $mean(o_{t-l},\ldots,o_{t})$ \;
+5. Left local std; $std(o_{t-l,\ldots, o_{t}})$ \;
+6. Left local median: $median(o_{t-l},\ldots,o_{t})$ \;
+7. Min/Max difference: $max(o_{t-l},\ldots,o_{t}) - min(o_{t-l},\ldots,o_{t})$ \;
 \BlankLine
-\KwOutput{HMM parameters and prediction of latent states.}
 
-\caption{Jump estimation of HMM (Nystrup et al., 2020)}
+
+\KwOutput{Feature set Z, where each each feature $z_i$ is standardized as $z_i = \frac{\bar x-x_i}{\sigma}$}
+
+\caption{Features used in Jump estimation of HMM's}
 \label{algo:jump_features}
 \end{algorithm}
-
 
 Part 2.a in \cref{algo:jump_fit} can be easily minimized analytically when the loss has strictly convex forms such as the squared L2 norm used here, thus guaranteeing the solution to be the global minimum. Taking the partial derivative of $\sum_{t=1}^T \ell(z_t, \theta_{s_t^{i-1}})$ with respect to $\theta_j$ yields
 \begin{equation}
@@ -442,16 +466,21 @@ Part 2.a in \cref{algo:jump_fit} can be easily minimized analytically when the l
 \end{equation}
 Thus, the partial derivative for $\theta_j$ is the sum over all time steps t where the state $s_t=j$ of the matrix $(\theta_{st}'-2z_t')$. Setting \cref{eq:jump_derivative} equal to zero and solving for $\theta_j$ yields the solution: $\theta_j = \frac{1}{N_j} \sum_{t:s_t=j} z_t $, where $N_j$ is the number of elements in $\mathcal{S}$ that equals $j$. The solution in each state is thus simply a vector of averages from each times series features in $Z$.
 
-Item 2.b in \cref{algo:jump_fit} is minimized recursively in a similar way to the viterbi algorithm explained eariler, except the time order of operations are reversed. Concretely, we 
+Item 2.b in \cref{algo:jump_fit} is minimized recursively in a similar way to the viterbi algorithm explained eariler, except the time order of operations are reversed. Following the method outlined by Nystrup et al. (2020), $S^i$ is found by computing the least costly state path $s_t$ through T data points. Define
+\begin{align}
+    V(T,s) &= \ell(Z_T, \theta_s) \\
+    V(t,s) &= \ell(Z_T, \theta_s) + \min_j[V(t+1, j) + \lambda\mathbf{1}_{\{ i\ne j \}}],
+    \quad t=T-1,\ldots,1
+\label{eq:jump_cost_path}
+\end{align}
 
-\begin{equation}
-    state sequence fitting = .....
-\end{equation}
+Then, the least costly state sequence is found by
+\begin{align}
+    s_1 &= \argmin_j V(1, j) \\
+    s_t &= \argmin_j[V(t, j) + \lambda\mathbf{1}_{\{ s_{t-1 \ne j} \}}], \quad t=2,\ldots,T
+    \label{eq:jump_state_seq_path}
+\end{align}
 
-One of the main advantages to the jump model over maximum likelihood estimation is that the jump model fitting is entirely based on Euclidean distances and does not assume the states to follow any specific distributions. As such it is expected to be more robust when trained on data in which the underlying distibution(s) is unknown, which is often the case with financial data. Additionally, the model is computationally lighter and often only requires between 5-10 operations to converge whereas the MLE estimator often requires 50-100.
+$V$ is thus defined as the least costly path from state $i$ to $j$ between two discrete time steps, as it merely determined by the tradeoff between the jump penalty $lambda$ and the cost associated with moving to state j. Viewing all entries of $V$ one can easily see how this will represent costs associated with each specific path through T data points in $V$. \cref{eq:jump_state_seq_path} can therefore be interpreted as the least costly path through $V$. 
 
-
-
-\subsubsection{Input and features of the model}
-
-\subsubsection{Model initialization}
+One of the main advantages to the jump model over maximum likelihood estimation is that the jump model fitting is entirely based on Euclidean distances and does not assume the states to follow any specific distributions. As such it is expected to be more robust when trained on data in which the underlying distribution(s) is unknown, which is often the case with financial data. This is an extremely important progression since misspecified distributions often are a huge error source in HMMs (and other probabilistic times series models), so the freedom from this assumption will potentially significantly improve the model fit. Additionally, the model is computationally lighter and often only requires between 5-10 operations to converge whereas the MLE estimator often requires 50-100. In the following sections we will show how both models converge when trained in a number of simulation environments.
