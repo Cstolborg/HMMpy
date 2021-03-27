@@ -1,12 +1,128 @@
 \newpage
 
 \section{Regime Based Asset Allocation}
-Portfolio allocation boils down to essentially maximizing the return generated for a given amount of risk. The portfolio manager who successfully and consistently does so, will have more money to manage and more satisfied investors. Generally speaking there are three approaches when it comes to portfolio selection that sophisticated institutional investors utilize (Nystrup, 2017). The first approach consists of diversification, which entails increasing risk-adjusted returns by forming optimal portfolios on the basis of allocating capital towards imperfectly correlated assets. This is also known as static asset allocation, since the portfolio allocation is constructed to capitalize on bullish market periods while providing protection in bearish market periods, hence static asset allocation is considered an all-weather portfolio (Markowitz, 1952). However, the challenge with static all-weather portfolios is that in order for them to remain efficient they must be continuously re-balanced and this trading is subject to trading costs, thereby negatively impacting returns. Furthermore, and perhaps more importantly, the financial crisis of 2008 demonstrated that diversification is not sufficient to avoid large drawdowns (Nystrup, 2017). As such, diversification fails when investors need it the most since the correlations between risky assets have a tendency to strengthen when markets are characterised by high volatility (Pedersen, 2009).  
+Optimal portfolio allocation boils down to essentially maximizing the return generated for a given amount of risk. The portfolio manager who successfully and consistently does so, will have more money to manage and more satisfied investors. Generally speaking there are three approaches when it comes to portfolio selection that sophisticated institutional investors utilize (Nystrup, 2017). The first approach consists of diversification, which entails increasing risk-adjusted returns by forming optimal portfolios on the basis of allocating capital towards imperfectly correlated assets. This is also known as static asset allocation, since the portfolio allocation is constructed to capitalize on bullish market periods while providing protection in bearish market periods, hence static asset allocation is considered an all-weather portfolio (Markowitz, 1952). However, the challenge with static all-weather portfolios is that in order for them to remain efficient they must be continuously re-balanced and this trading is subject to trading costs, thereby negatively impacting returns. Furthermore, and perhaps more importantly, the financial crisis of 2008 demonstrated that diversification is not sufficient to avoid large drawdowns (Nystrup, 2017). As such, diversification fails when investors need it the most since the correlations between risky assets have a tendency to strengthen when markets are characterised by high volatility (Pedersen, 2009). Furthermore, the large drawdowns in periods of high market volatility challenge investors' psychological and financial tolerance, and it will ultimately lead to redemption of funds and firing of portfolio managers (Nystrup, 2017). The findings suggests that a reasonably low maximum drawdown (MDD), despite diversification, is critical for the success of any portfolio.
+
+However, in order to counter the limitations of static asset allocation, particularly in markets with high volatility, portfolio managers and institutional investors began to switch from static-all-weather portfolios to consider dynamically optimizing and rebalancing the weights of the traded assets. This is known as dynamic asset allocation (DAA). As such, SAA involves setting an asset mix for the long-term with periodic adjustments, for instance yearly, while dynamic asset allocation involves frequent portfolio adjustments to respond to changes in market conditions. Following this, the predominant approach in previous studies has been to specify a static decision rule for changing the allocation based on the state of financial markets or the economy. As such, Nystrup (2014) showed that combining the dynamic rebalancing with the ability to uncover economic regimes through a spectrum of HMMs in order to adjust portfolio weights as new information arrives, thereby allowing investors to take advantage of favorable market conditions while withstanding and limiting the downside in high volatility market periods result in higher risk-adjusted returns compared to traditional SAA and DAA strategies. 
+
+The proposed method by Nystrup (2014) is referred to as Regime-based asset allocation (RBAA) and several studies have confirmed that RBAA add value when compared to rebalancing to static weights and it also dramatically reduces drawdowns in periods of high market volatility. For additional information on RBAA and its development the authors refer to Ang \& Bekaert 2004, Guidolin \& Timmermann (2007), Bulla et al. (2011), or Nystrup et al. (2015a, 2017a). 
+
+One of the big issues related to the methodology presented by Nystrup (2014) is that the portfolio weights comprising the optimal portfolio for a specific economic regime is optimized in sample, however, there is no guarantee that the portfolio weights are optimal when the regime change actually occurs. The natural disadvantage is that a large number of different portfolio weight specifications might have to be tried, in order to uncover a decision rule with good performance. However, testing many different specifications increases the risk of inferior performance out of sample due to overfitting, and  it can also be argued that a static decision rule is hardly optimal when the underlying HMM  used for regime inference is time varying (Nystrup, 2017).
+
+An alternative approach to simply switching between a static decision rule for changing the allocation based on the state of the economy is to dynamically optimize the portfolio based on the inferred regime while adjusting for transactions costs, risk aversion as well as a variety of other constraints. This methodology is known as model predictive control (MPC). One of the great strengths of the MPC framework is its capability to solve control problems with several constraining factors in a computationally feasible manner. Since transactions costs are an instrumental part for portfolio managers and investors when comparing the performance SAA against RBAA since frequent rebalancing can offset the potential excess return of a dynamic strategy. 
+
+As such, the thesis operates through a framework in which asset returns are modeled by a two-state hidden HMM with time-varying parameters, similar to the model considered in Nystrup (2014). This is due to the fact that HMMs are a more realistic description of asset price dynamics than a linear factor model with constant variance. Furthermore, as mentioned in \ref{Section: Stylized facts} HMMs are well suited to capture the stylized behavior of financial series, including volatility clustering, leptokurtosis, and time-varying correlations (Rydén et al. 1998). Lastly, from an economic perspective, HMMs are well suited to describe the abrupt changes in financial market that arise due to changes in the state of the economy as well as the associated changes in investment opportunities and optimal asset allocation.   
+
+The task of deriving optimal portfolios in a DAA/RBAA setting is a multi-period problem, however, it is often approximated by a sequence of single-period optimizations, thereby making it impossible to
+properly account for the impact of trading constraints and time-varying forecasts (Nystrup, 2017). Following the research of Gârleanu \&
+Pedersen (2013), multi-period portfolio selection has predominantly based on dynamic programming. However, actually carrying out dynamic programming for trade selection is impractical, except for
+some cases with limited assets due to the “curse of dimensionality” (Boyd et al. 2014). As a natural consequence of this, most previous studies only include a small number of assets while keeping the constraints extremely simple. This thesis mitigates this limitation by expanding on the MPC framework introduced by Boyd et al. (2017) thereby making it possible to consider a large numbers of assets
+while imposing additional constraints related to trading costs, maximum drawdown and position sizing.
+
+The following sections will introduce the MPC framework, the data used, as well as the obtained results.
+
+\subsection{Model Predictive control}
+The overarching idea behind the MPC approach is to dynamically optimize the portfolio based on forecasts of
+means and variances of returns at discrete time horizons. By relying on a 2-state Gaussian HMM means that the forecasts are mean-reverting and
+only change when the regime probabilities change (Nystrup, 2017). As such, the forecasted means and variances serve as inputs to the multi-period portfolio optimization problem. Intuitively, this means that every day a decision has to be made whether or not to change the current portfolio allocation, knowing that the decision will be reconsidered the next day with new input. The possible benefits from changing the asset allocation in the portfolio should be traded off against risks and costs. 
+
+Naturally, there is a limit regarding how far into the future it remains meaningful to make predictions about the means and variances of returns. For long horizons, it is not possible to make better predictions than
+the long-term mean and variance, hence the forecasted mean and variance converge to their stationary values when the forecast horizon becomes large. As such, relying on a small time horizon regarding predictions not just
+an approximation necessary to make the optimization problem computationally
+feasible, it also seemingly reasonable (Nystrup, 2017).
+
+\subsubsection{Stochastic control formulation}
+The formulation of the multi-period asset allocation optimization problem as a stochastic control problem is based on Boyd et al. (2017). 
+
+Define $w_t$ $\in$ $\mathbb{R}^{n+1}$ as the portfolio weights at time \textit{t} in which $(w_t)_{_i}$ is the fraction of the total portfolio $V_t$ invested in asset \textit{i}. As such, $(w_t)_{_i} < 0$ is a short position in asset \textit{i}. The reader should note that by these definitions, it is assumed that the portfolio value is positive. The weight $(w_t)_{_{n+1}}$ represents the fraction held in risk-free asset. By definition, the weights of all the assets comprising the portfolio sum to 100\% expressed as, $\bold{1}^Tw_t = 1$, in which $\bold{1}$ is a column vector with 1 in all entries. 
+
+A natural objective for investors is seeking to maximize the present value of the future expected returns, over a given investment horizon $T$, on a risk-adjusted basis, in which transactions and holding costs are taken into consideration.
+
+\begin{equation}
+    E\Big[\sum_{t=0}^{T-1}\eta^{t+1}(r_{t+1}^Tw_{t+1}-\gamma_{t+1}\psi_{t+1}(w_{t+1})) -\eta^t(\phi_t^{trade}(w_{t+1}-w_t)+\phi_t^{hold}(w_{t+1}))\Big]
+    \label{eq: MPC objective}
+\end{equation}
+
+As such, the expectation is taken over the sequence of returns $r_1, r_2...., r_T \in \mathbb{R}^{n+1}$ conditioned on all past observations. Further, $\psi_t:\mathbb{R}^{n+1} \rightarrow \mathbb{R}$ is a risk function, $\gamma_t$ is a risk-aversion parameter which is used to adjust and control the relative importance of return versus risk, $\phi_t^{trade}: \mathbb{R}^{n+1}\rightarrow\mathbb{R}$ serves as a cost function for trading, $\phi_t^{hold}: \mathbb{R}^{n+1}\rightarrow\mathbb{R}$ serves as a holding cost function and $\eta \in (0,1)$ is the discount factor equal to the inverse of $1+r_f$ where $r_f$ is the risk-free rate.  
+
+In order to determine which trades to make the MPC framework replaces all future unknown quantities by their forecasted values over a forecast horizon $H$. As such, the future returns, which by nature are unknown, are replaced by their forecasted mean values $\hat{\mu}_{T|t},\tau = t+1,....,t+H$, in which $\hat{\mu}_{\tau|t}$ is the forecast of returns for time $\tau$ conducted at time $t$ 
+(Nystrup, 2017). This property means that the stochastic optimization problem which underpins the MPC framework turns into a deterministic optimization problem, thereby making it feasible for a computer to solve as per \cref{eq: maximizing objective MPC}, 
+
+\begin{equation}
+\begin{split}
+    \text{maximize} \sum_{\tau=t+1}^{t+H}(\hat{\mu}_{\tau|t}^Tw_\tau-\hat{\phi}_{\tau|t}^{trade}(w_\tau-w_{\tau-1})-\hat{\phi}_{\tau|t}^{hold}(w_\tau)-\gamma_\tau\hat{\psi}_{\tau|t}(w_\tau))
+    \label{eq: maximizing objective MPC}
+    \\
+    \text{Subject to } \bold{1}^Tw_\tau=1, \quad \tau = t+1,...,t+H,
+\end{split}    
+\end{equation}
+
+in which $w_t$ is the current portfolio weights and $\hat{\phi}^{trade}$ as well as $\hat{\phi}^{hold}$ are trading and holding functions. These functions will be estimated in subsequent sections. 
+
+When solving the optimization problem from equation \ref{eq: maximizing objective MPC} the result is an optimal sequence of weights $w_{t+1}^*,..., w_{t+H}^*$. As such, this optimal sequence of portfolio weights represents the future trades over the planning horizon $H$, however, only upon fulfillment of the unrealistic assumption that all future unknown quantities will match their forecasted values. In order to minimize the risk of making inappropriate capital allocations, only the first predicted trade $w_{t+1}^*-w_t$ will be executed. At the next time step $t+1$ the process will be repeated. The reader should note that the planning horizon $H$ can be much shorter than the investment horizon $T$ and this is indeed why the discounting factor is ignored in equation \ref{eq: maximizing objective MPC} as opposed to \ref{eq: MPC objective} 
+(Nystrup, 2017).
+
+The procedure of the MPC approach for multi-period portfolio selection is depicted in the algorithm below. 
+
+\begin{algorithm}[H]
+\BlankLine
+1. Update model parameters based on the most recent observation
+\Indm
+\BlankLine
+2. Forecast future values of all unknown quantities H steps into the future
+\BlankLine
+3. Compute the optimal sequence of weights $w_{t+1}^*,...,w_{t+H}^*$ based on the current portfolio $w_t$
+\BlankLine
+4. Execute the first trade as $w_{t+1}^* - w_t$ and return to step 1 of the algorithm.\;
+\BlankLine
+\caption{MPC approach to multi-period portfolio selection}
+\label{algo:MPC}
+\end{algorithm}
+
+As such, algorithm \ref{algo:MPC} provides a summary of the steps involved in the MPC solution to the multi-period portfolio selection problem. Furthermore, the MPC approach holds computational advantages when coupled with a HMM for detecting economic regimes, since the optimal control action is considered anyway for whether or not to change the portfolio allocation, hence the portfolio manager might as well go ahead an update the derivation of the optimal portfolio allocation, given that its economically viable. The formulation of equation \ref{eq: maximizing objective MPC} is a convex optimization problem under the assumption that the risk function as well as the transaction and holding costs are convex (Boyd \& Vandenberghe, 2004). The formulation of the multi-period portfolio problem as a convex optimization problem has some computational and intuitive advantages, since computational remedies as CVXPY can be used in a Python setting, thereby speeding up processing time significantly.
+
+The aforementioned risk and control functions introduced in equation \ref{eq: maximizing objective MPC} will be covered in the sections below. This involves risk-aversion and drawdown control combined with transactions and holding costs. 
+
+\subsection{Forecasting $\hat\mu$ and $\hat\Sigma$}
+
+Describe forecasting method - explain s. 279
+
+\subsubsection{Shrinkage}
+
+\subsection{Cost functions}
+
+\subsubsection{Risk-averse-control}
+Since the origination of quantitative portfolio research by Markowitz' (1952) mean-variance theory, the most used risk-adjustment charge is depicted as
+
+\begin{equation}
+    \psi_t(w_t) = w_t^T\Sigma_tw_t
+    \label{eq: MPC quadratic risk}
+\end{equation}
+
+As such, the risk-adjustment charge $\psi_t(w_t)$ is proportional to the variance of the portfolio returns given the weights. $\Sigma_t$ represents an estimate of the return covariance, assuming that returns behave stochastically. Intuitively this means that the term can be considered a cost that discourages portfolios with high variance. 
+
+When combining the objective function in equation \ref{eq: MPC objective} with the quadratic risk function of equation \ref{eq: MPC quadratic risk} it results in assuming that investors posses and act upon mean-variance preferences. Furthermore, if the returns are independent random variables, the objective will be equivalent to the mean-variance criterion introduced by Markowitz (1952) (Nystrup, 2017). This thesis acknowledges the predominant use of quadratic risk due to its intutive nature as well as its straight-forwardness in terms of deriving a solution through convex optimization. Yet, there is an increasing focus on alternative risk measures beyond the introduced quadratic risk from equation \ref{eq: MPC quadratic risk}. Many of these alternative risk measures are also convex hence they are usable in the MPC framework. The alternative risk measures include expected shortfall, defined as the loss a portfolio manager could expect in the worst x\% of cases (Munk, 2019). It is a coherent risk measure encompassing the neat property that it only penalizes downside similar to Sharpe. However, when portfolios are constructed to minimize expected shortfall, empirical studies, such as (Lim et al. 2011), have shown that they often realize a higher expected shortfall out of sample when compared to mean variance efficient portfolios. The uncertainty is increasing in the lowering of the quantile level x\%. 
+
+Yet, investors concerned with the risk of the left tail of the distribution, can use drawdown control functions as an appealing alternative to control risk, since it prevents a portfolio of losing more than a given pre-defined acceptable level. 
+
+\subsubsection{Drawdown control}
+A portfolio manager is often subject and constrained by a maximum drawdown level which means that at each point in time $t$ the portfolio can not drop below a fixed value. Remember that $V_t$ entails the value of the portfolio at time $t$. Furthermore, the maximum value of the portfolio in the past is defined as,
+
+\begin{equation}
+    M_t = \max_{\tau \leq t} V_t
+\end{equation}
+
+meaning that the drawdown at time $t$ is defined as 
+
+\begin{equation}
+    D_t = 1 - \frac{V_t}{M_t}
+\end{equation}
 
 
-Short intro to regime based asset allocation - evt. sammenlign med statisk aktiv allokering og aktiv allokering mod statiske vægte
+\subsection{Constraints}
 
-\subsection{Model Predictive cotrol}
+
+
 
 
 
