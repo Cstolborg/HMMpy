@@ -1,7 +1,7 @@
 import copy
 
 import numpy as np
-import pandas as pd
+import pandas as pd ; pd.set_option('display.max_columns', 10); pd.set_option('display.width', 320)
 import tqdm
 import matplotlib.pyplot as plt
 
@@ -20,7 +20,7 @@ def test_model_convergence(jump, mle, sampler, X, sample_lengths=(250, 500, 1000
     # Set attributes to be saved in simulation
     cols = {
         '$\mu_1$': [], '$\mu_2$': [],
-        '$\std_1$': [], '$\std_2$': [],
+        '$\sigma_1$': [], '$\sigma_2$': [],
         '$q_11$': [], '$q_22$': []
     }
 
@@ -38,8 +38,8 @@ def test_model_convergence(jump, mle, sampler, X, sample_lengths=(250, 500, 1000
 
             data['jump']['$\mu_1$'].append(jump.mu[0])
             data['jump']['$\mu_2$'].append(jump.mu[1])
-            data['jump']['$\std_1$'].append(jump.std[0])
-            data['jump']['$\std_2$'].append(jump.std[1])
+            data['jump']['$\sigma_1$'].append(jump.std[0])
+            data['jump']['$\sigma_2$'].append(jump.std[1])
             data['jump']['$q_11$'].append(jump.tpm[0, 0])
             if len(jump.tpm) > 1:
                 data['jump']['$q_22$'].append(jump.tpm[1, 1])
@@ -48,8 +48,8 @@ def test_model_convergence(jump, mle, sampler, X, sample_lengths=(250, 500, 1000
 
             data['mle']['$\mu_1$'].append(mle.mu[0])
             data['mle']['$\mu_2$'].append(mle.mu[1])
-            data['mle']['$\std_1$'].append(mle.std[0])
-            data['mle']['$\std_2$'].append(mle.std[1])
+            data['mle']['$\sigma_1$'].append(mle.std[0])
+            data['mle']['$\sigma_2$'].append(mle.std[1])
             data['mle']['$q_11$'].append(mle.tpm[0, 0])
             if len(mle.tpm) > 1:
                 data['mle']['$q_22$'].append(mle.tpm[1, 1])
@@ -68,8 +68,8 @@ def test_model_convergence(jump, mle, sampler, X, sample_lengths=(250, 500, 1000
             {'model': 'true',
              '$\mu_1$': sampler.mu[0],
              '$\mu_2$': sampler.mu[1],
-             '$\std_1$': sampler.std[0],
-             '$\std_2$': sampler.std[1],
+             '$\sigma_1$': sampler.std[0],
+             '$\sigma_2$': sampler.std[1],
              '$q_11$': sampler.tpm[0, 0],
              '$q_22$': sampler.tpm[1, 1],
              'sample_size': sample_length
@@ -131,10 +131,17 @@ if __name__ == '__main__':
 
     df = pd.read_csv(path + 'simulation_normal.csv')
     #df = test_model_convergence(jump, mle, sampler, X, sample_lengths=(250, 500, 1000, 2000))
-
-    plot_simulated_model_convergence(df, sampler, savefig='simulation_normal.png')
-
+    #df.to_csv(path + 'simulation_normal.csv', index=False)
 
     data_table = df.groupby(['sample_size', 'model']).mean().sort_index(ascending=[True, False])
-    data_table.to_latex(path + 'simulation_normal.tex')
     print(data_table)
+
+    save = False
+    if save == True:
+        plot_simulated_model_convergence(df, sampler, savefig='simulation_normal.png')
+        data_table.to_latex(path + 'simulation_normal.tex', escape=False)
+    else:
+        plot_simulated_model_convergence(df, sampler, savefig=None)
+
+
+
