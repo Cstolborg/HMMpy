@@ -130,13 +130,13 @@ if __name__ == '__main__':
     true_states = np.load(path + 'sampled_true_states.npy')
 
     df = pd.read_csv(path + 'simulation_normal.csv')
-    #df = test_model_convergence(jump, mle, sampler, X, sample_lengths=(250, 500, 1000, 2000))
-    #df.to_csv(path + 'simulation_normal.csv', index=False)
+    df = test_model_convergence(jump, mle, sampler, X, sample_lengths=(250, 500, 1000, 2000))
+    df.to_csv(path + 'simulation_normal.csv', index=False)
 
     data_table = df.groupby(['sample_size', 'model']).mean().sort_index(ascending=[True, False])
     print(data_table)
 
-    save = False
+    save = True
     if save == True:
         plot_simulated_model_convergence(df, sampler, savefig='simulation_normal.png')
         data_table.to_latex(path + 'simulation_normal.tex', escape=False)

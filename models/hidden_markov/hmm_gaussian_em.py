@@ -191,9 +191,6 @@ class EMHiddenMarkov(BaseHiddenMarkov):
         self.is_fitted = False
         self._fit(X, verbose=verbose)
 
-        if sort_state_seq is True:
-            self._check_state_sort()  # Ensures low variance state is first
-
         if self.is_fitted is False:
             max_iter = self.max_iter
             self.max_iter = max_iter * 2  # Double amount of iterations
@@ -201,6 +198,9 @@ class EMHiddenMarkov(BaseHiddenMarkov):
             self.max_iter = max_iter  # Reset max_iter back to user-input
             if self.is_fitted == False and verbose == True:
                 print(f'MLE NOT FITTED -- epochs {self.epochs} -- iters {self.max_iter*2} -- mu {self.mu} -- std {self.std} -- tpm {np.diag(self.tpm)}')
+
+        if sort_state_seq is True:
+            self._check_state_sort()  # Ensures low variance state is first
 
         self.tpm = self.best_tpm
         self.start_proba = self.best_delta
@@ -212,10 +212,10 @@ class EMHiddenMarkov(BaseHiddenMarkov):
         # If the order is changed then states are reversed
         if np.sort(self.std)[0] != self.std[0]:
             # TODO only works for 2-states
-            self.mu = self.mu[::-1]
-            self.std = self.std[::-1]
-            self.tpm = np.flip(self.tpm)
-            self.start_proba = self.start_proba[::-1]
+            self.best_mu = self.best_mu[::-1]
+            self.best_std = self.best_std[::-1]
+            self.best_tpm = np.flip(self.best_tpm)
+            self.best_start_proba = self.start_proba[::-1]
 
 
 if __name__ == '__main__':

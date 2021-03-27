@@ -1,4 +1,5 @@
 import numpy as np
+import tqdm
 from scipy import stats
 
 from models.hidden_markov.hmm_base import BaseHiddenMarkov
@@ -85,7 +86,7 @@ class SampleHMM(BaseHiddenMarkov):
         sample_states = np.zeros(shape=(n_samples, n_sequences), dtype=np.int32) # Init sample vector
         samples = np.zeros(shape=(n_samples, n_sequences))  # Init sample vector
 
-        for seq in range(n_sequences):
+        for seq in tqdm.tqdm(range(n_sequences)):
             sample_states[0, seq] = np.random.choice(a=state_index, size=1, p=stationary_dist)
 
             for t in range(1, n_samples):
@@ -128,14 +129,14 @@ class SampleHMM(BaseHiddenMarkov):
         sample_states = np.zeros(shape=(n_samples, n_sequences), dtype=np.int32) # Init sample vector
         samples = np.zeros(shape=(n_samples, n_sequences))  # Init sample vector
 
-        for seq in range(n_sequences):
+        for seq in tqdm.tqdm(range(n_sequences)):
             sample_states[0, seq] = np.random.choice(a=state_index, size=1, p=stationary_dist)
 
             for t in range(1, n_samples):
                 # Each new state is chosen using the transition probs corresponding to the previous state sojourn.
                 sample_states[t, seq] = np.random.choice(a=state_index, size=1, p=tpm[sample_states[t - 1, seq], :])
 
-            samples[:, seq] = stats.t.rvs(loc=mu[sample_states[:, seq]], scale=std[sample_states[:, seq]], size=n_samples, df=5)
+            samples[:, seq] = stats.t.rvs(loc=mu[sample_states[:, seq]], scale=std[sample_states[:, seq]], size=n_samples, df=dof)
 
         if n_sequences == 1:
             sample_states = sample_states[:, 0]

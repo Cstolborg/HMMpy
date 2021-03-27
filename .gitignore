@@ -1,6 +1,7 @@
 # Folders
 .idea/
 .idea
+/analysis/model_convergence/input_data/
 
 
 # Byte-compiled / optimized / DLL files
@@ -133,3 +134,4 @@ dmypy.json
 # Pyre type checker
 .pyre/
 /.idea/
+

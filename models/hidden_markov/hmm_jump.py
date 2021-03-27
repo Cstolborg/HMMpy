@@ -222,11 +222,6 @@ class JumpHMM(BaseHiddenMarkov):
 
         self._fit(X=X, Z=Z, verbose=verbose)  # Container for loop where fitting happens
 
-        if get_hmm_params is True and self.is_fitted is True:
-            if sort_state_seq is True:
-                self.state_seq = self._check_state_sort(X, self.state_seq)
-            self.get_params_from_seq(X, state_sequence=self.state_seq)
-
         if self.is_fitted is False:
             max_iter = self.max_iter
             self.max_iter = max_iter * 2  # Double amount of iterations
@@ -235,6 +230,11 @@ class JumpHMM(BaseHiddenMarkov):
             if self.is_fitted == False and verbose == True:
                 print(
                     f'Jump NOT FITTED -- epochs {self.epochs} -- iters {self.max_iter * 2}')
+
+        if get_hmm_params is True and self.is_fitted is True:
+            if sort_state_seq is True:
+                self.state_seq = self._check_state_sort(X, self.state_seq)
+            self.get_params_from_seq(X, state_sequence=self.state_seq)
 
     def get_params_from_seq(self, X, state_sequence):
         """
@@ -292,7 +292,7 @@ class JumpHMM(BaseHiddenMarkov):
         self.start_proba[state_sequence[0]] = 1.
         self.stationary_dist = self.get_stationary_dist(tpm=self.tpm)
 
-    def _check_state_sort(self, X, state_sequence):
+    def _check_state_sort(self, X, state_sequence):  # TODO give this same structure as in EM_HMM
         """
         Checks whether the low-variance state is the first state.
 

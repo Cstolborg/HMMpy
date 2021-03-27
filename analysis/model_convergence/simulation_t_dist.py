@@ -24,8 +24,8 @@ if __name__ == '__main__':
     true_states = np.load(path + 'sampled_t_true_states.npy')
 
     df = pd.read_csv(path + 'simulation_t.csv')
-    #df = test_model_convergence(jump, mle, sampler, X, sample_lengths=(250, 500, 1000, 2000))
-    #df.to_csv(path + 'simulation_t.csv', index=False)
+    df = test_model_convergence(jump, mle, sampler, X, sample_lengths=(250, 500, 1000, 2000))
+    df.to_csv(path + 'simulation_t.csv', index=False)
 
     plot_simulated_model_convergence(df, sampler, savefig='simulation_t.png')
 
