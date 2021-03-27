@@ -62,19 +62,25 @@ if __name__ == '__main__':
     for i, sample_length in enumerate(sample_lengths):
         ax.plot(penalties, np.mean(bac_outer[i], axis=1), label=str(sample_length))
 
-    ax.legend()
 
-    plt.suptitle(f"Selecting the jump penalty")
+    ax.set_xlabel('$\lambda$')
+    ax.set_ylabel('Balanced Accuracy')
+
+    ax.legend()
     plt.tight_layout()
+    plt.savefig('./images/jump_penalties.png')
     plt.show()
 
     #Plot boxplot
     fig, ax = plt.subplots(figsize=(12, 7))
     ax.boxplot(bac_outer[-1], showfliers=False)
 
+    ax.set_xlabel('$\lambda$')
+    ax.set_ylabel('Balanced Accuracy')
+
     plt.xticks(list(range(len(penalties))), penalties)
-    plt.suptitle(f"Selecting the jump penalty")
     plt.tight_layout()
+    plt.savefig('./images/jump_penalties_box.png')
     plt.show()
 
 
