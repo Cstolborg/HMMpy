@@ -59,15 +59,20 @@ def plot_performance(df, port_val, weights, start=None, show=True, save=False):
 
     ax[0].plot(df.index, df)
     ax[0].set_yscale('log')
+    ax[0].set_ylabel('log $P_t$')
 
     ax[1].stackplot(df.index, weights.T, labels=df.drop('port_val',axis=1).columns)
     ax[1].legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+    ax[1].set_ylabel('Asset weight')
+
+    ax[1].set_xlim(df.index[0], df.index[-1])
+
     plt.tight_layout()
 
-    if show:
-        plt.show()
     if save:
         plt.savefig('../../analysis/portfolio_exercise/images/port_performance')
+    if show:
+        plt.show()
 
     return fig, ax
 

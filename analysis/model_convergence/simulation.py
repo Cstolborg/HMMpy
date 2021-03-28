@@ -21,7 +21,7 @@ def test_model_convergence(jump, mle, sampler, X, sample_lengths=(250, 500, 1000
     cols = {
         '$\mu_1$': [], '$\mu_2$': [],
         '$\sigma_1$': [], '$\sigma_2$': [],
-        '$q_11$': [], '$q_22$': []
+        '$q_{11}$': [], '$q_{22}$': []
     }
 
     # Compute models params for each sample length
@@ -40,21 +40,21 @@ def test_model_convergence(jump, mle, sampler, X, sample_lengths=(250, 500, 1000
             data['jump']['$\mu_2$'].append(jump.mu[1])
             data['jump']['$\sigma_1$'].append(jump.std[0])
             data['jump']['$\sigma_2$'].append(jump.std[1])
-            data['jump']['$q_11$'].append(jump.tpm[0, 0])
+            data['jump']['$q_{11}$'].append(jump.tpm[0, 0])
             if len(jump.tpm) > 1:
-                data['jump']['$q_22$'].append(jump.tpm[1, 1])
+                data['jump']['$q_{22}$'].append(jump.tpm[1, 1])
             else:
-                data['jump']['$q_22$'].append(0)
+                data['jump']['$q_{22}$'].append(0)
 
             data['mle']['$\mu_1$'].append(mle.mu[0])
             data['mle']['$\mu_2$'].append(mle.mu[1])
             data['mle']['$\sigma_1$'].append(mle.std[0])
             data['mle']['$\sigma_2$'].append(mle.std[1])
-            data['mle']['$q_11$'].append(mle.tpm[0, 0])
+            data['mle']['$q_{11}$'].append(mle.tpm[0, 0])
             if len(mle.tpm) > 1:
-                data['mle']['$q_22$'].append(mle.tpm[1, 1])
+                data['mle']['$q_{22}$'].append(mle.tpm[1, 1])
             else:
-                data['mle']['$q_22$'].append(0)
+                data['mle']['$q_{22}$'].append(0)
 
         for model in data.keys():
             df_temp = pd.DataFrame(data[model])
@@ -70,8 +70,8 @@ def test_model_convergence(jump, mle, sampler, X, sample_lengths=(250, 500, 1000
              '$\mu_2$': sampler.mu[1],
              '$\sigma_1$': sampler.std[0],
              '$\sigma_2$': sampler.std[1],
-             '$q_11$': sampler.tpm[0, 0],
-             '$q_22$': sampler.tpm[1, 1],
+             '$q_{11}$': sampler.tpm[0, 0],
+             '$q_{22}$': sampler.tpm[1, 1],
              'sample_size': sample_length
              }
         df = df.append(pd.DataFrame(true_data, index=[0]))
@@ -139,7 +139,7 @@ if __name__ == '__main__':
     save = True
     if save == True:
         plot_simulated_model_convergence(df, sampler, savefig='simulation_normal.png')
-        data_table.to_latex(path + 'simulation_normal.tex', escape=False)
+        data_table.round(4).to_latex(path + 'simulation_normal.tex', escape=False)
     else:
         plot_simulated_model_convergence(df, sampler, savefig=None)
 

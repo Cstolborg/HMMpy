@@ -29,7 +29,6 @@ if __name__ == '__main__':
 
     plot_simulated_model_convergence(df, sampler, savefig='simulation_t.png')
 
-
     data_table = df.groupby(['sample_size', 'model']).mean().sort_index(ascending=[True, False])
-    data_table.to_latex(path + 'simulation_t.tex', escape=False)
+    data_table.round(4).to_latex(path + 'simulation_t.tex', escape=False)
     print(data_table)

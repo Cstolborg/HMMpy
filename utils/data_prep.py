@@ -42,7 +42,7 @@ def load_data_get_logret(path='../../data/price_series.csv'):
     df.interpolate(method='linear', inplace=True)
     df_ret = np.log(df) - np.log(df.shift(1))
     df_ret.dropna(inplace=True)
-    df_ret = df_ret.loc['1994-02-28':]
+    df_ret = df_ret.loc['1994-02-28':]  # We start here because otherwise too many assets have monthly values only.
 
     return df_ret
 
@@ -53,3 +53,4 @@ def get_cov_mat(df_ret):
 if __name__ == '__main__':
     path = '../data/price_series.csv'
     df = load_data_get_ret(path)
+    df_logret = load_data_get_logret(path)
