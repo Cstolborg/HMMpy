@@ -472,4 +472,10 @@ if __name__ == "__main__":
 
     df = df.iloc[-len(port_val):]
 
-    plot_performance(df, port_val, weights)
+
+    save = False
+    if save == True:
+        metrics.round(4).to_latex(path + 'asset_performance.tex')
+        plot_performance(df, port_val, weights, save=True)
+    else:
+        plot_performance(df, port_val, weights, save=False)

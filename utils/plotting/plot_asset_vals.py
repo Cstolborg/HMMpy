@@ -55,6 +55,7 @@ def plot_performance(df, port_val, weights, start=None, show=True, save=False):
     df = df / df.iloc[0] * 100
 
     # Plotting
+    plt.rcParams.update({'font.size': 15})
     fig, ax = plt.subplots(nrows = 2, ncols=1, sharex=True, figsize=figsize)
 
     ax[0].plot(df.index, df)
