@@ -118,6 +118,23 @@ meaning that the drawdown at time $t$ is defined as
     D_t = 1 - \frac{V_t}{M_t}
 \end{equation}
 
+Grossman \& Zhou (1993) were the first to research and study the nature of portfolio selection under the constraint that the portfolio value must never drop below a specific percentage of the rolling maximum portfolio value. Particularly, the researchers found that for utility functions, exhibiting constant relative risk aversion, the optimal allocation to risky assets at time $t$ is in proportion to the cushion $D^{max}-D_t$, where $D^{max} \in (0,1)$ is the maximum drawdown that the portfolio manager can withstand. This can be implemented by adjusting the risk-aversion parameter as changes to the cushion occur (Nystrup, 2017).
+
+Defining the risk aversion parameter as $\gamma_0$ when the $D_t = 0$, meaning that $V_t = M_t$. As such, $\gamma_0$ is the initial and minimal risk aversion since $V_0 = M_0$ and the drawdown can never become negative, meaning that $M_t \geq V_t$. Furthermore, it intuitively follows that when $D_t = D^{max}$, the allocation to risky assets should be 0 resulting in an infinite risk aversion evident by equation \ref{eq: MPC risk aversion}.
+
+\begin{equation}
+\gamma_t = \gamma_0 \frac{D^{max}}{D^{max}-D_t}
+    \label{eq: MPC risk aversion}
+\end{equation}
+
+In practise, the denominator in equation \ref{eq: MPC risk aversion} will be replaced by $max(D^{max}-D_t,\epsilon)$, in which $\epsilon$ is a small number in order to avoid dividing by 0 or negative numbers. Additionally, it should be noted that $\gamma_\tau$ is only adjusted based on the realized drawdown, thereby resulting in keeping $\gamma_\tau = \gamma_t$ for $\tau = t+1,...., t+H$ when solving the maximizing problem in equation \ref{eq: maximizing objective MPC}.
+
+Conclusively, the formulation of the risk-aversion coefficient in equation \ref{eq: MPC risk aversion} means that risk-aversion will increase when the portfolio encounters losses, thereby implying a path-dependent utility function. One of the main critiques against this type of utility function is that if the drawdown gets too close to the predefined limit it can be impossible to escape a high risk-aversion coefficient meaning that the portfolio manager is unable to efficiently allocate capital. Furthermore, the lower the maximum drawdown limit, $D^{max}$ is set, the larger the risk of being stuck at the limit. In practise this means that the portfolio manager, who gets trapped at the limit, must either go to the client / investment committee to ask for a new limit.
+
+\subsubsection{Transaction costs}
+
+
+\subsubsection{Holding costs}
 
 \subsection{Constraints}
 
