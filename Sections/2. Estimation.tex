@@ -10,28 +10,36 @@ The theory of HMMs in discrete time as well as their associated mathematics and 
 
 \subsection{Hidden Markov Models}
 \label{subsection: HMM}
+
+\textbf{Magngler stadig stationær fordeling og initialization !!!}
+
 Hidden Markov Models, are probabilistic models whose primary function is to predict sequences of unobserved (hidden) states from a set of observed variables. The observed variables could be a price series of a financial asset like the MSCI World index.
 
 The model’s inference of hidden states is based on an underlying Markov process. As such, as opposed to other traditional model which assume independence among observations, Markov models assumes that the sequence of observations and the associated classifications are dependent. Furthermore, the Markov property states that the classification, which encompasses the prediction of a state, is only dependent on the former classification i.e. the previous instance. 
 
-Let $S_t \in \{1,\ldots, m\}, t \in \mathbb{N}$ be a random variable which determines a state at time step t. Also let $O_t \in \mathbb{R}$ be a random variable of observed data at time step t, which will also be referred to as emissions. Further, define the sequences $\mathbf{O^{(t)}}=(O_1,\ldots,O_t)$ and $\mathbf{S^{(t)}}=(S_1,\ldots,S_t)$. Then, $S_t$ is assumed to follow a first order Markov chain, where for all $t \in \mathbb{N}$ the future state at $t + 1$ solely depends on the current state, fulfilling the Markov property
+Let $\K=\{ 1,\ldots, K \}$ denote the state space with $K$ states, and let $\S=(s_1,s_2,\ldots,s_T)$ be a sequence of latent (unobservable) discrete random variables where $s_t\in\K: t\in \mathbb{N}$ is the state active at time t. Then, $s_t$ is assumed to follow a first order Markov chain, where for all $t \in \mathbb{N}$ the future state at $t + 1$ solely depends on the current state, fulfilling the Markov property
 
 \begin{equation}
-    Pr(S_t | \mathbf{S^{(t-1)}}) = Pr(S_t | S_{t-1}),
+    Pr(s_t | s_{t-1},\ldots,s_1) = Pr(s_t | s_{t-1}),
     \quad t=2,\ldots,T
     \label{eq:model_markov_property}
 \end{equation} 
 
-As such, the Markov property provide a neat mathematical simplification, since if one were to determine the probability that the current state $S_t$ is equal to some state $s_i$ from a full probabilistic system, it would require knowledge of all the states that have come before $S_t$. Given the Markov property, this knowledge can be reduced to only knowing the current state $S_t$. 
+As such, the Markov property provide a neat mathematical simplification, since if one were to determine the probability that the current state $s_t$ is equal to some state $i$ from a full probabilistic system, it would require knowledge of all the states that have come before $s_t$. Given the Markov property, this knowledge can be reduced to only knowing the current state $S_t$. 
 
-The switching behaviour of $S_t$ is governed by the conditional probabilities $Pr(S_{t} = j| S_t = i) = \alpha_{ij}$, where $\alpha_{ij}$ is the probability of switching from state $i$ to state $j$ (Bulla et al., 2011). These are referred to as transition probabilities and they are stored in a transition probability matrix denoted as $\mathbf{A} = \{{\alpha_{ij}}\}$. The initial distribution of the transition probability matrix is stored under the variable $P(S_1|O^{(T)})=\boldsymbol{\delta}$. Furthermore, HMMs operate under the assumption of output independence, which can be expressed through equation \ref{eq: Output independence}.
+The switching behaviour of $s_t$ is governed by the conditional probabilities $Pr(s_{t+1} = j| s_t = i) = q_{ij}$, where $q_{ij}$ is the probability of switching from state $i$ to state $j$ (Bulla et al., 2011). These are referred to as transition probabilities and they are stored in a transition probability matrix denoted as $Q = \{q_{ij}\}$. The initial distribution of the transition probability matrix is stored under the variable $P(s_1|O)= \delta$.
+
+Define emissions (observed data) as $o_t \in \mathbb{R}$, a random variable of observed data at time step t and let $O=(o_1,\ldots,o_t)$ be the sequence of observed data. HMMs operate under the assumption of output independence, expressed as
 \begin{equation}
-    Pr(O_t|\mathbf{O^{(t-1)}}, \mathbf{S}^{(t)}) = Pr(O_t|S_t),
+    Pr(o_t|O, \S) = Pr(o_t|s_t),
     \quad t=2,\ldots,T
     \label{eq: Output independence}
 \end{equation}
-
-As a result of the output independence, the distribution of the observable data depends on the current state, thereby making the autocorrelation functions highly dependent on the persistence of $O_t$. In addition, we define emission probabilities as $\mathbf{B}=\{ b_j(O_t) \}=Pr(O_t|S_t=j)$, i.e. the probability of observing $O_t$ at time t in state $j$. Since we in this study only consider continuous distributions, $b_j(O_t)$ will represent conditional densities (Jurafsky Martin, 2019).
+As a result of the output independence, the distribution of the observable data depends only on the current state, thereby making the autocorrelation functions highly dependent on the persistence of $s_t$. In addition, we define emission probabilities as
+\begin{equation}
+    B_t(o_t)=\{ b_j(o_t) \}=Pr(o_t|s_t=j), \quad \forall j \in \K, t=1,\ldots,T 
+\end{equation}
+where $B_t(\cdot)\in \mathbb{R}^{K\times K}$ is a diagonal matrix with state dependent probabilities, i.e. the probability of observing $o_t$ at time t from state $j$. Further, we denote $B=(B_1,\ldots,B_T)$ as the sequence state dependent probabilities. When the considered distribution is continuous, $b_j(o_t)$ instead of conditional probabilities, represents conditional densities (Jurafsky Martin, 2019), which is the case in this study where we shall mostly consider conditional normal distributions.
 
 An HMM is a state-space model with finite state space where equation \ref{eq:model_markov_property} is the state equation and equation \ref{eq: Output independence} is the observation equation. A specific observation can potentially arise from more than one state, since the conditional distributions between the states can overlap.
 
@@ -39,43 +47,43 @@ An HMM is a state-space model with finite state space where equation \ref{eq:mod
 
 In the following section, a 2-state HMM is introduced, however, the example could easily be expanded to include more states. Consider the two-state model with Gaussian conditional distributions specifications:
 \begin{equation}
-     O_t|S_t \sim N(\mu_{S_t},\sigma^2_{S_t}) 
+     o_t|s_t \sim N(\mu_{s_t},\sigma^2_{s_t}) 
 \end{equation}
 \begin{equation}
-   O_t = \mu_{S_t}  + \sigma_{S_t}\epsilon_{t}
+   o_t = \mu_{s_t}  + \sigma_{s_t}\epsilon_{t}
    ,\quad \epsilon_{t} \sim N(0,1)   
 \end{equation}
 where,
 
 $$
-    \mu_{S_t}=
+    \mu_{s_t}=
     \begin{cases}
-        \mu_1, & \text{if}\ S_t = 1 \\
-        \mu_2, & \text{if}\ S_t = 2
+        \mu_1, & \text{if}\ s_t = 1 \\
+        \mu_2, & \text{if}\ s_t = 2
     \end{cases},
-    \sigma_{S_t} =
+    \sigma_{s_t} =
     \begin{cases}
-        \sigma_1, & \text{if}\ S_t = 1 \\
-        \sigma_2, & \text{if}\ S_t = 2
+        \sigma_1, & \text{if}\ s_t = 1 \\
+        \sigma_2, & \text{if}\ s_t = 2
     \end{cases},
-    \mathbf{A} = 
+    Q = 
     \begin{bmatrix}
-    \alpha_{11} & \alpha_{12} \\
-    \alpha_{21} & \alpha_{22}
+    q_{11} & q_{12} \\
+    q_{21} & q_{22}
     \end{bmatrix},
-    \Theta = (\mathbf{A}, \mathbf{B}, \boldsymbol{\delta})
+    \Theta = (Q, B, \delta)
 $$
 
-Where $\Theta$ captures the estimated model parameters. The nature of the workings of a HMM are quite intuitive to comprehend. For every period t, the model observes a realization $o_t$ from $O_t$. As such one can think of this as drawing an observation form an underlying distribution. However, it is unknown whether $S_t = 1$ or $2$. Further, the properties underlying the transition probabilities in $\mathbf{A}$ are also unknown. As such, the objective of the HMM is to estimate the most likely sequence of $S_t$ as well as the most likely parameters, $\mathbf{A}$ \& $B$. 
+Where $\Theta$ captures the estimated model parameters. The nature of the workings of a HMM are quite intuitive to comprehend. For every period t, the model observes a realization $o_t$ from the current conditional distribution. As such one can think of this as drawing an observation form an underlying distribution. However, it is unknown whether $s_t = 1$ or $2$. Further, the properties underlying the transition probabilities in $Q$ are also unknown. As such, the objective of the HMM is to estimate the most likely sequence of $s_t$ as well as the most likely parameters, $Q$ \& $B$. 
 
 Furthermore, as previously mentioned, the sojourn times are implicitly assumed to be geometrically distributed as per equation \ref{eq: sojourn time}
 \begin{equation}
-    Pr('\text{staying t time steps in state i'}) = \alpha^{t-1}_{ii} *(1-\alpha_{ii})
+    Pr('\text{staying t time steps in state i'}) = q^{t-1}_{ii} *(1-q_{ii})
     \label{eq: sojourn time}
 \end{equation}
 As such, the expected duration of state \textit{i} can be depicted as 
 \begin{equation}
-    E[r_i] = \frac{1}{1-\alpha_{ii}}
+    E[r_i] = \frac{1}{1-q_{ii}}
     \label{eq: geometric distribution memory}
 \end{equation}
 
@@ -88,11 +96,11 @@ As evident by equation \ref{eq: sojourn time} and \ref{eq: geometric distributio
 The traditional way of estimating the parameters making up the HMM is through the Maximum Likelihood
 (ML) method. Following this method brings about three problems:
 
-    1. Determine the likelihood of which the model generated a sequence of  observations $\mathbf{O}^{(T)}$. 
+    1. Determine the likelihood of which the model generated a sequence of  observations $O$. 
     
     2. Estimate the model parameters that maximize the likelihood of the observed data.
 
-    3. Based on the observation sequence, infer the most likely sequence of states $S^{(T)}$
+    3. Based on the observation sequence, infer the most likely sequence of states $\S$.
 \label{subsection: MLE}
  
 In order to solve the first problem, one need to rely on a dynamic programming technique, known as the forward–
@@ -101,50 +109,47 @@ algorithm. Finally, the third problem is solved by using the Viterbi algorithm. 
  
 \subsubsection{The Forward-Backward Algorithm}
 \label{Section: Forward backward}
-In order to motivate the use of the forward-backward algorithm, one can try to imagine all possible combinations of state sequences i.e. $S_t = s_1, s_2, s_3, s_4....s_t$. The state sequence will always have the same length as the observation sequence $O_t$. The relevant information to uncover is the probability of seeing a particular observation sequence, given a state sequence. After uncovering all the possible state sequences that can produce a particular observations sequence, the probabilities can be summed, and the answer simplifies to a likelihood. Mathematically, the likelihood ($L_T$) of the observations given the model parameters $\Theta$, can be written as expressed in equation \ref{eq: motive fb}.
-
+In order to motivate the use of the forward-backward algorithm, one can try to imagine all possible combinations of state sequences i.e. $\S = s_1,\ldots,s_t$. The state sequence will always have the same length as the observation sequence $O_t$. The relevant information to uncover is the probability of seeing a particular observation sequence, given a state sequence. After uncovering all the possible state sequences that can produce a particular observations sequence, the probabilities can be summed, and the answer simplifies to a likelihood. Mathematically, the likelihood ($L_T$) of the observations given the model parameters $\Theta$, can be written as expressed in equation \ref{eq: motive fb}.
 \begin{equation}
-    L_T = P(O_t|\Theta) = \sum_{S_1,\ldots,S_t} \delta_{s_1}*b_{s_1}*(o_1) * \alpha_{s_1s_2} * b_{s_2}(o_2)*\alpha_{s_2s_3} .....\alpha_{s_t-1 s_t}*b_{s_t}*(o_t)
+    L_T = P(O_t|\Theta) = \sum_{S_1,\ldots,S_t} \delta_{s_1}*b_{s_1}*(o_1) * q_{s_1s_2} * b_{s_2}(o_2)*q_{s_2s_3} .....q_{s_t-1 s_t}*b_{s_t}*(o_t)
     \label{eq: motive fb}
 \end{equation}
 
 As expressed through equation \ref{eq: motive fb}, if an observations sequence is assumed to consist of 10 observations, which can be generated by a variety of different state sequences, one must derive the individual probability of each potential state sequence that can generate the correct observation sequence and sum them up to find the probability of  an observation sequence $O_t$ given a model $\Theta$. The problem with this approach is that when the number of states ($m$) and the number of observations ($T$) grows large the complexity increases, and this methodology becomes highly computationally expensive. The number of operations required to estimate equation \ref{eq: motive fb} simplifies to:
-
 \begin{equation}
     (2T-1)*m^T+(m^T-1)
 \end{equation}
 
 As such, for an observations sequence with $T = 100$ and $N = 5$, following the procedure of equation \ref{eq: motive fb} would result in $10^{72}$ operations. When the number of observations and states grows larger, this becomes even more computationally heavy, hence a better methodology is needed.  
 In order to reduce the computational complexity and solve the problem of deriving the probability of a particular observation sequence, the forward–backward algorithm is used. These results will also be used in the subsequent Baum-Welch algorithm. The ith element of the vector $\mathbf{\alpha_t}$ is the forward probability.
-
-\begin{equation}
-    \alpha_t(i) = P(o_1,\ldots,o_t, S_t = i | \Theta)
+\begin{align}
+    \alpha_t(i) = P(o_1,\ldots,o_t, s_t = i | \Theta)
     \label{eq: forward prob}
-\end{equation}
+\end{align}
 
 As such, it is evident from equation \ref{eq: forward prob} that the forward trellis can be defined as the probability of seeing observation $o_1 $ to $o_t$ while ending up at state $i$ at time $t$. Therefore, the forward probability $\alpha_t(i)$ will be derived for each possible state at each time $t$. This means that the derivation of the forward probability can be separated in a base, inductive and termination step as depicted by equation \ref{eq: base case forward prob}, \ref{eq: inductive step forward prob} and \ref{eq: termination step}.
 
 \begin{equation}
     \alpha_1(i) = \delta_i*b_i(o_1),
-    \quad  1 \leq i \leq m
+    \quad  \forall i \in \K
     \label{eq: base case forward prob}
 \end{equation}
 \begin{equation}
-    \alpha_{t+1}(j) = \Big[\sum_{i=1}^m a_t(i)*a_{ij}\Big] * b_j(o_{t+1}),
+    \alpha_{t+1}(j) = \Big[\sum_{i=1}^K \alpha_t(i)*q_{ij}\Big] * b_j(o_{t+1}),
     \quad 1\leq t \leq T,
-     \quad 1 \leq j \leq m
+     \forall i,j \in \K
     \label{eq: inductive step forward prob}
 \end{equation}
 \begin{equation}
-    L_T = P(O^{(T)}|\Theta) = \sum_{i=1}^m a_T(i)
+    L_T = P(O|\Theta) = \sum_{i=1}^K a_T(i)
     \label{eq: termination step}
 \end{equation}
 
-The base case represents the probability of starting in state $i$ while observing $o_1$. After this initial calculation, which is done for all states, the inductive step is initialized. The inductive step derives the joint probability of seeing state $j$ at $t+1$ and observing the sequence $\mathbf{O}^{(t)}$. As such, the forward probabilities derived one time step before is stored, and each of these stored values are then multiplied with their transition probability of jumping to state $j$ at time $t+1$. Taking the sum of all the possible paths and multiplying with the emission probability of seeing $O_{t+1}$ yields $\alpha_{t+1}(j)$. Therefore, the forward probabilities are inductively rolled forward until termination is reached at $T$. At termination the forward probabilities are summed across all states and a single value is reached which encompass the probability of observing a particular observation sequence based on a given set of model parameters $\Theta$.
+The base case represents the probability of starting in state $i$ while observing $o_1$. After this initial calculation, which is done for all states, the inductive step is initialized. The inductive step derives the joint probability of seeing state $j$ at $t+1$ and observing the sequence $o_1,\ldots,o_t$. As such, the forward probabilities derived one time step before is stored, and each of these stored values are then multiplied with their transition probability of jumping to state $j$ at time $t+1$. Taking the sum of all the possible paths and multiplying with the emission probability of seeing $o_{t+1}$ yields $\alpha_{t+1}(j)$. Therefore, the forward probabilities are inductively rolled forward until termination is reached at $T$. At termination the forward probabilities are summed across all states and a single value is reached which encompass the probability of observing a particular observation sequence based on a given set of model parameters $\Theta$.
 
 The method depicted through equation \ref{eq: base case forward prob}, \ref{eq: inductive step forward prob} and \ref{eq: termination step} provides an intuitive inductive framework as opposed to the more comprehensive methodology introduced by equation \ref{eq: motive fb}. Furthermore, by introducing the forward probability framework, the computational complexity reduces to $O(m^2T)$. This reduction in mathematical operations makes it appropriate to implement the algorithm in an operationally efficient manner, hence the methodology could be applied by institutional investors and fund managers. 
 
-Although the forward probability is all one need to solve the first problem in order to determine the probability of seeing an observation sequence $O_t$ given a model $\Theta$, the same methodology will be conducted backward in order to solve additional problems related to the Baum-Welch algorithm. The backward probability, denoted $\beta_t(i)$ is derived in a similar fashion to the forward algorithm defined in equation \ref{eq: forward prob}.
+Although the forward probability is all one need to solve the first problem in order to determine the probability of seeing an observation sequence $o_t$ given a model $\Theta$, the same methodology will be conducted backward in order to solve additional problems related to the Baum-Welch algorithm. The backward probability, denoted $\beta_t(i)$ is derived in a similar fashion to the forward algorithm defined in equation \ref{eq: forward prob}.
 
 \begin{equation}
     \beta_t(i) = P(o_{t+1},\ldots,o_T | s_t = i, \Theta) 
@@ -156,26 +161,25 @@ The primary difference between the forward and backward probabilities is that in
     \label{eq: base backward}
 \end{equation}
 \begin{equation}
-   \beta_t(i) = \sum_{j=1}^m a_{ij}*b_j(o_{t+1})*\beta_{t+1}(j),
+   \beta_t(i) = \sum_{j=1}^K q_{ij}*b_j(o_{t+1})*\beta_{t+1}(j),
    \quad t = T-1,\ldots,1,
-   \quad 1\leq i \leq m
+   \quad \forall i,j \in\K
     \label{eq: Inductive backward}
 \end{equation}
 
 It is evident from equation \ref{eq: base backward} and \ref{eq: Inductive backward} that the backward probabilities are derived by summing over all of the states that the model might end up while taking into account the transition and emission probabilities as well as the $\beta$ at time $t+1$.
 
-From the forward and backward probabilities it follows that the probability of being in state $i$ at time $t$ can be found as
-
+From the forward and backward probabilities it follows that the probability of observing a particular sequence O and being in state $i$ at time $t$ can be found as
 \begin{align}
-    Pr(o_1,\ldots,o_t, S_t = i | \Theta) * 
+    Pr(o_1,\ldots,o_t, s_t = i | \Theta) * 
     Pr(o_{t+1},\ldots,o_T | s_t = i, \Theta)
      &=\alpha_t(i) * \beta_t(i) \\
-     &= Pr(O^{(T)} = o^{(T)}, S_t = i |\Theta)
+     &= Pr(O, s_t = i |\Theta)  \notag
 \end{align}
 
-As such, the likelihood of the observed data $o^{(T)}$ can be evaluated as by marginalizing over all $m$ states:
+As such, the likelihood of the observed data $O$ can be evaluated by marginalizing over all $K$ states:
 \begin{equation}
-    Pr(O^{(T)} = o^{(T)} | \Theta) = \sum_{i=1}^m \alpha_t(i) * \beta_t(i)
+    Pr(O | \Theta) = \sum_{i=1}^K \alpha_t(i) * \beta_t(i)
     \label{eq: solution problem 1}
 \end{equation}
 
@@ -185,14 +189,14 @@ underflow, as described in Zucchini and MacDonald (2009).
 \subsubsection{The Baum-Welch Algorithm}
 There are two popular methodologies to maximizing the likelihood which involves the direct nummerical maximization and the Baum-Welch algorithm, which is a unique case of the more general expectation-maximization (EM) algorithm developed by Baum et al. (1970). Of the two, the Baum-Welch algorithm is often preferred due to its larger robustness to initial starting values (Nystrup, 2014). Yet, the starting values are crucial since even though the likelihood is guaranteed to increase or remain the same for each iteration of the EM algorithm, the convergence towards the global maximum might be slow, or worse, it might get stuck at a local maximum. In order to circumvent this, the paper relies on several runs of the EM algorithm with different starting values, thereby making it possible to uncover any significant deviations in the maximum likelihood. 
 
-The Baum–Welch algorithm maximizes the logarithm of the complete-data likelihood (CDLL), which includes the log-likelihood of the observations $o^{(T)}$ and the hidden data $s^{(T)}$. This can be written as
+The Baum–Welch algorithm maximizes the logarithm of the complete-data likelihood (CDLL), which includes the log-likelihood of the observations $O$ and the hidden data $\S$. This can be written as
 
 \begin{equation}
-    \log(Pr(o^{(T)},s^{(T)}) = \log(\delta_{s_1} * \Pi_{t=2}^T \alpha_{s_{t-1},s_t} * \Pi_{t=1}^T b_{s_t}(o_t)) 
+    \log(Pr(O, \S) = \log(\delta_{s_1} * \Pi_{t=2}^T q_{s_{t-1},s_t} * \Pi_{t=1}^T b_{s_t}(o_t)) 
 \end{equation}
 This can also be expressed as
 \begin{equation}
-    \log(Pr(o^{(T)},s^{(T)}) = \log(\delta_{s_1}) + \sum_{t=2}^T \log(\alpha_{s_{t-1},s_t})+\sum_{t=1}^T log(b_{st}(o_t)))
+    \log(Pr(O,\S) = \log(\delta_{s_1}) + \sum_{t=2}^T \log(q_{s_{t-1},s_t})+\sum_{t=1}^T log(b_{st}(o_t)))
 \end{equation}
 
 In order to simplify the operational nature of the maximum likelihood function, the following binary random variables are introduced below.
@@ -206,56 +210,54 @@ $$
 As such if no state transition occurs $\gamma_i(t)$ is activated and if a state transition occurs $\xi_{ij}(t)$ is activated. The CDLL can now be written as
 
 \begin{equation}
-    \log(Pr(o^{(T)}, s^{(T)})) = \sum_{i=1}^m \gamma_i(1) \log\delta_i + \sum_{i=1}^m \sum_{j=1}^m \Big(\sum_{t=2}^T \xi_{ij}(t)\Big) \log\alpha_{ij}+ \sum_{i=1}^m \sum_{t=1}^T \gamma_i(t) \log b_i(o_t) 
+    \log(Pr(O, \S)) = \sum_{i=1}^K \gamma_i(1) \log\delta_i + \sum_{i=1}^K \sum_{j=1}^K \Big(\sum_{t=2}^T \xi_{ij}(t)\Big) \log q_{ij}+ \sum_{i=1}^K \sum_{t=1}^T \gamma_i(t) \log b_i(o_t) 
     \label{eq: CDLL}
 \end{equation}
 
-Now, the idea underlying the methodology of the EM algorithm is to replace the quantities of $\gamma_i(t)$ and $\xi_{ij}(t)$ by their conditional expectations given an observation sequence $o^{T}$ as well as the current model parameters $\Theta(A, B,\delta)$. This is referred to as the estimation-step (E-step) (Nystrup, 2014). 
+Now, the idea underlying the methodology of the EM algorithm is to replace the quantities of $\gamma_i(t)$ and $\xi_{ij}(t)$ by their conditional expectations given an observation sequence $O$ as well as the current model parameters $\Theta(Q, B,\delta)$. This is referred to as the estimation-step (E-step) (Nystrup, 2014). 
 
 \begin{equation}
-    \hat{\gamma_i(t)} = Pr(s_t=i | o^{(T)}) = \frac{\alpha_i(t)*\beta_i(t)}{\sum_{j=1}^m \alpha_t(j)\beta_t(j)} = \frac{\alpha_i(t)*\beta_i(t)}{P(O_T|\Theta)}
+    \hat{\gamma_i(t)} = Pr(s_t=i | O) = \frac{\alpha_i(t)*\beta_i(t)}{\sum_{j=1}^K \alpha_t(j)\beta_t(j)} = \frac{\alpha_i(t)*\beta_i(t)}{P(O|\Theta)}
     \label{eq: gamma}
 \end{equation}
 and
-\begin{equation}
-    \hat{\xi_{ij}(t)} = Pr(s_{t-1}=i, s_t=j|o^{(T)}) = \frac{\alpha_{t-1}(i)*\alpha_{ij}b_j(o_{t+1}\beta_{t+1}(j)}{\sum_{i=1}^m\sum_{j=1}^m\alpha_{t-1}(i)*\alpha_{ij}b_j(o_{t+1}\beta_{t+1}(j)} = \frac{\alpha_{t-1}(i)*\alpha_{ij}b_j(o_{t+1})\beta_{t+1}(j)}{P(O_T|\Theta)}
-    \label{eq: xi}
-\end{equation}
+\begin{align}
+    \hat{\xi_{ij}(t)} = Pr(s_{t-1}=i, s_t=j|o^{(T)}) &= \label{eq: xi} \\ 
+    \frac{\alpha_{t-1}(i)*q_{ij}b_j(o_{t+1}\beta_{t+1}(j)}
+            {\sum_{i=1}^K\sum_{j=1}^K\alpha_{t-1}(i)*q_{ij}b_j(o_{t+1}\beta_{t+1}(j)}
+    &= \frac{\alpha_{t-1}(i)*q_{ij}b_j(o_{t+1})\beta_{t+1}(j)}{P(O|\Theta)}  \notag
+\end{align}
 
-As such, it is evident $\gamma_i(t)$ encompass the probability of being in state $i$ at time $t$ knowing all the observations that has come before and all the observations that is to come, regardless of all the possible ways the model could have arrived at $t$ as well as all the possible ways the model can continue after $t$. Given this analogy one can think of $\gamma_i(t)$ as a bowtie that ties the forward and backward probabilities together for a given state $i$ at a given time $t$. As such, given the properties in equation \ref{eq: gamma}, it is evident that $\sum_{i=1}^m \gamma_i(t) = 1$
+As such, it is evident $\gamma_i(t)$ encompass the probability of being in state $i$ at time $t$ knowing all the observations that has come before and all the observations that is to come, regardless of all the possible ways the model could have arrived at $t$ as well as all the possible ways the model can continue after $t$. Given this analogy one can think of $\gamma_i(t)$ as a bowtie that ties the forward and backward probabilities together for a given state $i$ at a given time $t$. As such, given the properties in equation \ref{eq: gamma}, it is evident that $\sum_{i=1}^K \gamma_i(t) = 1$
 
-Furthermore, $\xi_{ij}(t)$ captures the probability of being in state $i$ at time $t$ and then transitioning to state $j$ at time $t+1$, given all the past observations and all the observations to come. Therefore, the similarity to $\gamma_i(t)$ is evident, however, $\xi_{ij}(t)$ takes into account two time steps. As such, given the properties of equation \ref{eq: gamma} and \ref{eq: xi} it is clear that $\sum_{j=1}^m \xi_{ij}(t) = \gamma_i(t)$. 
+Furthermore, $\xi_{ij}(t)$ captures the probability of being in state $i$ at time $t$ and then transitioning to state $j$ at time $t+1$, given all the past observations and all the observations to come. Therefore, the similarity to $\gamma_i(t)$ is evident, however, $\xi_{ij}(t)$ takes into account two time steps. As such, given the properties of equation \ref{eq: gamma} and \ref{eq: xi} it is clear that $\sum_{j=1}^K \xi_{ij}(t) = \gamma_i(t)$. 
 
-Having replaced $\gamma_i(t)$ and $\xi_{ij}(t)$ by their conditional expectations $\hat{\gamma_i(t)}$ and $\hat{\xi_{ij}(t)}$ the CDLL from equation \ref{eq: CDLL} is maximized with respect to three sets of parameters which includes the initial distribution $\delta$, the transition probability matrix $A$ as well as the parameters of the state dependent distributions captured by $B$. This process is referred to as the maximization step (M-step). 
+Having replaced $\gamma_i(t)$ and $\xi_{ij}(t)$ by their conditional expectations $\hat{\gamma_i(t)}$ and $\hat{\xi_{ij}(t)}$ the CDLL from equation \ref{eq: CDLL} is maximized with respect to three sets of parameters which includes the initial distribution $\delta$, the transition probability matrix $Q$ as well as the parameters of the state dependent distributions captured by $B$. This process is referred to as the maximization step (M-step). 
 
 As such, the mechanism of the EM algorithm is to repeat the E-step and M-step until one or several convergence criterion have been satisfied. This criterion could entail that the iteration proceeds until the resulting change in the log-likelihood is below some threshold. As briefly mentioned, since the EM algorithm is sensitive to starting values there is no guarantee that the model parameters converge to a global maximum. In order to avoid the model getting stuck in a local maximum or a saddle point, several starting values are tested. 
 
 The solution set to the parameters is 
-
 \begin{equation}
-    \delta_i = \frac{\hat{\gamma_i(1)}}{\sum_{i=1}^m\hat{\gamma_i(1)}} = \hat{\gamma_i(1)}
+    \delta_i = \frac{\hat{\gamma_i(1)}}{\sum_{i=1}^K\hat{\gamma_i(1)}} = \hat{\gamma_i(1)}
 \end{equation}
-
-and
-
 \begin{equation}
-    \alpha_{ij} = \frac{\sum_{t=1}^{T-1}\hat{\xi_{ij}(t)}}{\sum_{t=1}^{T-1}\hat{\gamma_i(t)}}
+    q_{ij} = \frac{\sum_{t=1}^{T-1}\hat{\xi_{ij}(t)}}{\sum_{t=1}^{T-1}\hat{\gamma_i(t)}}
 \end{equation}
 
 where $\sum_{t=1}^{T-1}\hat{\xi_{ij}(t)}$ is the total number of expected transitions from state $i$ to state $j$ and $\sum_{t=1}^{T-1}\hat{\gamma_i(t)}$ is the total number of transitions from state $i$.
 
-Furthermore, maximization of the third term in equation \ref{eq: CDLL} may be easy or difficult depending on the nature of the state-dependent distributions (Nystrup, 2014). In some cases numerical maximization will be necessary, but in the case of conditional univariate normal
-distributions the maximizing values of the state-dependent parameters simplifies to
-\begin{equation}
-    b_j(k) = \frac{\sum_{t=1, s.t.o_t}^T\hat{\gamma_i(t)}}{\sum_{t=1}^T\hat{\gamma_i(t)}}    
-\end{equation}
-where $\sum_{t=1, s.t.o_t}^T\hat{\gamma_i(t)}$ is the number of times in state $j$ observing $o_t$ and $\sum_{t=1}^T\hat{\gamma_i(t)}$ is the number of times in state $j$
+Furthermore, maximization of the third term in equation \ref{eq: CDLL} may be easy or difficult depending on the nature of the state-dependent distributions (Zucchini, 2009). In some cases numerical maximization will be necessary, but in the case of conditional univariate normal
+distributions the maximizing values of the state-dependent parameters are
+\begin{align}
+    \hat\mu_j &= \frac{\sum_{t=1}^T\hat\gamma_j(t)o_t}{\sum_{t=1}^T \hat\gamma_j(t)} \\
+    \hat\sigma_j^2 &= \frac{\sum_{t=1}^T\hat\gamma_j(t)(o_t-\hat\mu_j)^2}{\sum_{t=1}^T \hat\gamma_j(t)}
+\end{align}
 
 In order to utilize this on a large scale, one must carefully consider the speed of convergence. One way to increase the speed of convergence is through a hybrid algorithm that starts with the EM algorithm and switches to a Newton-type algorithm when a certain stopping criterion is fulfilled (Bulla \& Berzel, 2008)
 
 It should be clear that the likelihood of an HMM is a complicated function of defined model parameters hence it has several local maxima. The goal of the algorithm is obviously to find the model parameters that maximizes the likelihood, however, there is no simple way to determine that a global maximum has been reached. As such, the paper utilizes a sensible strategy which involves using a range of starting values for the initial model parameters.
 
-As such, the EM algorithm is circular since the algorithm initializes with a qualified estimate of the model parameters $\Theta(A,\delta, B)$. The forward-backward algorithm then derives $\alpha_t(i), \beta_t(i), \gamma_i(t)$ and $\xi_{ij}(t)$. This is the E-step. These derived parameters are then used to update the model parameters by maximizaing the CDLL log-likelihood function. This completes one iteration of the EM algorithm and the model starts over until it converges to a local or preferably global maximum. Alternative methodologies for maximizing the likelihood function do exist. For instance a Bayesian approach based on Markov chain Monte Carlo (MCMC) sampling can be used (Frühwirth-Schnatter 2006). It follows that Rydén (2008) compared the EM and MCMC approaches and found that MCMC can be advantageous for interval estimation and inferential problems, yet the EM serves as a simpler and faster way of obtaining point estimates.
+As such, the EM algorithm is circular since the algorithm initializes with a qualified estimate of the model parameters $\Theta(Q, B,\delta)$. The forward-backward algorithm then derives $\alpha_t(i), \beta_t(i), \gamma_i(t)$ and $\xi_{ij}(t)$. This is the E-step. These derived parameters are then used to update the model parameters by maximizaing the CDLL log-likelihood function. This completes one iteration of the EM algorithm and the model starts over until it converges to a local or preferably global maximum. Alternative methodologies for maximizing the likelihood function do exist. For instance a Bayesian approach based on Markov chain Monte Carlo (MCMC) sampling can be used (Frühwirth-Schnatter 2006). It follows that Rydén (2008) compared the EM and MCMC approaches and found that MCMC can be advantageous for interval estimation and inferential problems, yet the EM serves as a simpler and faster way of obtaining point estimates.
 
 As such, the forward-backward and Baum-Welch (EM) algorithm have solved the first two problems, hence the only aspect left is to infer the most likely sequence of states. This is done through the Viterbi algorithm. 
  
@@ -268,11 +270,11 @@ As such, the model should estimate the most probable state sequence while taking
 Decoding can be done either locally, by determining the most likely state at each time $t$ or globally by determining the most likely sequence of states (Nystrup, 2014). The issue with local decoding is that it deduces the state sequence at each time instead of doing so across the entire time horizon. This can lead to suggested state sequences that are impossible to take, hence global decoding is preferred. 
 
 \begin{equation}
-    arg\max_{s^{(t)}}Pr(S^{(T)} = s^{(T)}|O^{(T)} = o^{(T)}, \Theta)
+    \argmax_{\S}Pr(\S|O, \Theta)
     \label{eq: global decoding}
 \end{equation}
 
-Maximizing equation \ref{eq: global decoding} over all possible state sequences by brute force involves mT operations and thus proves inefficient on large scale evaluations. Rather, the Viterbi algorithm can be used to compute
+Maximizing equation \ref{eq: global decoding} over all possible state sequences by brute force involves O(mT) operations and thus proves inefficient on large scale evaluations. Rather, the Viterbi algorithm can be used to compute
 the most likely sequence of states in an efficient manner. 
 
 The best way to comprehend the Viterbi algorithm is to realize that at $t+1$ the algorithm has to figure out the state at time $t$ that maximizes the probability of making a transition to a given state $i$ and observing a specific observation at time $t+1$. Once this is done, the state from time $t$ is stored. Now the algorithm moves on to time $t+2$ and find the state that maximizes a move from time $t+1$ to $t+2$ while observing a specific observation at time $t+2$. Then the state at t+1 that maximizes this is stored and so forth. Once the algorithm terminates at $T$ it will contain a map of valid state sequences that can be followed and interpreted. 
@@ -280,74 +282,80 @@ The best way to comprehend the Viterbi algorithm is to realize that at $t+1$ the
 In order to implement the outlined reasoning some additional variables are introduced.
 
 \begin{equation}
-    \pi_t(i) =  arg\max_{s^{(t)}}Pr(S^{(T)} = s^{(T)}|O^{(T)} = o^{(T)}, \Theta)
+    \upsilon_t(i) =  \max_{\S}Pr(\S|O, \Theta)
 \end{equation}
 and 
 $$
 {\psi_t(i)}
 $$
 
-$\pi_t(i)$ finds the path with the highest probability that accounts for the first $t$ observations and ends up at state $i$ at time $t$ and $\psi_t(i)$ serves as a storing variable that keeps track of optimal state at each time step $t$. Similar to the previously described algorithms, the Viterbi algorithm can be separated into an base, inductive and termination step.
+$\upsilon_t(i)$ finds the path with the highest probability that accounts for the first $t$ observations and ends up at state $i$ at time $t$ and $\psi_t(i)$ serves as a storing variable that keeps track of optimal state at each time step $t$. Similar to the previously described algorithms, the Viterbi algorithm can be separated into an base, inductive and termination step.
 \begin{equation}
-    \text{Base case: } \pi_1(i) = \delta_i*b_i(o_1)
+    \upsilon_1(i) = \delta_i*b_i(o_1)
     \label{eq: viterbi start 1}
 \end{equation}
 \begin{equation}
-     \text{Base case: } \psi_1(i) = 0 
+     \psi_1(i) = 0 
 \end{equation}
 \begin{equation}
-    \text{Inductive step: } \pi_t(j) = \max_{1\leq i \leq m}\Big[\pi_{t-1}(i)a_{ij}\Big] *b_j(o_t), 2\leq t \leq T 
+    \upsilon_t(j) = \max_{i}\Big[\upsilon_{t-1}(i)q_{ij}\Big] *b_j(o_t),
+    \quad t=2,\ldots,T , \quad i,j \in \K 
     \label{eq: inductive viterbi}
 \end{equation}
 \begin{equation}
-    \text{Inductive step: }\psi_t(j) = {arg\max_{1\leq i \leq m} \Big[\pi_{t-1}(i)a_{ij}\Big]}, {1\leq j \leq m}
+    \psi_t(j) = {\argmax_{i} \Big[\upsilon_{t-1}(i)q_{ij}\Big]},
+    \quad {t= T-1,\ldots,1}, \quad i,j\in\K
     \label{eq: inductive viterbi 2}
 \end{equation}
 
-Naturally, the best initial state is the one that maximizes the probability of observing a particular observation $o_1$ as expressed in equation \ref{eq: viterbi start 1}. Furthermore, it is obvious that the storing variable $psi_t(i)$ is 0 at initialization since no optimal state has been discovered.
+Naturally, the best initial state is the one that maximizes the probability of observing a particular observation $o_1$ as expressed in equation \ref{eq: viterbi start 1}. Furthermore, it is obvious that the storing variable $\psi_t(i)$ is 0 at initialization since no optimal state has been discovered.
 
-The first term in equation \ref{eq: inductive viterbi} is the state that maximized $\pi$ at the previous time step. In this case thate state is set to $i$ but the algorithm scan over all the potential states that the model could have come from. After doing so the algorithm considers all the ways of getting from state  $i$ to $j$ which is the transition probability, which is then multiplied with the probability of observing $ot+1$ at the state $j$. 
+The first term in equation \ref{eq: inductive viterbi} is the state that maximized $\upsilon$ at the previous time step. In this case the state is set to $i$ but the algorithm scan over all the potential states that the model could have come from. After doing so the algorithm considers all the ways of getting from state  $i$ to $j$ which is the transition probability, which is then multiplied with the probability of observing $o_{t+1}$ at the state $j$. 
 
 Therefore, the max function of equation \ref{eq: inductive viterbi} is going to find the state from the previous time period that maximizes the probability of moving to the current state. Note that the optimal state from the previous iteration is stored in the variable $\psi$ such that the algorithm does not loose track of previous iterations. 
 
 The termination step of the algorithm is presented in equation \ref{eq: viterbi termination 1} and \ref{eq: viterbi termination 2}
 \begin{equation}
-    \text{Termination: } \pi^* = \max_{1\leq i\leq m}\Big[\delta_T(i)\Big] 
+    \upsilon^* = \max_{i}\Big[\delta_T(i)\Big],
+    \quad i \in\K
     \label{eq: viterbi termination 1}
 \end{equation}
  \begin{equation}
-     \text{Termination: } s_T^*= arg\max_{1\leq i\leq m}\Big[\delta_T(i)\Big]
+     s_T^*= \argmax_{i}\Big[\delta_T(i)\Big],
+     \quad i \in\K
      \label{eq: viterbi termination 2}
  \end{equation}
-Where $\pi^*$ expresses the highest probability for the valid sequence of states given an observation sequence. As such, knowing $\pi^*$ it is possible to iterate backwards through the process as
+Where $\upsilon^*$ expresses the highest probability for the valid sequence of states given an observation sequence. As such, knowing $\upsilon^*$ it is possible to iterate backwards through the process as
 \begin{equation}
     s_t^* = \psi_{t+1}*(s_{t+1}^*)
 \end{equation}
 
 Comparing equation \ref{eq: inductive viterbi} with equation \ref{eq: inductive step forward prob} it is evident that the dynamic programming technique for the Viterbi algorithm is the same as in the forward–backward
-algorithm. The only difference is the substitution of the sum with a maximization. From a computational efficiency perspective the Viterbi algorithm remains at $O_T*(m^2*T)$, thereby making it feasible for full-scale production applications (Dittmer 2008).
+algorithm. The only difference is the substitution of the sum with a maximization. From a computational efficiency perspective the Viterbi algorithm remains at $O(m^2T)$, thereby making it feasible for full-scale production applications (Dittmer 2008).
 
 \subsection{Logarithmic scaling to handle numerical underflow}
 The theory above have outlined the mathematics comprising HMMs, however, a crucial aspect regarding their implementation is dealing with the underflow and/or overflow produced by the algorithms. The issues regarding underflow arises when $T$ gets large since the algorithms will begin multiplying together smaller and smaller numbers when for instance deriving the forward and backward probabilities. Overflow is the inverse to underflow and it occurs when continuously larger numbers are multiplied together. As such, underflow and overflow proposes a challenge to the implementation of the HMMs as Python or other libaries will generate an error or simply interrupt the execution of the code. The challenges associated with underflow and overflow is an area that is widely overlooked in the literature, despite the fact it is of crucial importance in terms of utilizing HMMs on a full-scale operational level. This section aims at proposing a solution towards the challenges associated with underflow and overflow.
 
 \subsubsection{Scaling the likelihood computation}
-For discrete state-dependent distributions, the element of the forward probabilities $\alpha_t$ ,as seen in equation \ref{eq: inductive step forward prob}, become progressively smaller as $t$ increase because the forward probabilities are made up of products of probabilities, hence these will eventually be rounded to 0. The remedy needed to circumvent this issue is the same for overflow and underflow, hence the authors confine their attention to underflow.
+For discrete state-dependent distributions, the element of the forward probabilities $\alpha_t$ ,as seen in equation \ref{eq: inductive step forward prob}, become progressively smaller as $t$ increase because the forward probabilities are made up of products of probabilities, hence they will exponentially converge towards zero. The remedy needed to circumvent this issue is the same for overflow and underflow, hence the authors confine their attention to underflow.
 
 A circumvention of the challenges related to underflow can be implemented by computing the logarithm of $L_T$ in equation \ref{eq: motive fb} which involves using a strategy of scaling the vector of forward and backward probabilities $\alpha_t$ and $\beta_t$. As such, a scaling of the vector of forward and backward probabilities can be conducted by log-transforming the  traditional formulas presented in section \ref{Section: Forward backward}. This methodology does not change the workings of the algorithms, however, it reduces the problem associated with underflow as the forward and backward probabilities no longer becomes excessively small when $t$ increases. Since the log-transformation will be rooted in the formulas presented in \ref{Section: Forward backward}, one can separate the transformations into a base, inductive and termination step.  
 
 \begin{equation}
-    \text{Log Base case}: \log\alpha_1(i) = \log\delta_i + \log b_i(o_1) \quad  1 \leq i \leq m
+    \log\alpha_1(i) = \log\delta_i + \log b_i(o_1)
+    \quad \forall i \in\K
     \label{eq: log base case forward prob}
 \end{equation}
 
 \begin{equation}
-    \log\alpha_{t+1}(j) = \log\Big[\sum_{i=1}^m \exp^{\log a_t(i)+\log a_{ij}}\Big] + \log b_j(o_{t+1}) \quad 1\leq t \leq T - 1, \quad
-    1 \leq j \leq m
+    \log\alpha_{t+1}(j) = \log\Big[\sum_{i=1}^K \exp^{\log a_t(i)+\log q_{ij}}\Big] + \log b_j(o_{t+1}),
+    \quad t=2,\ldots,T-1, 
+    \quad \forall j \in\K
     \label{eq: log inductive step forward prob}
 \end{equation}
 
 \begin{equation}
-     \text{Termination step}: \log P(O^{(T)} = o^{(T)}|\Theta) = \log\sum_{i=1}^m \exp^{\log\alpha_T(i)}
+     L_T = \log P(O |\Theta) = \log\sum_{i=1}^K \exp^{\log\alpha_T(i)}
     \label{eq: log termination step}
 \end{equation}
 
@@ -358,36 +366,42 @@ Yet, the utilization of the LSE function directly, as depicted in equation \ref{
 By utilising the logarithmic transformation formulas just presented, it is possible to conduct a similar transformation for the backward probabilities derived from equation \ref{eq: base backward} and \ref{eq: Inductive backward}. 
 
 \begin{equation}
-     \textit{Base case}: \log\beta_T(i) = 0
+     \log\beta_T(i) = 0
     \label{eq: log base backward}
 \end{equation}
 
 \begin{equation}
-    \textit{Inductive step}: \beta_t(i) = \log\sum_{j=1}^m \exp^{\log a_{ij}+\log b_j(o_{t+1})+\log \beta_{t+1}(j)}
+    \beta_t(i) = \log\sum_{j=1}^m \exp^{\log q_{ij}+\log b_j(o_{t+1})+\log \beta_{t+1}(j)}
+    \quad t=T-1,\ldots,1, 
+    \quad \forall i \in\K
     \label{eq: log inductive backward}
 \end{equation}
 
 As such, given equation \ref{eq: log inductive backward} and \ref{eq: log inductive step forward prob} it is possible to derive the probability of being in a specific state at time $t$. Furthermore, in order to avoid the issues related to underflow, one needs to transform the posterior probabilities as well. This can be completed as shown in equation \ref{eq: base log posterior} and \ref{eq: inductive log posterior}.
 
 \begin{equation}
-    \textit{Base case}: \log \pi_1(i) = \log P(S_i = s_i | o_1) = \log \delta_1 + \log b_j(o_{t1}) 
+    \log \upsilon_1(i) = \log P(s_t=i | o_1) = \log \delta_1 + \log b_j(o_{1}) 
     \label{eq: base log posterior}
 \end{equation}
 
 \begin{equation}
-    \textit{Inductive step}: \max_{1\leq i \leq m} \Big[\pi_{t-1}(i) + \alpha_{ij}\Big] + \log b_j(o_t) \quad 2\leq t \leq T
+    \max_{i} \Big[\upsilon_{t-1}(i) + q_{ij}\Big] + \log b_j(o_t),
+    \quad t=2,\ldots,T,
+    \quad i \in\K
     \label{eq: inductive log posterior}
 \end{equation}
 
 As such, equation \ref{eq: base log posterior} and \ref{eq: inductive log posterior} captures the optimal state for each time step $t$, while ensuring that all the inputs are log-scaled, thereby avoiding underflow. It should be noted that similar to the procedure presented in equation \ref{eq: inductive viterbi 2}, the result produced from equation \ref{eq: inductive log posterior} for each time step $t$ should be stored in a variable such that the solutions can be back-traced in the decoding procedure. Lastly, in order to fully implement and capitalize on the log-scaling, it is necessary to adjust the re-estimation procedure presented in the EM-algorithm which were introduced by equation \ref{eq: gamma} and \ref{eq: xi}. The associated log transformation can be conducted as per below.
 
 \begin{equation}
-    \log\gamma_i(t) = \log Pr(s_t=i|o^{(T)}) = \frac{\log\alpha_i(t) + \log\beta_i(t)}{\log\Big[\sum_{i=1}^m \exp^{\log a_t(i)+\log a_{ij}}\Big]}  
+    \log\gamma_i(t) = \log Pr(s_t=i|O) =
+    \frac{\log\alpha_i(t) + \log\beta_i(t)}{\log\Big[\sum_{i=1}^K \exp^{\log a_t(i)+\log q_{ij}}\Big]}  
     \label{eq: log gamma}
 \end{equation}
 
 \begin{equation}
-    \log\xi_{ij}(t) = \log Pr(s_{t-1}=i, s_t=j|o^{(T)}) =  \frac{\log\alpha_{t-1}(i) + \log\alpha_{ij} + \log b_j(o_{t+1}) + \log \beta_{t+1}(j)}{\log\Big[\sum_{i=1}^m \exp^{\log a_t(i)+\log a_{ij}}\Big]}
+    \log\xi_{ij}(t) = \log Pr(s_{t-1}=i, s_t=j|O) =
+    \frac{\log\alpha_{t-1}(i) + \log q_{ij} + \log b_j(o_{t+1}) + \log \beta_{t+1}(j)}{\log\Big[\sum_{i=1}^K \exp^{\log a_t(i)+\log q_{ij}}\Big]}
     \label{eq: log xi}
 \end{equation}
 
@@ -397,7 +411,7 @@ As such, it should be evident that by relying on the methodology introduced abov
 \subsection{Jump estimation}
 \label{subsection: Jump theory}
 
-Apart from maximum likelihood estimation, other ways to estimate HMM's include jump estimation as shown by Bemporad et al. (2018). When given data $o_t\in O$, $t=1,\ldots,T$, then for $O = \mathbb{R}^d$, $o$ is a feature vector, which can be both univariate and multivariate. We are additionally given model parameters $\theta_s\in \mathbb{R}^d$, $s=1...,K$ and the latent state variable $s_t\in\mathbb{N}$, which determines which model parameter $\theta_{s_t}$ is active at time t. Then the loss function $\ell: O\times\mathbb{R}^d \rightarrow\mathbb{R}$, the regularizer term $r: \mathbb{R}^d \rightarrow \mathbb{R}$ and the state sequence loss $\mathcal{L}$ defines the generalized jump model fitting objective
+Apart from maximum likelihood estimation, other ways to estimate HMM's include jump estimation as shown by Bemporad et al. (2018). Most of the notation in this section follows that of the MLE section, though with minor differences. Following the model proposed by Bemporad et al. (2018), we define the following jump model; When given data $o_t\in \mathbb{R}^d$, $t=1,\ldots,T$, then, $o_t$ is a feature vector of order $d$, which for $d=1$ is univariate and for $d>1$ is multivariate. We are additionally given model parameters $\theta_{s_t}\in \mathbb{R}^d:s_t\in\K$, where the latent state variable $s_t$ determines which model parameter $\theta_{s_t}$ is active at time t. Then the loss function $\ell: O\times\mathbb{R}^d \rightarrow\mathbb{R}$, the regularizer term $r: \mathbb{R}^d \rightarrow \mathbb{R}$ and the state sequence loss $\mathcal{L}:\K^2 \rightarrow \mathbb{R}$ defines the jump model fitting objective
 \begin{equation}
     J(O, \Theta, S) = \sum_{t=1}^T \ell(o_t,\theta_{s_t}) + \sum_{k=1}^K r(\theta_{s_t}) + \mathcal{L(S)}
 \label{eq:jump_gen_objective}    
@@ -419,10 +433,10 @@ In \cref{eq:jump_objective}, $\lambda$ is a penalty that applies each time a sta
 \BlankLine
 
 1. Construct a set of standardized features Z from O.\;
-2. Iterate for $i=1,\ldots$ until $S^i=S^{i-1}$ \;
+2. Iterate for $i=1,\ldots$ until $\S^i=\S^{i-1}$ \;
 \Indp
-(a) $\Theta^i = arg\min_{\Theta} \sum_{t=1}^T \ell(z_t, \theta_{s_t^{i-1}})$ (model fitting)\;
-(b) $S^i = arg\min_s \sum_{t=1}^{T-1} [\ell(o_t, \theta_{s_t}) + \lambda\mathbf{1}_{\{ s_t\ne s_{t+1} \}}]
+(a) $\Theta^i = \argmin_{\Theta} \sum_{t=1}^T \ell(z_t, \theta_{s_t^{i-1}})$ (model fitting)\;
+(b) $\S^i = \argmin_s \sum_{t=1}^{T-1} [\ell(o_t, \theta_{s_t}) + \lambda\mathbf{1}_{\{ s_t\ne s_{t+1} \}}]
     + \ell(o_T, \theta_{s_T})$ (state sequence fitting)\;
 \Indm
 3. Compute transition probabilities and distributional properties in each state.\;
@@ -462,26 +476,26 @@ Part 2.a in \cref{algo:jump_fit} can be easily minimized analytically when the l
 \begin{equation}
    \frac{\delta \sum_{t=1}^{T} ((z_t-\theta_{s_t})'(z_t-\theta_{s_t}) }{\delta \theta_j}
    = \frac{\delta \sum_{t=1}^T (z_t'z_t - 2z_t'\theta_{st}+ \theta_{s_t}'\theta_{s_t} )}{\delta  \theta_j}
-   = \sum_{t:s_t=j} ( 2\theta_{s_t}' - 2z_t' )
+   = \sum_{t\forall s_t=j} ( 2\theta_{s_t}' - 2z_t' )
 \label{eq:jump_derivative}
 \end{equation}
 Thus, the partial derivative for $\theta_j$ is the sum over all time steps t where the state $s_t=j$ of the matrix $(\theta_{st}'-2z_t')$. Setting \cref{eq:jump_derivative} equal to zero and solving for $\theta_j$ yields the solution: $\theta_j = \frac{1}{N_j} \sum_{t:s_t=j} z_t $, where $N_j$ is the number of elements in $\mathcal{S}$ that equals $j$. The solution in each state is thus simply a vector of averages from each times series features in $Z$.
 
-Item 2.b in \cref{algo:jump_fit} is minimized recursively in a similar way to the viterbi algorithm explained eariler, except the time order of operations are reversed. Following the method outlined by Nystrup et al. (2020), $S^i$ is found by computing the least costly state path $s_t$ through T data points. Define
+Item 2.b in \cref{algo:jump_fit} is minimized recursively in a similar way to the viterbi algorithm explained eariler, except the time order of operations are reversed. Following the method outlined by Nystrup et al. (2020), $\S^i$ is found by computing the least costly state path $s_t$ through T data points. Define
 \begin{align}
-    V(T,s) &= \ell(Z_T, \theta_s) \\
-    V(t,s) &= \ell(Z_T, \theta_s) + \min_j[V(t+1, j) + \lambda\mathbf{1}_{\{ i\ne j \}}],
+    \upsilon_T(s) &= \ell(Z_T, \theta_s) \\
+    \upsilon_t(s) &= \ell(Z_T, \theta_s) + \min_j[\upsilon_{t+1}(j) + \lambda\mathbf{1}_{\{ i\ne j \}}],
     \quad t=T-1,\ldots,1
 \label{eq:jump_cost_path}
 \end{align}
-
 Then, the least costly state sequence is found by
 \begin{align}
-    s_1 &= \argmin_j V(1, j) \\
-    s_t &= \argmin_j[V(t, j) + \lambda\mathbf{1}_{\{ s_{t-1 \ne j} \}}], \quad t=2,\ldots,T
+    s_1 &= \argmin_j \upsilon_t(j) \\
+    s_t &= \argmin_j[\upsilon_t(j) + \lambda\mathbf{1}_{\{ s_{t-1 \ne j} \}}], \quad t=2,\ldots,T
     \label{eq:jump_state_seq_path}
 \end{align}
+$\upsilon$ is thus defined as the least costly path from state $i$ to $j$ between two discrete time steps, as it merely determined by the tradeoff between the jump penalty $\lambda$ and the cost associated with moving to state j. Viewing all entries of $V$ one can easily see how this will represent costs associated with each specific path through T data points in $\upsilon$. \cref{eq:jump_state_seq_path} can therefore be interpreted as the least costly path through $V$. 
 
-$V$ is thus defined as the least costly path from state $i$ to $j$ between two discrete time steps, as it merely determined by the tradeoff between the jump penalty $lambda$ and the cost associated with moving to state j. Viewing all entries of $V$ one can easily see how this will represent costs associated with each specific path through T data points in $V$. \cref{eq:jump_state_seq_path} can therefore be interpreted as the least costly path through $V$. 
+One of the main advantages to the jump model over maximum likelihood estimation is that the jump model fitting is entirely based on squared Euclidean distances and does not assume the states to follow any specific distributions. As such it is expected to be more robust when trained on data in which the underlying distribution(s) is unknown, which is often the case with financial data. This is an extremely important progression since misspecified distributions often are a huge error source in HMMs (and other probabilistic times series models), so the freedom from this assumption will potentially significantly improve the model fit. Additionally, as shown in \cref{algo:jump_features} it is very easy to add more features to the estimator, allowing the use of a variety of both endogenously and exogenously given variables. This makes it feasible to potentially test many different features and feature sets when training models - no small advantage when pursuing models with highly persistent states
 
-One of the main advantages to the jump model over maximum likelihood estimation is that the jump model fitting is entirely based on Euclidean distances and does not assume the states to follow any specific distributions. As such it is expected to be more robust when trained on data in which the underlying distribution(s) is unknown, which is often the case with financial data. This is an extremely important progression since misspecified distributions often are a huge error source in HMMs (and other probabilistic times series models), so the freedom from this assumption will potentially significantly improve the model fit. Additionally, the model is computationally lighter and often only requires between 5-10 operations to converge whereas the MLE estimator often requires 50-100. In the following sections we will show how both models converge when trained in a number of simulation environments.
+Finally, the model is computationally lighter to fit and often only requires between 5-10 operations to converge whereas the MLE estimator often requires 50-100. In the following sections we will show how both models converge when trained in a number of simulation environments.

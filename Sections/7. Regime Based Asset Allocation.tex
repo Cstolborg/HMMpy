@@ -34,32 +34,36 @@ feasible, it also seemingly reasonable (Nystrup, 2017).
 \subsubsection{Stochastic control formulation}
 The formulation of the multi-period asset allocation optimization problem as a stochastic control problem is based on Boyd et al. (2017). 
 
-Define $w_t$ $\in$ $\mathbb{R}^{n+1}$ as the portfolio weights at time \textit{t} in which $(w_t)_{_i}$ is the fraction of the total portfolio $V_t$ invested in asset \textit{i}. As such, $(w_t)_{_i} < 0$ is a short position in asset \textit{i}. The reader should note that by these definitions, it is assumed that the portfolio value is positive. The weight $(w_t)_{_{n+1}}$ represents the fraction held in risk-free asset. By definition, the weights of all the assets comprising the portfolio sum to 100\% expressed as, $\bold{1}^Tw_t = 1$, in which $\bold{1}$ is a column vector with 1 in all entries. 
+Define $w_t$ $\in$ $\mathbb{R}^{n+1}$ as the portfolio weights at time \textit{t} in which $(w_t)_{i}$ is the fraction of the total portfolio $V_t$ invested in asset \textit{i}. As such, $(w_t)_{i} < 0$ is a short position in asset \textit{i}. The weight $(w_t)_{{n+1}}$ represents the fraction held in risk-free asset. By definition, the weights of all the assets comprising the portfolio sum to 1, i.e. $\mathbf{1}^Tw_t = 1$, in which $\mathbf{1}$ is a column vector with 1 in all entries. 
 
 A natural objective for investors is seeking to maximize the present value of the future expected returns, over a given investment horizon $T$, on a risk-adjusted basis, in which transactions and holding costs are taken into consideration.
 
 \begin{equation}
-    E\Big[\sum_{t=0}^{T-1}\eta^{t+1}(r_{t+1}^Tw_{t+1}-\gamma_{t+1}\psi_{t+1}(w_{t+1})) -\eta^t(\phi_t^{trade}(w_{t+1}-w_t)+\phi_t^{hold}(w_{t+1}))\Big]
-    \label{eq: MPC objective}
+\begin{split}
+    E\left[\sum_{t=0}^{T-1}\eta^{t+1}\left(r_{t+1}^Tw_{t+1} -\gamma_{t+1}\psi_{t+1}(w_{t+1})\right) \right. \\
+    \left. -\eta^t\left(\phi_t^{trade}(w_{t+1}-w_t)+\phi_t^{hold}(w_{t+1})\right)
+    \vphantom{\sum_{t=0}^{T-1}} \right]
+    \label{eq: MPC_stochastic}
+\end{split}
 \end{equation}
 
 As such, the expectation is taken over the sequence of returns $r_1, r_2...., r_T \in \mathbb{R}^{n+1}$ conditioned on all past observations. Further, $\psi_t:\mathbb{R}^{n+1} \rightarrow \mathbb{R}$ is a risk function, $\gamma_t$ is a risk-aversion parameter which is used to adjust and control the relative importance of return versus risk, $\phi_t^{trade}: \mathbb{R}^{n+1}\rightarrow\mathbb{R}$ serves as a cost function for trading, $\phi_t^{hold}: \mathbb{R}^{n+1}\rightarrow\mathbb{R}$ serves as a holding cost function and $\eta \in (0,1)$ is the discount factor equal to the inverse of $1+r_f$ where $r_f$ is the risk-free rate.  
 
-In order to determine which trades to make the MPC framework replaces all future unknown quantities by their forecasted values over a forecast horizon $H$. As such, the future returns, which by nature are unknown, are replaced by their forecasted mean values $\hat{\mu}_{T|t},\tau = t+1,....,t+H$, in which $\hat{\mu}_{\tau|t}$ is the forecast of returns for time $\tau$ conducted at time $t$ 
-(Nystrup, 2017). This property means that the stochastic optimization problem which underpins the MPC framework turns into a deterministic optimization problem, thereby making it feasible for a computer to solve as per \cref{eq: maximizing objective MPC}, 
+\subsubsection{Deterministic control formulation}
 
+In order to determine which trades to make the MPC framework replaces all future unknown quantities by their forecasted values over a forecast horizon $H$. As such, the future returns, which by nature are unknown, are replaced by their forecasted mean values $\hat{\mu}_{\tau|t},\tau = t+1,....,t+H$, in which $\hat{\mu}_{\tau|t}$ is the forecast of returns for time $\tau$ conducted at time $t$ 
+(Nystrup, 2017). This property turns the stochastic optimization problem from \cref{eq: MPC_stochastic}, which underpins the MPC framework, into the deterministic optimization problem 
 \begin{equation}
 \begin{split}
-    \text{maximize} \sum_{\tau=t+1}^{t+H}(\hat{\mu}_{\tau|t}^Tw_\tau-\hat{\phi}_{\tau|t}^{trade}(w_\tau-w_{\tau-1})-\hat{\phi}_{\tau|t}^{hold}(w_\tau)-\gamma_\tau\hat{\psi}_{\tau|t}(w_\tau))
+    \max_{w_{t+1},\ldots,w_{t+H}} \sum_{\tau=t+1}^{t+H}(\hat{\mu}_{\tau|t}^Tw_\tau-\hat{\phi}_{\tau|t}^{trade}(w_\tau-w_{\tau-1})-\hat{\phi}_{\tau|t}^{hold}(w_\tau)-\gamma_\tau\hat{\psi}_{\tau|t}(w_\tau))
     \label{eq: maximizing objective MPC}
     \\
-    \text{Subject to } \bold{1}^Tw_\tau=1, \quad \tau = t+1,...,t+H,
+    \text{Subject to } \mathbf{1}^Tw_\tau=1, \quad \tau = t+1,...,t+H,
 \end{split}    
 \end{equation}
+where $\hat{\phi}^{trade}$ as well as $\hat{\phi}^{hold}$ are trading and holding functions, which will be further defined in subsequent sections. Note that $w_t$ is not a variable in the control formulation since it is a current known quantity. 
 
-in which $w_t$ is the current portfolio weights and $\hat{\phi}^{trade}$ as well as $\hat{\phi}^{hold}$ are trading and holding functions. These functions will be estimated in subsequent sections. 
-
-When solving the optimization problem from equation \ref{eq: maximizing objective MPC} the result is an optimal sequence of weights $w_{t+1}^*,..., w_{t+H}^*$. As such, this optimal sequence of portfolio weights represents the future trades over the planning horizon $H$, however, only upon fulfillment of the unrealistic assumption that all future unknown quantities will match their forecasted values. In order to minimize the risk of making inappropriate capital allocations, only the first predicted trade $w_{t+1}^*-w_t$ will be executed. At the next time step $t+1$ the process will be repeated. The reader should note that the planning horizon $H$ can be much shorter than the investment horizon $T$ and this is indeed why the discounting factor is ignored in equation \ref{eq: maximizing objective MPC} as opposed to \ref{eq: MPC objective} 
+Therefore, when solving the optimization problem from equation \ref{eq: maximizing objective MPC} the result is an optimal sequence of weights $w_{t+1}^*,..., w_{t+H}^*$. As such, the difference over this optimal sequence of portfolio weights represents the future trades over the planning horizon $H$. However, only upon fulfillment of the unrealistic assumption that all future unknown quantities will match their forecasted values. In order to minimize the risk of making inappropriate capital allocations, only the first predicted trade $w_{t+1}^*-w_t$ will be executed. At the next time step $t+1$ the process will be repeated. The reader should note that the planning horizon $H$ can be much shorter than the investment horizon $T$ and this is indeed why the discounting factor is ignored in equation \ref{eq: maximizing objective MPC} as opposed to \ref{eq: MPC_stochastic} 
 (Nystrup, 2017).
 
 The procedure of the MPC approach for multi-period portfolio selection is depicted in the algorithm below. 
@@ -81,13 +85,56 @@ The procedure of the MPC approach for multi-period portfolio selection is depict
 
 As such, algorithm \ref{algo:MPC} provides a summary of the steps involved in the MPC solution to the multi-period portfolio selection problem. Furthermore, the MPC approach holds computational advantages when coupled with a HMM for detecting economic regimes, since the optimal control action is considered anyway for whether or not to change the portfolio allocation, hence the portfolio manager might as well go ahead an update the derivation of the optimal portfolio allocation, given that its economically viable. The formulation of equation \ref{eq: maximizing objective MPC} is a convex optimization problem under the assumption that the risk function as well as the transaction and holding costs are convex (Boyd \& Vandenberghe, 2004). The formulation of the multi-period portfolio problem as a convex optimization problem has some computational and intuitive advantages, since computational remedies as CVXPY can be used in a Python setting, thereby speeding up processing time significantly.
 
-The aforementioned risk and control functions introduced in equation \ref{eq: maximizing objective MPC} will be covered in the sections below. This involves risk-aversion and drawdown control combined with transactions and holding costs. 
+In the next sections, we first explain the use of HMM models in the forecasting procedure of \cref{algo:MPC}. Then, different choices for the aforementioned risk and control functions in \cref{eq: maximizing objective MPC} is discussed. That is, choices for how to set the risk aversion parameter $\gamma$, risk function $\psi$ and cost functions $\phi^{trade}$ \& $\phi^{hold}$. Additionally, possible constraints on $w_t$ are discussed. Finally hyperparameter tuning methods is reviewed.
 
-\subsection{Forecasting $\hat\mu$ and $\hat\Sigma$}
+\subsection{Forecasting with HMMs}
+\label{section: forecasting MPC HMM}
 
-Describe forecasting method - explain s. 279
+\textbf{Consider using rolling estimation of state sequence where only 1 new state is detected each time step (like in BP) - current approach estimates a new state sequence over entire rolling window at each time step, which might make estimated means and covariances more unstable. Also, do we include rf in the estimates of mu and covariance matrix or how do we handle that asset?}
 
-\subsubsection{Shrinkage}
+Forecasting will be performed using the HMM estimators described throughout previous chapters. We consider rolling windows of same length as described previously, i.e. 2000 observations. In a Markowitz portfolio optimization, we rely on expected quantities of assets' expected returns, variance their covariance. Thus, the procedure described here is structured as follows; First an HMM is estimated at time step t. Then, using the Viterbi algorithm, the state sequence over the rolling window is decoded. This allows one to estimate each asset's sample mean return, standard deviation and covariance in each state. Based on those estimates, and by assuming returns follow a multivariate log-normal distribution, parameters are transformed into normally distributed variables. Having computed conditional estimates of asset returns as a multivariate normal distribution, the unconditional distribution is found, for each time t and each time $t+H$, by weighting the conditional distribution by the state probabilities $P(s_{T+H}=i | O)$ for all $i\in\K$. We proceed by describing this procedure in greater detail in the next paragraphs.
+
+Having decoded the state sequence over the rolling window, the conditional means and covariances of returns are calculated from the estimated log-returns. Thus, log-returns are in each state assumed to be i.i.d. and follow a multivariate gaussian distribution
+\begin{equation}
+    \log(\mathbf{1}+ r_t) \sim N\left(\mu_{s_t}^{log}, \Sigma_{s_t}^{log}  \right)
+\end{equation}
+where $\mu_{s_t}^{log}$ and $\Sigma_{s_t}^{log}$ denote the conditional mean and covariance of observed log-returns over the rolling window. We use $s_t$ as subscripts to denote that the distribution of $\log(\mathbf{1}+ r_t)$ at time t is dependent on the active state. Thus, using the formulas described by Munk (2019), the $i$th value in the vector $\mu_s$ and the $ij$th value in the matrix $\Sigma_s$ is calculated as
+\begin{align}
+    (\mu_{s})_i &= \exp \left\{(\mu_{s}^{log})_i + \frac{1}{2}(\Sigma_{s}^{log})_{ii} \right\} - 1,
+    \quad i = 1,\ldots, n+1
+    \\
+    (\Sigma_{s})_{ij} &= \exp \left\{(\mu_{s}^{log})_i + (\mu_{s}^{log})_j + \frac{1}{2}\left\{(\Sigma_{s}^{log})_{ii} + (\Sigma_{s}^{log})_{jj} \right\} \right\} \\
+    &\cdot \left\{ \exp \left\{ (\Sigma_{s}^{log})_{ij} \right\} - 1 \right\} \nonumber
+    , \quad i,j = 1,\ldots,n+1
+\end{align}
+where $(\mu_{s})_i$ denote to the conditional mean of asset $i$ in state $s$, and $(\Sigma_{s})_{ij}$ denote the conditional covariance between asset $i$ and $j$ in state $s$.
+
+Having computed the first two conditional moments for all $n+1$ assets, we have a basis for forecasting. Since HMMs are probabilistic models, forecasting entails computing the forecast distribution (Zucchini, 2009) at each time step $T+H$
+\begin{equation}
+    \hat\gamma(T+H) = P(s_{T+H}| O) = \hat\gamma(T) \cdot Q^H
+\end{equation}
+Thus, once the model parameters are estimated at time t, the forecast distribution H steps ahead is computed by multiplying the posterior distribution with the transition probability matrix H times, thus producing the discrete distribution $\hat\gamma(T+H)$. Given the forecast distribution at each future time step, $\hat\gamma(T+H)$, and the conditional means and covariances, $(\mu_{s})_i$ \& $(\Sigma_{s})_{ij}$, the unconditional distribution is
+\begin{align}
+    \mu_{T+H} &= \sum_s \hat\gamma_s(T+H) \mu_s,
+    \quad s \in\K \label{eq:MPC_mean_uncond} \\
+    \Sigma_{T+H} &= \sum_s \hat\gamma_s(T+H) \Sigma_s + \sum_s \hat\gamma_s(T+H) (\mu_s-\mu_{T+H})(\mu_s-\mu_{T+H})^T ,
+    \quad s\in\K  \label{eq:MPC_var_uncond}
+\end{align}
+where $\mu_{T+H}$ and $\Sigma_{T+H}$ is the forecasted unconditional mean and covariance at time step $T+H$. Further, $\hat\gamma_s(T+H)$ denote the forecasted probability of being in state s and $mu_s$ and $\Sigma_s$ refer to the estimated conditional distribution in state s (which is not time-varying with the forecast). We note here, that since the conditional distributions are distinct gaussian distributions, then the resulting unconditional distribution described in \cref{eq:MPC_mean_uncond} and \cref{eq:MPC_var_uncond} is a mixture with non-gaussian distribution (Frühwirth-Schnatter, 2006).
+
+
+\textbf{Insert comments on where the forecast distribution goes to (stationary distribution) and other considerations. Paper G is a good source for this.}
+
+\subsubsection{Shrinkage of variance-covariance matrix}
+
+As shown by Fiecas et al. (2017) and Nystrup et al. (2017), estimates of the covariances quickly become unstable as one increase the number of assets. Considering the trading strategy described here, where trading potentially occurs each day, such a strategy can potentially not only cause large estimation errors and thus downright bad portfolio allocations, but also cause the model to recommend large frequent switches yielding unnecessarily inflated trading costs. The problem is even bigger in a regime-switching model, such as an HMM, because the data is further divided into states where some states may only occur very infrequently causing sample sizes to drop. To alleviate the problem, one can, as proposed by Fiecas et al. (2017), apply a Stein-type shrinkage estimator
+\begin{equation}
+    \hat\Sigma_s^{shrink} = (1-\upsilon_s)\hat\Sigma_s + \upsilon_s tr(\hat\Sigma_s) \frac{1}{n+1} I_{n+1},
+    \quad s \in\K
+\end{equation}
+where $\upsilon_s\in[0,1]$ is the shrinkage factor in state s, $tr(\cdot)$ is the trace of a square matrix, and $I_{n+1}$ is the $(n+1)\times (n+1)$ identity matrix.
+
+In conclusion, the approach to forecasting means and covariance (step 2 in \cref{algo:MPC}) has been described. This will serve as input to the objective function in \cref{eq: maximizing objective MPC}, computed in step 3 of \cref{algo:MPC}. In the following sections some choices for cost functions are considered.
 
 \subsection{Cost functions}
 
@@ -101,7 +148,7 @@ Since the origination of quantitative portfolio research by Markowitz' (1952) me
 
 As such, the risk-adjustment charge $\psi_t(w_t)$ is proportional to the variance of the portfolio returns given the weights. $\Sigma_t$ represents an estimate of the return covariance, assuming that returns behave stochastically. Intuitively this means that the term can be considered a cost that discourages portfolios with high variance. 
 
-When combining the objective function in equation \ref{eq: MPC objective} with the quadratic risk function of equation \ref{eq: MPC quadratic risk} it results in assuming that investors posses and act upon mean-variance preferences. Furthermore, if the returns are independent random variables, the objective will be equivalent to the mean-variance criterion introduced by Markowitz (1952) (Nystrup, 2017). This thesis acknowledges the predominant use of quadratic risk due to its intutive nature as well as its straight-forwardness in terms of deriving a solution through convex optimization. Yet, there is an increasing focus on alternative risk measures beyond the introduced quadratic risk from equation \ref{eq: MPC quadratic risk}. Many of these alternative risk measures are also convex hence they are usable in the MPC framework. The alternative risk measures include expected shortfall, defined as the loss a portfolio manager could expect in the worst x\% of cases (Munk, 2019). It is a coherent risk measure encompassing the neat property that it only penalizes downside similar to Sharpe. However, when portfolios are constructed to minimize expected shortfall, empirical studies, such as (Lim et al. 2011), have shown that they often realize a higher expected shortfall out of sample when compared to mean variance efficient portfolios. The uncertainty is increasing in the lowering of the quantile level x\%. 
+When combining the objective function in equation \ref{eq: MPC_stochastic} with the quadratic risk function of equation \ref{eq: MPC quadratic risk} it results in assuming that investors posses and act upon mean-variance preferences. Furthermore, if the returns are independent random variables, the objective will be equivalent to the mean-variance criterion introduced by Markowitz (1952) (Nystrup, 2017). This thesis acknowledges the predominant use of quadratic risk due to its intutive nature as well as its straight-forwardness in terms of deriving a solution through convex optimization. Yet, there is an increasing focus on alternative risk measures beyond the introduced quadratic risk from equation \ref{eq: MPC quadratic risk}. Many of these alternative risk measures are also convex hence they are usable in the MPC framework. The alternative risk measures include expected shortfall, defined as the loss a portfolio manager could expect in the worst x\% of cases (Munk, 2019). It is a coherent risk measure encompassing the neat property that it only penalizes downside similar to Sharpe. However, when portfolios are constructed to minimize expected shortfall, empirical studies, such as (Lim et al. 2011), have shown that they often realize a higher expected shortfall out of sample when compared to mean variance efficient portfolios. The uncertainty is increasing in the lowering of the quantile level x\%. 
 
 Yet, investors concerned with the risk of the left tail of the distribution, can use drawdown control functions as an appealing alternative to control risk, since it prevents a portfolio of losing more than a given pre-defined acceptable level. 
 
@@ -132,28 +179,62 @@ In practise, the denominator in equation \ref{eq: MPC risk aversion} will be rep
 Conclusively, the formulation of the risk-aversion coefficient in equation \ref{eq: MPC risk aversion} means that risk-aversion will increase when the portfolio encounters losses, thereby implying a path-dependent utility function. One of the main critiques against this type of utility function is that if the drawdown gets too close to the predefined limit it can be impossible to escape a high risk-aversion coefficient meaning that the portfolio manager is unable to efficiently allocate capital. Furthermore, the lower the maximum drawdown limit, $D^{max}$ is set, the larger the risk of being stuck at the limit. In practise this means that the portfolio manager, who gets trapped at the limit, must either go to the client / investment committee to ask for a new limit.
 
 \subsubsection{Transaction costs}
+One of the most important considerations when comparing the performance of static and dynamic portfolio strategies evolves around transaction costs as frequent trading can offset the potential benefits of the dynamic strategy. As such, trading, and the associated transaction costs, should be regularized in order to reduce the risk of trading too frequently. However, the regularization should not be too constraining such that portfolio managers have difficulties capitalizing on evident capital allocation opportunities. The penalty for trading to be included in the objective function of equation \ref{eq: maximizing objective MPC} can be defined as, 
 
+\begin{equation}
+    \phi_t^{trade}(w_t-w_{t-1}) = \kappa_1^T|w_t-w_{t-1}| + \kappa_2^T(w_t-w_{t-1})^2
+    \label{eq: MPC trade function}
+\end{equation}
+
+in which $\kappa_1$ and $\kappa_2$ are vectors of penalty factors represented by the absolute and squared value elementwise. From an intuitive standpoint this trading function could reflect the actual transaction costs or a restrictive attitude towards trading due to the uncertainty associated with forecasting from section \ref{section: forecasting MPC HMM}. The penalty function represented in equation \ref{eq: MPC trade function} is a weighted elastic net, thereby serving as a combination of the ridge and lasso penalizers. This means that the penalty function is a convex combination of the $l_1-$ and squared $l_2$-norm penalties. Intuitively, the $l_1$ penalty reduces the number of trades and the $l_2$ penalty reduces the size of the trades. More precisely, the $l_2$ penalty shrinks together trades in highly correlated assets and splits the trades over multiple days (Nystrup, 2017). As such, the $l_2$ penalty tries to circumvent the price impact of large orders since these large orders tend to move market prices in the assets that are traded. 
+
+It is possible to incorporate a variety of different trading penalty functions, for instance Gârleanu and Pedersen (2013) presented a cost function of the nature $(w_t-w_{t-1})^T\Sigma_t(w_t-w_{t-1})$ which is closely related to the quadratic risk function of equation \ref{eq: MPC quadratic risk}, meaning that it captures the increased cost of trading in markets with high volatility.
+
+Despite this alternative, the intuitive nature of the $l_1$ and $l_2$ penalties of equation \ref{eq: MPC trade function} and their direct link to linear regression regularization through the LASSO, Ridge and Elastic net methodologies, it serves as the preferred choice to model trading penalty for the subsequent analysis.
 
 \subsubsection{Holding costs}
+Another crucial consideration for portfolio managers concerns the fact that holding a particular portfolio $w_t$ over $t$ periods can result in a holding cost. An intutive and basic holding function can be constructed in a similar fashion to the aforementioned trading penalty in equation \ref{eq: MPC trade function},
 
-\subsection{Constraints}
+\begin{equation}
+    \phi_t^{hold}(w_t) = p_1^T|w_t| + p_2^Tw_t^2
+    \label{eq: MPC holding function}
+\end{equation}
 
+where $p_1$ and $p_2$ are penalty vectors representing the absolute and squared penalty value elementwise. Evidently, for very large holding costs, the portfolio manager will be restricted to a long-only capital allocation. As such, the intuitive reason for including a holding costs penalty function is to control the leverage of the portfolio. Additionally, the theoretical foundation for the defintion if equation \ref{eq: MPC holding function} is identical to the outlined reasoning for the trading function of equation \ref{eq: MPC trade function}. The $l_1$ penalty reduces the number of different holdings while the $l_2$ penalty reduces the size of the different holdings.
 
+\subsubsection{ Direct portfolio and asset constraints}
+Another mechanism that the portfolio manager can adjust and utilize to improve the out-of-sample performance involves imposing constraints on the portfolio allocation by controlling the weights. As such, the portfolio manager can impose constraints on the weights of the different assets such as minimum and maximum positions for each assets:
 
+\begin{equation}
+    -w^{min}\leq w_t\leq w^{max},
+\end{equation}
+in which the inequalities are elementwise and $w^{min}$ and $w^{max}$ represent nonnegative vectors of the allowed maximum short and long positions in a given asset respectively. In this scenario, a long-only portfolio will correspond to $w^{min}=0$.
 
+Other direct constraint such as portfolio leverage and even asset specific constraints can be imposed, however, such possible constraints will be mentioned in the results section.
 
-
-Introducer modellen
+\textbf{Introducer modellen
 - Object-funcktion + constriant.
+Underafsnit hvor man går mere i dybden med valget og udregningen af nogle dele af objekt-funktionen.}
 
-Underafsnit hvor man går mere i dybden med valget og udregningen af nogle dele af objekt-funktionen.
+\subsection{Data}
 
-\subsection{Data...}
-
-
-\subsection{Results}
+\textbf{Bliver beskrevet i sit eget kapitel, TBD?}
 
 
+\subsection{In-sample training: Tuning hyperparameters}
+
+\textbf{Maximize portfolio Sharpe, excess return and minimize annual turnover over the hyperparameters}
+
+\subsection{Out-of-sample results}
 
 
 \subsubsection{Comparison}
+
+
+
+\subsubsection{Notes to self}
+
+
+\textbf{Consider using rolling estimation of state sequence where only 1 new state is detected each time step(like in BP) - current approach estimates a new state sequence over entire rolling window at each timestep, which might make estimated means and covariances more unstable. Also, do we include rf in theestimates of mu and covariance matrix or how do we handle that asset?}
+
+\textbf{Consider adding estimation section for portfolio allocation as in BP - trained on the same in-sample data as the rest.}
