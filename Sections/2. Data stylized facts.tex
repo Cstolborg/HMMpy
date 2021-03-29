@@ -12,7 +12,7 @@ Furthermore, despite the aforementioned issues with sporadic predictions due to 
 
 Bulla et al. (2011) further argued that the use of daily data frequencies increases the amount of data available for markets characterised by a short lifetime, however, many financial indices are old and for these older indices monthly data is more available than daily data. Unsupervised machine learning models, such as HMMs, require large amounts of data to be trained in order to achieve a desired and comfortable level of predictability, and as such, the usage of these heavy data-driven models serve as an argument for relying on monthly data as opposed to daily data. Yet, this thesis favors early detection, due to the reasoning outlined above. As a result, daily data, will be used in the analysis. Lastly, the optimal time horizon used for training the model is debatable, however, it should at least span the time required for a financial cycle to unfold in order to include the performance of DAA strategies in several economic environments. The tuning of this hyperparameter will be subject for further analysis and elaboration in section \ref{Subsection: Model estimation and selection}. Furthermore, it should be acknowledged that, the longer the data horizon the more questionable it becomes whether stationarity of the data-generating process can be assumed (Bulla et al. 2011).
 
-The following sections will include details on the S\&P 500 index used for training the hidden Markov models.
+The following sections will include details on the S\&P 500 index.
  
 \subsection{The S\&P 500}
 The S\&P 500 is a stock index comprising 500 companies from the U.S. which was founded in 1957. The stocks that make up the index are selected by a committee which include representation from all major segments in American industry. As such, contrary to prevailing public sentiment, the index is not simply made up of the 500 largest companies in the U.S. The S\&P 500 Index is a market-capitalization weighted index in which the 10 largest companies account for 27.5\% of the capitalization of the index as of per December 2020. Figure \ref{fig: SP500_index} showcases the development of the S\&P 500 Index since origination. 
@@ -31,13 +31,14 @@ It is unlikely that the recent bullish environment for stocks will continue in p
 The inclusion of the S\&P 500 index is based on the fact that it is a one of the leading American indices by market capitalization. In addition, contrary to for instance the Nasdaq Composite Index, the S\&P 500 is not exclusively focusing on a specific sector like information technology, hence it should capture the economics trends across sectors accordingly. As such, the thesis treats it as a baseline index in terms of uncovering economic-regimes. The main critique of using the S\&P 500 index is that it exclusively entail American companies, however, from an economic perspective the U.S. economy serves as a fundamental indicator of how the remaining world economy is progressing, hence it is argued that US stocks will be the first to be impacted by changing economic regime. Taking into consideration the aspect of early regime detection, the fact that the index is composed purely of American companies serves as a strength. Furthermore, North American companies makes up almost 2/3 of alternative indices like the MSCI World, hence no matter which large popular index that will be used will contain a heavy skew and over-representation of American stocks.
 
 \begin{table}[H]
+\small
 \caption{Summary statistics for the daily S\&P 500 log-returns.}
 \centering
 \begin{tabular}{c c c c c c c c c} 
 \hline\hline
-Observations & Mean & STD & Skewness & Excess Kurtosis & Min & Max & First ACF & Annual SR \\
+Observations & Mean & STD & Skewness & Excess Kurtosis & Min & Max & Annual Sharpe \\
 \hline
-15,385 & 0.0003 & 0.0103 & -1.0353 & 23.8338 & -0.2290 & 0.1096 & -0.006 & 0.4350 \\
+15,385 & 0.0003 & 0.0103 & -1.0353 & 23.8338 & -0.2290 & 0.1096 & 0.4350 \\
 \hline
 \end{tabular}
 \label{tab:summary_stats_S&P500}
@@ -85,21 +86,18 @@ Since extreme events happen in live markets the observation that they create sho
 
 \subsection{Temporal properties}
 \label{subsection: temporal properties}
-It is evident by the plot of the log returns in figure \ref{fig: log_returns_all_indices} that the log returns are characterised as mean stationary, since they fluctuate around a constant mean level close to zero. Despite this, the log-returns series is seen to be more volatile in some periods. The effect that large prices movements tend to be followed by other large price movements, but not necessarily in the same direction, is known as volatility clustering (Cont, 2001). 
+It is evident by the plot of the log returns in figure \ref{fig: log_returns_all_indices} that the log returns are characterised as mean stationary, since they fluctuate around a constant mean level close to zero. Despite this, the log-returns series is seen to be more volatile in some periods. The effect that large prices movements tend to be followed by other large price movements, but not necessarily in the same direction, is known as volatility clustering (Cont, 2001) and it is one of the stylized facts that is hardest for mathematical models to replicate. However, it has been proven that regime-switching models replicate the absence of linear autocorrelation and the long-term memory property of squared autocorrelation well, although simple regime-switching models struggle to achieve a simultaneous fit of the
+different stylized facts (Rogers \& Zhang, 2011). Further analysis of this will be conducted in section \ref{Section: Stylized facts}, in which the thesis aims at achieving a simultaneous fit of the mentioned stylized facts through different estimation procedures of the HMMs.
 
-Particularly the MSCI World and S\&P 500 index appear to have increasing volatility throughout time, whereas the DAX 30 appears to have similar or slightly contracting volatility levels. This is not surprising as the MSCI World and S\&P 500 index include observations beginning from the 1970s and 1960s respectively. During these times, there were no active derivative markets and much fewer actors had direct access to trading financial instruments. As such, markets were simpler, less risky and thus characterised by an overall lower level of volatility. 
+It is particularly evident from figure \ref{fig: log_returns_all_indices} that the S\&P 500 index appears to have increasing volatility throug time. This is not surprising as the S\&P 500 index originates, and thus include observations, from 1960. During these times, there were no active derivative markets and much fewer actors had direct access to trading financial instruments. As such, markets were simpler, less risky and thus characterised by an overall lower level of volatility compared to the past 30 years of development.
 
 \begin{figure}[H] 
     \centering
-    \includegraphics[width=0.65\textwidth]{analysis/data_description/images/MSCI_ACF.png}
-    \includegraphics[width=0.65\textwidth]{analysis/data_description/images/SP500_ACF.png}
-    \includegraphics[width=0.65\textwidth]{analysis/data_description/images/DAX_ACF.png}
-    \caption{ACF and absolute ACF. MSCI, S\&P500 and DAX respectively. The dashed black line is the 95\% significance level.}
+    \includegraphics[width=1\textwidth]{analysis/data_description/images/SP500_ACF.png}
+    \caption{ACF and absolute ACF - S\&P500. The dashed black line is the 95\% significance level.}
     \label{fig: ACF_all_log_returns}
 \end{figure}
 
-The autocorrelation functions (ACFs) for the log-returns and the absolute log returns are shown in figure \ref{fig: ACF_all_log_returns}. The first-order autocorrelation is only significant for the MSCI World index. However, the reader should note that the ACF is time-varying, thus if one were to zoom in on a narrower time-period it is highly probable that the first-order autocorrelation could be significant for all indices. 
+The autocorrelation functions (ACFs) for the log-returns and the absolute log returns are shown in figure \ref{fig: ACF_all_log_returns}. The first-order autocorrelation is across different lags for the S\&P 500 index, however, the vast majority of the linear autocorrelation at different lags appear to be non-significant which is in accordance with the empirical studies conducted by Cont (2001) as well as Granger \& Ding (1995b). The lags that are significant comes at no surprise either since, as previously discussed, large historical development such as black monday could tricker significant linear autocorrelation, however, this is clearly not persistent across time. 
 
-The absolute ACFs show significant autocorrelation that persists all the way up to lag 100 for all the selected indices. This suggests that financial returns exhibit a memory component, thereby making volatility somewhat predictable. As such, the long memory of the absolute log-returns is closely related to the previously described volatility clustering from figure \ref{fig: log_returns_all_indices}.
-
-Conclusively, the reader should note that the correlation among the indices are stronger at the times of high market volatility. This is perhaps not surprising since the indices are made up of stocks, however, it highlights that diversification based on investing in different sectors or geographical areas may not materialize precisely when an investor needs it the most. The impact would most probably be less significant if one were to compare a stock index with a bond index, since the correlation would be lower, especially during periods of high volatility. Despite the fact that correlations increased in high volatility markets, there are definitely benefits related to diversification between asset classes.
+The absolute ACF shows significant autocorrelation that persists all the way up to lag 100 for all the selected indices. This suggests that financial returns exhibit a memory component, thereby making volatility somewhat predictable. As such, the long memory of the absolute log-returns is closely related to the previously described volatility clustering from figure \ref{fig: log_returns_all_indices}. This finding is also congruent to the aforementioned empirical studies. 
