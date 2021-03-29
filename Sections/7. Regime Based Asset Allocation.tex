@@ -209,59 +209,20 @@ in which the inequalities are elementwise and $w^{min}$ and $w^{max}$ represent 
 
 Other direct constraint such as portfolio leverage and even asset specific constraints can be imposed, however, such possible constraints will be mentioned in the results section.
 
-\textbf{Introducer modellen
-- Object-funcktion + constriant.
-Underafsnit hvor man går mere i dybden med valget og udregningen af nogle dele af objekt-funktionen.}
-
-
-
 \subsection{Computing portfolio returns}
 
-As mentioned, the parameter inputs comprising expected returns, standard deviations and covariances are estimated empirically on the data. Since the data used have daily frequencies, the estimates are annualized by applying the formulas below for each asset\footnote{252 trading days are assumed, consistent with the literature.}.
-\begin{equation}
-    \mu_{annual} = (1+\mu_{daily})^{1/252}-1
-\end{equation}
-\begin{equation}
-    \sigma_{annual} = \sigma_{daily} * \sqrt{252}
-\end{equation}
-\begin{equation}
-    {\Sigma}_{annual} = {\Sigma}_{daily} * 252
-\end{equation}
+\textbf{Add formulas for shorting costs and transaction costs here.}
 
-Through the traditional methodology associated with deriving the tangency portfolio, we condition the tangency calculation on each state. Therefore, in the 2-state HMM, two tangency portfolios are calculated, which represent the aggressive and defensive portfolio respectively. As a natural consequence, there are three tangency portfolios in the 3-state HMM. Conditioning on the state, the empirical mean, standard deviation and covariance is estimated from a return time series of $N$ assets. Using the tangency weights, the portfolio returns are calculated each day as the product of all assets' gross return and their respective weights.
-
+Using the weights estimated at time t, the portfolio returns are calculated each day as the product of all assets' gross return and their respective weights.
 \begin{equation}
-    r_{t,portfolio} = \sum_{i=1}^N (\pi_{t,i}*(1+r_{t,i}))  - 1
+    r_{t,portfolio} = \sum_{i=1}^N \left(w_{t,i}\times(1+r_{t,i})\right)  - 1
 \end{equation}
-\\
-Where, $r_{t,portfolio}$ is the portfolio return for day $t$ and $r_{t,i}$ \& $\pi_{t,i}$ denotes the return and weight of asset $i$ at day $t$. The weights are updated accordingly by the end of each day to reflect returns, until they are reset whenever a rebalancing occur. Therefore, within each state sojourn, the weights evolve according to
-
-\begin{equation}
-    \boldsymbol\pi_{t+1} = \frac{(\boldsymbol{r_t}+\boldsymbol{1}) \circ \boldsymbol{\pi_t}}
-    {\sum (\boldsymbol{r_t}+\boldsymbol{1}) \circ \boldsymbol{\pi_t}}
-\end{equation}
-\\
-\noindent Where, $\mathbf{r_t}$ denote the vector of daily asset returns, $\boldsymbol{\pi_t}$ is the vector of current portfolio weights and $\circ$ is the hadarmard product, i.e. element-wise product of the vectors. When a state change occur, or a sojourn exceeds one year, the portfolio is rebalanced and the above procedure is repeated. The result is a series of portfolio returns with length equal to the amount of days in the sample. Total return over the period is then the product of all daily portfolio returns over the period
-
+Where, $r_{t,portfolio}$ is the portfolio return for day $t$ and $r_{t,i}$ \& $\pi_{t,i}$ denotes the return and weight of asset $i$ at day $t$. The weights are updated accordingly by the end of each day to reflect returns. The result is a series of portfolio returns with length equal to the amount of days in the sample. Total return over the period is then the product of all daily portfolio returns over the period
 \begin{equation}
     r_{total} = \prod_{t=1}^T (1+r_{t, portfolio} ) - 1
     \label{eq:total_ret}
 \end{equation}
-
-The rebalancing costs are set to 0.1\% of the notional portfolio value at each rebalancing, consistent with Nystrup (2014). Returns after rebalancing could be computed by subtracting the costs at every rebalancing, but noting the multiplicative nature of equation \ref{eq:total_ret}, one only need to know the number of rebalancings after which total returns after trading costs can be computed as
-
 \begin{equation}
-    r_{total,TC} = \prod_{t=1}^T (1+r_{t, portfolio}) *
-    (1-0.1\%)^\omega - 1
-    \label{eq:total_ret_tc}
-\end{equation}
-\\
-\noindent Where, TC denotes returns after adjusting for trading costs, and $\omega$ denotes the number of rebalancings. Total return after trading costs are then annualized as 
-
-\begin{equation}
-    r_{annual,TC}=(1+r_{total})^{1/T}-1
+    r_{annual}=(1+r_{total})^{1/T}-1
     \label{eq:annual_ret}
 \end{equation}
-\\
-\noindent Note that in equation \ref{eq:total_ret} \& \ref{eq:total_ret_tc}, T denotes the number of days in the sample, whereas in equation \ref{eq:annual_ret} it is the number of years in sample.
-
