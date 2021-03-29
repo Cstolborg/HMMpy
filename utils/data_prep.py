@@ -46,6 +46,14 @@ def load_data_get_logret(path='../../data/price_series.csv'):
 
     return df_ret
 
+def load_long_series_logret(path='../../data/price_series.csv'):
+    df = pd.read_csv(path, index_col='Time', parse_dates=True)
+    df = df['S&P 500 ']
+    df_ret = np.log(df) - np.log(df.shift(1))
+    df_ret.dropna(inplace=True)
+
+    return df_ret
+
 def get_cov_mat(df_ret):
     return df_ret.cov()
 

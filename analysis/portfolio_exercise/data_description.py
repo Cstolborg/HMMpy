@@ -51,7 +51,6 @@ def compute_asset_metrics(df,start=None):
 
     return metrics
 
-
 def plot_asset_vals(df, start=None, show=True, save=False):
     # Prepare data
     df.dropna(inplace=True)
