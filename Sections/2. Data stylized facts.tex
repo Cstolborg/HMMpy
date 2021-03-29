@@ -48,50 +48,28 @@ It is evident by table \ref{tab:summary_stats_S&P500} that the daily log-returns
 \subsection{Distributional properties} An overview of the development for the S\&P 500 index have been plotted in figure \ref{fig: all_indices_index}, however, the timeline have been adjusted so the most recent 25 years of development have been included. Particularly, the development since the electronification of financial markets is of interest, since many actors, including private investors, gained access to the financial markets due to advancement of technology in the late 90s and early 00s. This means that the first observation is from 04-01-1999 and the last observation is 12-02-2021. 
 \begin{figure}[H] 
     \centering
-    \includegraphics[width=1.0\textwidth]{analysis/data_description/images/comb_index.png}
-    \caption{Development all indices.}
-    \label{fig: all_indices_index}
+    \includegraphics[width=1.0\textwidth]{analysis/data_description/images/adjusted SP500.png}
+    \caption{Recent development SP500.}
+    \label{fig: all_indices_index} 
 \end{figure}
 
-From an overall return perspective it is evident that the S\&P 500 index has been subject to a variety of turbulent market periods including the dot-com bubble and most recently the GFC. Interestingly, the S\&P 500 Index only recovered from the dot-com bubble a few months prior to the financial crisis of 2008, yet it was severely impacted by the GFC. In the period following the financial crisis the S\&P 500 has been performing increasingly well resulting in an upward-trajectory until the recent COVID-19 correction, after-which the index reached the present all time high values. 
-
-The MSCI World Index appears to have a more stable trajectory with less volatile movements both compared to the S\&P 500 and the DAX 30. Despite this, the MSCI World Index generally trended in the same direction as the S\&P 500,
-but in some periods the range between the two indices widened. For example,
-it appears that the MSCI World and S\&P 500 Index trended in close correlation in the period from 1999 to 2015, however, from 2015 to 2021 the two indices have drifted apart. Furthermore, it appears that the S\&P 500 has become increasingly more volatile over the period 2015-2021, particularly evident by the recent COVID-19 rebound in which the drawdown of the S\&P 500 was much more extreme compared to the MSCI World.  
-
-The DAX 30 performed particularly well in the period following the dot-com bubble, however, during 2008 and 2009 the GFC severely impacted the index, thereby bringing it down to the respective levels of the S\&P 500 and MSCI World. As concluded in section \ref{subsection: DAX 30} the DAX was characterised as the most volatile, which is also evident by figure \ref{fig: all_indices_index} which showcases that the DAX indeed appears to have a higher volatility. From 2006 to 2017 the DAX Index has consistently been at higher index levels compared to the other indices until the S\&P 500 caught up by breaking its all time high in 2019. An overview of the summary statistics for each index is listed in table \ref{tab:summary_all}.
-
-\begin{table}[H]
-\caption{Summary statistics for the daily log-returns of the three indices}
-\centering
-\begin{tabular}{c c c c}
-\hline
- & MSCI World & S\&P 500 & DAX 30 \\
-\hline 
-Observations & 12,941 & 15,385 & 5,613 \cr Mean & 0.0003 & 0.0003 & 0.0002 \cr STD & 0.0087 & 0.0103 & 0.0159 \cr Skewness & -0.6521 & -1.0353 & -0.1869 \cr Excess Kurtosis & 10.8819 & 23.8338 & 2.8115 \cr Min & -0.1044 & -0.2290  & -0.1394 \cr Max & 0.0909 & 0.1096 & 0.1257 \cr Annual SR & 0.4854 & 0.4350 & 0.1839
-\\
-\hline
-\end{tabular}
-\label{tab:summary_all}
-\end{table}
+From an overall return perspective it is evident that the S\&P 500 index has been subject to a variety of turbulent market periods including the dot-com bubble and most recently the GFC. Interestingly, the S\&P 500 index only recovered from the dot-com bubble a few months prior to the financial crisis of 2008, yet it was severely impacted by the GFC. In the period following the financial crisis the S\&P 500 has been performing increasingly well resulting in an upward-trajectory until the recent COVID-19 correction, after-which the index reached the present all time high values. 
 
 \subsubsection{Log Returns}
-As evident by\Cref{fig: all_indices_index} the series are not stationary since the mean values are growing and when zooming in on local periods, the development of the respective index appears to be characterised by strong trends. As such, a transformation is needed to obtain stationary time-series. In cases where the series is characterised by growing means and local trends a log-transformation will narrow the gap between the indices and taking the first difference will eliminate the growing mean values. This results in the log-returns being derived as $r_t = log(P_t) - log(P_{t-1})$, where $P_t$ is the adjusted closing price of the index on day $t$ and $\log$ is the natural logarithm. For daily returns less than 10\%, log returns are a good approximation to the discrete return, as it is the first order Taylor approximation (Nystrup, 2014).
+As evident by figure \ref{fig: all_indices_index} the series is not stationary since the mean value is growing and when zooming in on local periods, the development of the index appears to be characterised by strong trends. As such, a transformation is needed to obtain stationary time-series. In cases where the S\&P 500 is characterised by growing means and local trends a log-transformation will narrow the gap between the indices and taking the first difference will eliminate the growing mean values. This results in the log-returns being derived as $r_t = log(P_t) - log(P_{t-1})$, where $P_t$ is the adjusted closing price of the index on day $t$ and $\log$ is the natural logarithm. For daily returns less than 10\%, log returns are a good approximation to the discrete return, as it is the first order Taylor approximation (Nystrup, 2014).
 
-Table \ref{tab:summary_all} showcases the summary statistics for the daily log-returns of the selected indices together with the annual Sharpe ratio and the Jarque-Bera (JB) test statistic. As already noted the distributions are left skewed and strongly leptokurtic, however, this is not a surprising finding given previous studies conducted by Cont (2001) as well as Granger \& Ding (1995b), in which the stylized facts of financial returns were explored substantially. The critical value for the Jarque–Bera test statistic at a 99.9\% significance level is 14.13, in which table \ref{tab:summary_all} clearly highlights that the Jarque–Bera test strongly rejects the normal distribution for all three indices.  
+Table \ref{tab:summary_stats_S&P500} showcases the summary statistics for the daily log-returns of the S\&P 500 together with the annual Sharpe ratio and the Jarque-Bera (JB) test statistic. As already noted the distribution is left skewed and strongly leptokurtic, however, this is not a surprising finding given previous studies conducted by Cont (2001) as well as Granger \& Ding (1995b), in which the stylized facts of financial returns were explored substantially. The critical value for the Jarque–Bera test statistic at a 99.9\% significance level is 14.13, in which table \ref{tab:summary_stats_S&P500} clearly highlights that the Jarque–Bera test strongly rejects the normal distribution for all three indices.  
 
-In addition, it is evident from the plot of the kernel density functions in figure ref til figur (de billeder med normalfordeling vs. empirisk fordeling) that the log returns series are characterised by excess kurtosis relative to a Gaussian distribution. As such, there is too much mass centered around the mean and in the tails compared to the Gaussian distribution. The fat left tail implies that using a Gaussian distribution to model returns will underestimate the frequency and magnitude of downside events (Nystrup, 2014). 
+In addition, it is evident from the plot of the kernel density function in figure \ref{fig: Kernel_distributions} that the log return series are characterised by excess kurtosis relative to a Gaussian distribution. As such, there is too much mass centered around the mean and in the tails compared to the Gaussian distribution. The fat left tail implies that using a Gaussian distribution to model returns will underestimate the frequency and magnitude of downside events (Nystrup, 2014). 
 
 \begin{figure}[H] 
     \centering
-    \includegraphics[width=0.65\textwidth]{analysis/data_description/images/MSCI_distribution.png}
-    \includegraphics[width=0.65\textwidth]{analysis/data_description/images/SP500_distribution.png}
-    \includegraphics[width=0.65\textwidth]{analysis/data_description/images/DAX_distribution.png}
-    \caption{Distributions. MSCI, S\&P500 and DAX respectively.}
+    \includegraphics[width=1\textwidth]{analysis/data_description/images/SP500_distribution.png}
+    \caption{Distributions. S\&P500.}
     \label{fig: Kernel_distributions}
 \end{figure}
 
-Furthermore, it is evident from figure \ref{fig: Kernel_distributions} that all three indices encompass extreme observations that lie more than 3 standard deviations from the mean. There are 187 observations that deviate more than 3 standard deviations from the mean for the MSCI World index which is way above the expected 39 if the series followed a Gaussian distribution. Out of these, 74 observations are located in the right side of the tail while the remaining 113 are located in the left tail. This phenomenon that large drawdowns occur more often than similar large upwards movements is well researched and known as the gain/loss asymmetry (Cont, 2001). In addition, it should be noted that since the MSCI World contains 12,941 observations, it only takes a few outliers to reject that the series follow a normal distribution. However, as noted by Cont (2001), financial returns are characterised by a large degree of extreme observations compared to the Gaussian distribution, which is evident by the large excess kurtosis from table \ref{tab:summary_all}.
+Following the properties underlying figure \ref{fig: Kernel_distributions} an interesting analysis would be to uncover how many observations that lie more than 3 standard deviations from the mean. In total there are 219 observations that deviate more than 3 standard deviations from the mean for the S\&P 500 index which is way above the expected 46 if the series followed a Gaussian distribution. Out of these, 108 observations are located in the right side of the tail while the remaining 111 are located in the left tail. This phenomenon that large drawdowns occur more often than similar large upwards movements is well researched and known as the gain/loss asymmetry (Cont, 2001). In addition, it should be noted that since the MSCI World contains 12,941 observations, it only takes a few outliers to reject that the series follow a normal distribution. However, as noted by Cont (2001), financial returns are characterised by a large degree of extreme observations compared to the Gaussian distribution, which is evident by the large excess kurtosis from table \ref{tab:summary_stats_S&P500}.
 
 Lastly, it is important to note the subtle distingshion between outliers and extreme observations since extreme observations deviate considerably from the group mean, yet they may still hold meaningful information hence they should not be disregarded.
 Since extreme events happen in live markets the observation that they create should be included in the model estimation in order for the model be as realistic as possible. As such, a plot of the log returns for all the indices have been constructed in figure \ref{fig: log_returns_all_indices}
