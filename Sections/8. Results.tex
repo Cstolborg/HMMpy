@@ -5,6 +5,14 @@
 Sktiser index data på log scala + evt. tabel over aktivers perfomance over periode - thats it.
 
 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{analysis/portfolio_exercise/images/asset_vals.png}
+    \caption{Assets development during the out-of-sample period.}
+    \label{fig:MPC_data}
+\end{figure}
+
+
 \subsection{In-sample training: Tuning hyperparameters}
 
 \begin{itemize}
@@ -25,15 +33,15 @@ Sktiser index data på log scala + evt. tabel over aktivers perfomance over peri
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=1\textwidth]{analysis/portfolio_exercise/images/port_performance.png}
-    \caption{Balanced accuracy of jump estimator, as a function of the penalty $\lambda$ using different simulation lengths. All points are based on the estimate $\hat\Omega(\lambda)$ based on 1000 simulated series.}
+    \includegraphics[width=1\textwidth]{analysis/portfolio_exercise/images/port_weights.png}
+    \caption{Asset weights over time for a long-only portfolio.}
     \label{fig:MPC_port_weights}
 \end{figure}
 
 \begin{table}[H]
 \centering
-\caption{Estimates of HMM models' convergence towards true values as a function of simulation length. Results are based on 1000 simulations from conditional gaussian distributions.}
-\input{analysis/model_convergence/output_data/simulation_normal}
+\caption{Summary of annualized performance for each asset during the out-of-sample period. All measures are in excess of the risk-free rate.}
+\input{analysis/portfolio_exercise/output_data/asset_performance}
 \label{tab:MPC_asset_performance}
 \end{table}
 
