@@ -39,13 +39,13 @@ def compute_asset_metrics(df,start=None):
     max_drawdown = drawdown.max(axis=0)
     calmar = excess_cagr / max_drawdown
 
-    metrics = {'return': cagr,
-               'std': std,
-               'excess_return': excess_cagr,
-               'excess_std': excess_std,
-               'sharpe': sharpe,
-               'max_drawdown': max_drawdown,
-               'calmar_ratio': calmar}
+    metrics = {#'Return': cagr,
+               #'Std': std,
+               'Return': excess_cagr,
+               'Std': excess_std,
+               'Sharpe': sharpe,
+               'Max drawdown': max_drawdown,
+               'Calmar ratio': calmar}
 
     metrics = pd.DataFrame(metrics)
 
