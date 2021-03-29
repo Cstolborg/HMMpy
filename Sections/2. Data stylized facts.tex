@@ -69,21 +69,17 @@ In addition, it is evident from the plot of the kernel density function in figur
     \label{fig: Kernel_distributions}
 \end{figure}
 
-Following the properties underlying figure \ref{fig: Kernel_distributions} an interesting analysis would be to uncover how many observations that lie more than 3 standard deviations from the mean. In total there are 219 observations that deviate more than 3 standard deviations from the mean for the S\&P 500 index which is way above the expected 46 if the series followed a Gaussian distribution. Out of these, 108 observations are located in the right side of the tail while the remaining 111 are located in the left tail. This phenomenon that large drawdowns occur more often than similar large upwards movements is well researched and known as the gain/loss asymmetry (Cont, 2001). In addition, it should be noted that since the MSCI World contains 12,941 observations, it only takes a few outliers to reject that the series follow a normal distribution. However, as noted by Cont (2001), financial returns are characterised by a large degree of extreme observations compared to the Gaussian distribution, which is evident by the large excess kurtosis from table \ref{tab:summary_stats_S&P500}.
+Following the properties underlying figure \ref{fig: Kernel_distributions} an interesting analysis would be to uncover how many observations that lie more than 3 standard deviations from the mean. In total there are 219 observations that deviate more than 3 standard deviations from the mean for the S\&P 500 index which is way above the expected 46 if the series followed a Gaussian distribution. Out of these, 108 observations are located in the right side of the tail while the remaining 111 are located in the left tail. This phenomenon that large drawdowns occur more often than similar large upwards movements is well researched and known as the gain/loss asymmetry (Cont, 2001). In addition, it should be noted that since the S\&P contains 15,385 observations, it only takes a few outliers to reject that the series follow a normal distribution. However, as noted by Cont (2001), financial returns are characterised by a large degree of extreme observations compared to the Gaussian distribution, which is evident by the large excess kurtosis from table \ref{tab:summary_stats_S&P500}.
 
 Lastly, it is important to note the subtle distingshion between outliers and extreme observations since extreme observations deviate considerably from the group mean, yet they may still hold meaningful information hence they should not be disregarded.
-Since extreme events happen in live markets the observation that they create should be included in the model estimation in order for the model be as realistic as possible. As such, a plot of the log returns for all the indices have been constructed in figure \ref{fig: log_returns_all_indices}
+Since extreme events happen in live markets the observation that they create should be included in the model estimation in order for the model be as realistic as possible. The other side of the argument is that since the outliers, in the case of the S\&P 500, only account for $1.4\%$ of the total observation, they can be disregarded. Furthermore, depending on the extremeness of the outliers, the impact on parameter estimation is questionable, thereby serving as an argument for disregarding the extreme observations (Nystrup, 2014). A plot of the log returns for all the indices have been constructed in figure \ref{fig: log_returns_all_indices}, which graphically illustrates some of the extreme observations, for instance the black monday event of October 1987.
 
 \begin{figure}[H] 
     \centering
-    \includegraphics[width=0.65\textwidth]{analysis/data_description/images/MSCI_log_returns.png}
-    \includegraphics[width=0.65\textwidth]{analysis/data_description/images/SP500_log_returns.png}
-    \includegraphics[width=0.65\textwidth]{analysis/data_description/images/DAX_log_returns.png}
-    \caption{Log returns. MSCI, S\&P500 and DAX respectively.}
+    \includegraphics[width=1\textwidth]{analysis/data_description/images/SP500_log_returns.png}
+    \caption{Log returns. S\&P500}
     \label{fig: log_returns_all_indices}
 \end{figure}
-
-%%% INDSÆT FIGUR AF LOG RETURNS FOR ALLE INDICES.
 
 \label{subsection: distributional properties}
 
