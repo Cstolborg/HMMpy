@@ -1,0 +1,50 @@
+\section{Results}
+
+\subsection{Data}
+
+Sktiser index data på log scala + evt. tabel over aktivers perfomance over periode - thats it.
+
+
+\subsection{In-sample training: Tuning hyperparameters}
+
+\begin{itemize}
+    \item Sample period
+    \item method - what do we maximize
+    \item go over each tuning parameter separately.
+\end{itemize}
+
+\textbf{Maximize portfolio Sharpe, excess return and minimize annual turnover over the hyperparameters}
+
+\subsection{Out-of-sample results}
+
+\begin{itemize}
+    \item Plot allocations
+    \item Plot portfolio performance
+    \item Table summarizing KPIs
+\end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{analysis/portfolio_exercise/images/port_performance.png}
+    \caption{Balanced accuracy of jump estimator, as a function of the penalty $\lambda$ using different simulation lengths. All points are based on the estimate $\hat\Omega(\lambda)$ based on 1000 simulated series.}
+    \label{fig:MPC_port_weights}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption{Estimates of HMM models' convergence towards true values as a function of simulation length. Results are based on 1000 simulations from conditional gaussian distributions.}
+\input{analysis/model_convergence/output_data/simulation_normal}
+\label{tab:MPC_asset_performance}
+\end{table}
+
+
+\subsubsection{Comparison}
+
+
+
+\subsubsection{Notes to self}
+
+
+\textbf{Consider using rolling estimation of state sequence where only 1 new state is detected each time step(like in BP) - current approach estimates a new state sequence over entire rolling window at each timestep, which might make estimated means and covariances more unstable. Also, do we include rf in theestimates of mu and covariance matrix or how do we handle that asset?}
+
+\textbf{Consider adding estimation section for portfolio allocation as in BP - trained on the same in-sample data as the rest.}
