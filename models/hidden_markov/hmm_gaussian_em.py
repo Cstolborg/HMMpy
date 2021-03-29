@@ -161,7 +161,7 @@ class EMHiddenMarkov(BaseHiddenMarkov):
                         self.stationary_dist = self.get_stationary_dist(tpm=self.tpm)
 
                         self.best_tpm = self.tpm
-                        self.best_delta = self.start_proba
+                        self.best_start_proba = self.start_proba
                         self.best_mu = self.mu
                         self.best_std = self.std
 
@@ -203,14 +203,14 @@ class EMHiddenMarkov(BaseHiddenMarkov):
             self._check_state_sort()  # Ensures low variance state is first
 
         self.tpm = self.best_tpm
-        self.start_proba = self.best_delta
+        self.start_proba = self.best_start_proba
         self.mu = self.best_mu
         self.std = self.best_std
 
     def _check_state_sort(self):
         # Sort array ascending and check if order is changed
         # If the order is changed then states are reversed
-        if np.sort(self.std)[0] != self.std[0]:
+        if np.sort(self.best_std)[0] != self.best_std[0]:
             # TODO only works for 2-states
             self.best_mu = self.best_mu[::-1]
             self.best_std = self.best_std[::-1]

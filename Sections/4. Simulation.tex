@@ -1,7 +1,7 @@
 \newpage
 
 \section{Simulation study}
-In this section, HMMs are trained based on the estimation procedure described in \cref{section:estimation}. The primary purpose of the section is to compare how well different estimation methods converge toward the true parameter values, when data is simulated from an HMM. The advantage of using simulated data is that it entails us knowing the true parameter values. Thus, it becomes possible to directly analyze whether a model has learned the estimates close to the true parameter values, as oppossed to relying on general measures of fit, such as AIC and BIC scores, which is necessarily the case when one works with real data. More importantly, simulated data allows us to compare the true state sequences with the estimated. This can be highly informative as it allows the measurement of accuracy in state classification. Simulation will be carried out under various alterations designed to test models' convergence when some of their key assumptions about the data are (partially) unfulfilled\footnote
+In this section, HMMs are trained based on the estimation procedure described in \cref{section:estimation}. The primary purpose of the section is to compare how well different estimation methods converge toward the true parameter values, when data is simulated from an HMM. The advantage of using simulated data is that it entails us knowing the true parameter values. Thus, it becomes possible to directly analyze whether a model has learned the estimates close to the true parameter values, as opposed to relying on general measures of fit, such as AIC and BIC scores, which is necessarily the case when one works with real data. More importantly, simulated data allows us to compare the true state sequences with the estimated. This can be highly informative as it allows the measurement of accuracy in state classification. Simulation will be carried out under various alterations designed to test models' convergence when some of their key assumptions about the data are (partially) unfulfilled\footnote
 {Such as the maximum likelihood estimator, which assumes conditional normality. Since it has been shown that e.g. conditional students t-distributions are often a better fit (Bulla, 2011) the assumption is in practice often not fulfilled.
 }.
 
@@ -11,13 +11,13 @@ In the following, accuracy of state predictions is defined using recall/sensitiv
 \end{equation}
 where $tp_k$ is the number of true positives and $fn_k$ is the number of false negatives in state $k$. As a result, when a classifier performs equally well on all states, then BAC reduces to regular accuracy, but if a classifier only performs well by always predicting the dominating class then BAC appropriately drops to the reciprocal of the number of states. So, given data with two classes, then if 99\% of data belongs to the positive class and this is correctly detected, but the remaining 1\% belong to the negative and is incorrectly classified, then that classifier obtains a BAC of 0.50, whereas regular accuracy would be 0.99.
 
-An inherent problem with comparing several HMMs is the fact that, given the unsupervised nature of the model, it outputs label-less states (predictions). This is, not only the case in this simulation study where thousands of models will be compared, but also the case when backtesting e.g. an HMM based on rolling windows on financial data. For example, consider training two HMMs by MLE on the same data with hidden states a and b. Then differences among their final parameter values and state sequences are entirely attributable to the initialized parameter values (as explained in \cref{section:estimation}, which are random quantities. If the models are initialized in a way where the first model labels state a as 1 and state b as 2, whereas the second model might have the order reversed, thus making comparisons of the two (perhaps equally good) models difficult. There are several ways to circumvent this issue, such as choosing the labels that maximize the accuracy score, however since this is impossible to do on real data another method is used here. Since a fundamental assumption in this paper is that the primary difference between conditional gaussian states, is the conditional variance, parameters and state labels are sorted according to variance. Another option could have been sorting according their means, however when thinking about a "good" and "bad" state it is certainly a possibility to observe a state with a high mean and high variance, which we would still interpret as the "bad" state, therefore making such sorting a poor choice.
+An inherent problem with comparing several HMMs is the fact that, given the unsupervised nature of the model, it outputs label-less states (predictions). This is, not only the case in this simulation study where thousands of models will be compared, but also the case when backtesting e.g. an HMM based on rolling windows on financial data. For example, consider training two HMMs by MLE on the same data with hidden states a and b. Then differences among their final parameter values and state sequences are entirely attributable to the initialized parameter values (as explained in \cref{section:estimation}, which are random quantities. If the models are initialized in a way where the first model labels state a as 1 and state b as 2, whereas the second model might have the order reversed, thus making comparisons of the two (perhaps equally good) models difficult. There are several ways to circumvent this issue, such as choosing the labels that maximize the accuracy score, however, since this is impossible to do on real data another method is used here. Since a fundamental assumption in this paper is that the primary difference between conditional Gaussian states, is the conditional variance, parameters and state labels are sorted according to variance. Another option could have been sorting according their means, however, when thinking about a "good" and "bad" state it is certainly a possibility to observe a state with a high mean and high variance, which we would still interpret as the "bad" state, therefore making such sorting a poor choice.
 
 The rest of the section is structured as follows: First, the simulation procedure is described. Then we describe how to tune the jump penalty $\lambda$ in the jump model. Once the penalty has been tuned, the models can be trained on simulated data and compared. Initially models are trained on correctly specified conditional distributions, after which we show their performance when conditional distributions are purposely misspecified - a feature that is likely when estimating HMMs on real data.
 
 \subsection{Simulation procedure}
 
-Throughout the section, data is simulated from a 2-state HMM. To make results comparable to those of Nystrup et al. (2020), the same parameters are chosen, thus yielding the gaussian HMM
+Throughout the section, data is simulated from a 2-state HMM. To make results comparable to those of Nystrup et al. (2020), the same parameters are chosen, thus yielding the Gaussian HMM
 \begin{equation*}
     O_t|S_t \sim N(\mu_{st}, \sigma_{st}^2)
 \end{equation*}
@@ -65,26 +65,12 @@ $$
     \end{bmatrix}
 $$
 
-Each series simulated from this model is generated as follows: The first element $s_0$ is drawn from the stationary distribution $\pi$, and each subsequent element is drawn from $q_{t-1}$, i.e. the row of $Q$ corresponding to the last state sojurn. Based on the value of each $s_t$, observations $o_t$ are generated from the conditional distributions. Concretely, let $\Pi$ denote a realization from the stationary distribution $\pi$. Then
-
-\textbf{Need better notation for the realization from the stationary distribution and from a row of the TPM. http://probcomp.csail.mit.edu/blog/programming-and-probability-sampling-from-a-discrete-distribution-over-an-infinite-set/}
-
-\begin{algorithm}[H]
-\KwInput{HMM parameters and sample length H}
- $s_1 = \Pi$ \;
- \For{t=2 to H}{
-  $s_t = \alpha_{t-1, j} $\;
-   $o_t = N^{-1}(U; \mu_{s_t}, \sigma_{s_t})$ 
- }
-\KwOutput{}
-\caption{Sampling from an HMM}
-\label{algo:sample_hmm}
-\end{algorithm}
-
-By repeating this procedure, 1000 different series are simulated with sample lengths $H = 250, 500, 1000, 2000$
+Each series simulated from this model is generated as follows: The first element $s_0$ is drawn from the stationary distribution $\pi$, and each subsequent element is drawn from $q_{t-1}$, i.e. the row of $Q$ corresponding to the last state sojourn. Based on the value of each $s_t$, observations $o_t$ are generated from the conditional distributions. By repeating this procedure, 1000 different series are simulated with sample lengths $H = 250, 500, 1000, 2000$
 
 \subsection{Choosing the jump penalizer}
 \label{subsection: jump_penalizer}
+
+\textbf{This section should be expanded to consider different feature sets in the jump estimator - Feature selection is just as }
 
 Since the MLE model doesn't have any hyperparameters, it can be applied to the simulated data right away. However, that is not the case for the jump model which requires a given value for $\lambda$. As mentioned previously, we are testing the models' ability to correctly identify state sequences, thus we want to maximize BAC with respect to $\lambda$. Since BAC is a random quantity\footnote
 {It is a function of the data and the initial state sequence $s_0$, which in the jump estimator is generated by K-means++. Both quantities are random.
@@ -110,35 +96,52 @@ From \cref{fig:jump_penalties}, the optimal level of $\lambda$ is roughly equiva
 
 \subsection{Simulation study with correctly specified distributions}
 
-\cref{tab:jump_gaussian} summarizes the performance of the MLE and Jump estimator for various sample sizes when compared to the true values. Apart from the HMM parameters, the accuracy in each state as well as BAC is reported. Accuracy for for the true parameters are obtained by running the Viterbi algorithm using an HMM with the true model parameters. This can be seen as the best obtainable performance in state detection and is used to get a sense of where the 'upper bound' on BAC lies when comparing the other models.
-
-\begin{table}[H]
-\centering
-\caption{Estimated model parameters based on 1000 different simulations from conditional gaussian distributions}
-\input{analysis/model_convergence/output_data/simulation_normal}
-\label{tab:jump_gaussian}
-\end{table}
+\cref{tab:jump_gaussian} and \cref{fig:jump_normal} summarizes the performance of the MLE and Jump estimator for various sample sizes when compared to the true values. As mentioned in the previous section, data is generated from a conditional gaussian HMM, which is also the case for the models trained here. Apart from the HMM parameters, the accuracy in each state as well as BAC is reported. Accuracy for for the true parameters are obtained by running the Viterbi algorithm using an HMM with the true model parameters. This can be seen as the best obtainable performance in state detection and is used to get a sense of where the 'upper bound' on BAC lies when comparing the other models.
 
 \begin{figure}[H] 
     \centering
     \includegraphics[width=1\textwidth]{analysis/model_convergence/images/simulation_normal.png}
-    \caption{Hyper-tuning.}
-    %\label{fig:jump_penalties}
+    \caption{Estimates of HMM models' convergence towards true values as a function of simulation length. Results are based on 1000 simulations from conditional gaussian distributions.}
+    \label{fig:jump_normal}
 \end{figure}
 
+It is clear that that both models converge towards the true values when longer simulation lengths are considered. Curiously, the jump estimator is able to detect the low-variance / high-persistence state quite accurately, even at the shortest simulation lengths. Yet, both models performs poorly on the high-variance / low-persistence state for simulation lengths below 1000. This is most likely explained by the fact that, at low simulation lengths the probability of seeing both states are quite low. For a series of 250 observations the probability of only seeing one state is 51\%, at 500 observations it is 30\%, for 1000 observations it is 10\% and at 2000 observations it is 1\%\footnote
+{These probability are calculated using the fact that sojourn times follows a geometric distrubution.
+}. 
+When only one state is observed, it becomes inherently harder for the estimator to detect that only one state is actually present, when it is designed to fit two.
+
+Previous studies such as Zheng et al. (2019), alleviated this problem by excluding those simulations with only one state present, however as noted by Nystrup et al. (2020) this introduces bias in the transition probabilities. The problem with excluding those simulations, is that when training HMMs on real data, then it possible that only one state will be present at times. This is especially true when one is considering a rolling window. In such cases, it is important that the estimator doesn't break down, which for example, is regularized with the jump penalty in the jump estimator. For most parameters, both models converge toward the true parameters around 1000 and 2000 observations, though convergence speed quickly decreases for sequences longer than that.
+
+In conclusion, the different estimators generally converge towards the true parameter values when the simulation length is increased. However, these results are dependent on the assumption that the underlying distribution of data is known, which is generally unrealistic - especially with financial returns. In the following section we show how the estimators perform when they are purposefully estimated on an unknown distribution, which is not a mixture of gaussian distributions.
+
+
+\begin{table}[H]
+\centering
+\caption{Estimates of HMM models' convergence towards true values as a function of simulation length. Results are based on 1000 simulations from conditional gaussian distributions.}
+\input{analysis/model_convergence/output_data/simulation_normal}
+\label{tab:jump_gaussian}
+\end{table}
 
 
 \subsection{Simulation study with misspecified distributions}
 
+In this section, the simulation procedure from before is repeated, except for that fact that observations are sampled from conditional student's t distribution instead of gaussian, though means, variances and transition probabilities remain unchanged. The simulated t-distribution has five degrees of freedom. Student's t distribution generally have fatter tails, and have been shown to better resemble financial returns compared to normal distributions (Cont, 2001). As such, the goal of this section is to create a more realistic simulation experiment, in which models are still specified to be conditional gaussian, even though the simulated data is not. When implementing these types of models in a portfolio, it is important to know how it performs in such an environment. The results in this section will thus provide insights into how well each estimator performs in such a scenario, and where they fail.
+
+\cref{fig:jump_t} shows the mean parameter values as a function of simulation length based on 1000 simulations. Compared to \cref{fig:jump_normal}, the estimators performance has generally worsened. Yet, the jump estimator is generally more robust, especially when analyzing the transition probabilities, in which the jump estimator has close to similar performance as before. As mentioned in \cref{subsection: Jump theory}, a large advantage of the jump model is that, during training it does not assume anything about the distributional properties of the data, therefore making it more robust when the data's distribution is unknown.
+
 \begin{figure}[H] 
     \centering
     \includegraphics[width=1\textwidth]{analysis/model_convergence/images/simulation_t.png}
-    \caption{Estimated mean model parameters based on 1000 different simulations from conditional t-distributions with five degrees of freedom}
-    %\label{fig:jump_penalties}
+    \caption{Estimates of HMM models' convergence towards true values as a function of simulation length. Results are based on 1000 simulations with conditional t distributions with five degrees of freedom.}
+    \label{fig:jump_t}
 \end{figure}
+
+This is in contrast to the MLE model, which assumes a given conditional distribution for each state during training. From \cref{fig:jump_t} it becomes clear that such an assumption has a sizeable error as the model generally doesn't perform well across the parameters. Most conspicuously, the MLE model has basically broken down in terms of the transition probabilities where it is very far from the true estimates. This would result in states with very low persistence and frequent state switching. Though it does seem to be converging slowly toward the true parameter values, it is much less robust than the jump model. However, even if the model did eventually converge, given enough data, the problem is that financial returns are generally shown to have time varying features, (Ryden (1997), Nystrup et al. (2017)). As a result, one should be reluctant to consider estimating models on data that goes back too far, which is why the longest simulation length is 2000 observations.
+
+In conclusion, testing the models' performance on data with misspecified distributions, has allowed us better understand how they might perform on real data, when the true values are unknown. The fact that the jump model was shown to be very robust in terms of transition probabilities, is convincing of its merit on real data. However, as a final remark it should be noted that the results presented in this section is entirely based on data simulated from an HMM, thus with the underlying assumption that financial data to some degree can be explained by such a model. As a result, the next section will consist of an analysis of HMMs ability to reproduce stylized facts. This should provide further insight into their appropriateness as times series models.
 
 \begin{table}[H]
 \centering
-\caption{Estimated mean model parameters based on 1000 different simulations from conditional t-distributions}
+\caption{Estimates of HMM models' convergence towards true values as a function of simulation length. Results are based on 1000 simulations with conditional t distributions with five degrees of freedom.}
 \input{analysis/model_convergence/output_data/simulation_t}
 \end{table}
