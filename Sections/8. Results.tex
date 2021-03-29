@@ -1,0 +1,59 @@
+\section{Results}
+
+\subsection{Data}
+
+Sktiser index data på log scala + evt. tabel over aktivers perfomance over periode - thats it.
+
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{analysis/portfolio_exercise/images/asset_vals.png}
+    \caption{Assets development during the out-of-sample period.}
+    \label{fig:MPC_data}
+\end{figure}
+
+
+\subsection{In-sample training: Tuning hyperparameters}
+
+\begin{itemize}
+    \item Sample period
+    \item method - what do we maximize
+    \item go over each tuning parameter separately.
+\end{itemize}
+
+\textbf{Maximize portfolio Sharpe, excess return and minimize annual turnover over the hyperparameters}
+
+\subsection{Out-of-sample results}
+
+\begin{itemize}
+    \item Plot allocations
+    \item Plot portfolio performance
+    \item Table summarizing KPIs
+\end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{analysis/portfolio_exercise/images/port_weights.png}
+    \caption{Asset weights over time for a long-only portfolio.}
+    \label{fig:MPC_port_weights}
+\end{figure}
+
+\begin{table}[H]
+\small
+\centering
+\caption{Summary of annualized performance for each asset during the out-of-sample period. All measures are in excess of the risk-free rate.}
+\input{analysis/portfolio_exercise/output_data/asset_performance}
+\label{tab:MPC_asset_performance}
+\end{table}
+
+
+\subsubsection{Comparison}
+
+
+
+\subsubsection{Notes to self}
+
+
+\textbf{Consider using rolling estimation of state sequence where only 1 new state is detected each time step(like in BP) - current approach estimates a new state sequence over entire rolling window at each timestep, which might make estimated means and covariances more unstable. Also, do we include rf in theestimates of mu and covariance matrix or how do we handle that asset?}
+
+\textbf{Consider adding estimation section for portfolio allocation as in BP - trained on the same in-sample data as the rest.}

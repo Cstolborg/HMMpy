@@ -22,6 +22,8 @@ while imposing additional constraints related to trading costs, maximum drawdown
 The following sections will introduce the MPC framework, the data used, as well as the obtained results.
 
 \subsection{Model Predictive control}
+\label{Subsection: Model predictive control}
+
 The overarching idea behind the MPC approach is to dynamically optimize the portfolio based on forecasts of
 means and variances of returns at discrete time horizons. By relying on a 2-state Gaussian HMM means that the forecasts are mean-reverting and
 only change when the regime probabilities change (Nystrup, 2017). As such, the forecasted means and variances serve as inputs to the multi-period portfolio optimization problem. Intuitively, this means that every day a decision has to be made whether or not to change the current portfolio allocation, knowing that the decision will be reconsidered the next day with new input. The possible benefits from changing the asset allocation in the portfolio should be traded off against risks and costs. 
@@ -154,13 +156,10 @@ Yet, investors concerned with the risk of the left tail of the distribution, can
 
 \subsubsection{Drawdown control}
 A portfolio manager is often subject and constrained by a maximum drawdown level which means that at each point in time $t$ the portfolio can not drop below a fixed value. Remember that $V_t$ entails the value of the portfolio at time $t$. Furthermore, the maximum value of the portfolio in the past is defined as,
-
 \begin{equation}
     M_t = \max_{\tau \leq t} V_t
 \end{equation}
-
 meaning that the drawdown at time $t$ is defined as 
-
 \begin{equation}
     D_t = 1 - \frac{V_t}{M_t}
 \end{equation}
@@ -168,7 +167,6 @@ meaning that the drawdown at time $t$ is defined as
 Grossman \& Zhou (1993) were the first to research and study the nature of portfolio selection under the constraint that the portfolio value must never drop below a specific percentage of the rolling maximum portfolio value. Particularly, the researchers found that for utility functions, exhibiting constant relative risk aversion, the optimal allocation to risky assets at time $t$ is in proportion to the cushion $D^{max}-D_t$, where $D^{max} \in (0,1)$ is the maximum drawdown that the portfolio manager can withstand. This can be implemented by adjusting the risk-aversion parameter as changes to the cushion occur (Nystrup, 2017).
 
 Defining the risk aversion parameter as $\gamma_0$ when the $D_t = 0$, meaning that $V_t = M_t$. As such, $\gamma_0$ is the initial and minimal risk aversion since $V_0 = M_0$ and the drawdown can never become negative, meaning that $M_t \geq V_t$. Furthermore, it intuitively follows that when $D_t = D^{max}$, the allocation to risky assets should be 0 resulting in an infinite risk aversion evident by equation \ref{eq: MPC risk aversion}.
-
 \begin{equation}
 \gamma_t = \gamma_0 \frac{D^{max}}{D^{max}-D_t}
     \label{eq: MPC risk aversion}
@@ -204,7 +202,6 @@ where $p_1$ and $p_2$ are penalty vectors representing the absolute and squared 
 
 \subsubsection{ Direct portfolio and asset constraints}
 Another mechanism that the portfolio manager can adjust and utilize to improve the out-of-sample performance involves imposing constraints on the portfolio allocation by controlling the weights. As such, the portfolio manager can impose constraints on the weights of the different assets such as minimum and maximum positions for each assets:
-
 \begin{equation}
     -w^{min}\leq w_t\leq w^{max},
 \end{equation}
@@ -216,25 +213,55 @@ Other direct constraint such as portfolio leverage and even asset specific const
 - Object-funcktion + constriant.
 Underafsnit hvor man går mere i dybden med valget og udregningen af nogle dele af objekt-funktionen.}
 
-\subsection{Data}
-
-\textbf{Bliver beskrevet i sit eget kapitel, TBD?}
 
 
-\subsection{In-sample training: Tuning hyperparameters}
+\subsection{Computing portfolio returns}
 
-\textbf{Maximize portfolio Sharpe, excess return and minimize annual turnover over the hyperparameters}
+As mentioned, the parameter inputs comprising expected returns, standard deviations and covariances are estimated empirically on the data. Since the data used have daily frequencies, the estimates are annualized by applying the formulas below for each asset\footnote{252 trading days are assumed, consistent with the literature.}.
+\begin{equation}
+    \mu_{annual} = (1+\mu_{daily})^{1/252}-1
+\end{equation}
+\begin{equation}
+    \sigma_{annual} = \sigma_{daily} * \sqrt{252}
+\end{equation}
+\begin{equation}
+    {\Sigma}_{annual} = {\Sigma}_{daily} * 252
+\end{equation}
 
-\subsection{Out-of-sample results}
+Through the traditional methodology associated with deriving the tangency portfolio, we condition the tangency calculation on each state. Therefore, in the 2-state HMM, two tangency portfolios are calculated, which represent the aggressive and defensive portfolio respectively. As a natural consequence, there are three tangency portfolios in the 3-state HMM. Conditioning on the state, the empirical mean, standard deviation and covariance is estimated from a return time series of $N$ assets. Using the tangency weights, the portfolio returns are calculated each day as the product of all assets' gross return and their respective weights.
 
+\begin{equation}
+    r_{t,portfolio} = \sum_{i=1}^N (\pi_{t,i}*(1+r_{t,i}))  - 1
+\end{equation}
+\\
+Where, $r_{t,portfolio}$ is the portfolio return for day $t$ and $r_{t,i}$ \& $\pi_{t,i}$ denotes the return and weight of asset $i$ at day $t$. The weights are updated accordingly by the end of each day to reflect returns, until they are reset whenever a rebalancing occur. Therefore, within each state sojourn, the weights evolve according to
 
-\subsubsection{Comparison}
+\begin{equation}
+    \boldsymbol\pi_{t+1} = \frac{(\boldsymbol{r_t}+\boldsymbol{1}) \circ \boldsymbol{\pi_t}}
+    {\sum (\boldsymbol{r_t}+\boldsymbol{1}) \circ \boldsymbol{\pi_t}}
+\end{equation}
+\\
+\noindent Where, $\mathbf{r_t}$ denote the vector of daily asset returns, $\boldsymbol{\pi_t}$ is the vector of current portfolio weights and $\circ$ is the hadarmard product, i.e. element-wise product of the vectors. When a state change occur, or a sojourn exceeds one year, the portfolio is rebalanced and the above procedure is repeated. The result is a series of portfolio returns with length equal to the amount of days in the sample. Total return over the period is then the product of all daily portfolio returns over the period
 
+\begin{equation}
+    r_{total} = \prod_{t=1}^T (1+r_{t, portfolio} ) - 1
+    \label{eq:total_ret}
+\end{equation}
 
+The rebalancing costs are set to 0.1\% of the notional portfolio value at each rebalancing, consistent with Nystrup (2014). Returns after rebalancing could be computed by subtracting the costs at every rebalancing, but noting the multiplicative nature of equation \ref{eq:total_ret}, one only need to know the number of rebalancings after which total returns after trading costs can be computed as
 
-\subsubsection{Notes to self}
+\begin{equation}
+    r_{total,TC} = \prod_{t=1}^T (1+r_{t, portfolio}) *
+    (1-0.1\%)^\omega - 1
+    \label{eq:total_ret_tc}
+\end{equation}
+\\
+\noindent Where, TC denotes returns after adjusting for trading costs, and $\omega$ denotes the number of rebalancings. Total return after trading costs are then annualized as 
 
+\begin{equation}
+    r_{annual,TC}=(1+r_{total})^{1/T}-1
+    \label{eq:annual_ret}
+\end{equation}
+\\
+\noindent Note that in equation \ref{eq:total_ret} \& \ref{eq:total_ret_tc}, T denotes the number of days in the sample, whereas in equation \ref{eq:annual_ret} it is the number of years in sample.
 
-\textbf{Consider using rolling estimation of state sequence where only 1 new state is detected each time step(like in BP) - current approach estimates a new state sequence over entire rolling window at each timestep, which might make estimated means and covariances more unstable. Also, do we include rf in theestimates of mu and covariance matrix or how do we handle that asset?}
-
-\textbf{Consider adding estimation section for portfolio allocation as in BP - trained on the same in-sample data as the rest.}
