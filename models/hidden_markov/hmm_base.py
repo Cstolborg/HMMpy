@@ -308,6 +308,9 @@ class BaseHiddenMarkov(BaseEstimator):
         -------
         stationary_dist: ndarray of shape (n_states,)
         """
+        if tpm.ndim < 2:  # In cases where only 1 state is detected
+            return np.array([1., 0.])
+
         # Computes right eigenvectors, thus transposing the TPM is necessary.
         eigvals, eigvecs = np.linalg.eig(tpm.T)
         eigvec = eigvecs[:, np.argmax(eigvals)]  # Get the eigenvector corresponding to largest eigenvalue
