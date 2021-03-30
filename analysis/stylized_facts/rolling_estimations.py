@@ -10,7 +10,7 @@ from models.hidden_markov.hmm_gaussian_em import EMHiddenMarkov
 from models.hidden_markov.hmm_jump import JumpHMM
 
 
-def train_rolling_window(logret, mle, jump, window_lens=[1700]):
+def train_rolling_window(logret, mle, jump, window_lens=[1700], n_lags=100):
     n_obs = len(logret)
     df = pd.DataFrame()  # Create empty df to store data in
 
@@ -18,8 +18,13 @@ def train_rolling_window(logret, mle, jump, window_lens=[1700]):
     cols = {
         '$\mu_1$': [], '$\mu_2$': [],
         '$\sigma_1$': [], '$\sigma_2$': [],
-        '$q_{11}$': [], '$q_{22}$': [], 'timestamp': []
-    }
+        '$q_{11}$': [], '$q_{22}$': [], 'timestamp': [],
+        '$\phi_1$': [], '$\phi_2$':[]}
+
+    cols_1 = {f'lag_{i}': [] for i in range(n_lags)}
+
+    cols.update(cols_1)
+
 
     # Compute models params for each window length
     for window_len in tqdm.tqdm(window_lens):
@@ -43,6 +48,9 @@ def train_rolling_window(logret, mle, jump, window_lens=[1700]):
             data['jump']['$\sigma_1$'].append(jump.std[0])
             data['jump']['$\sigma_2$'].append(jump.std[1])
             data['jump']['$q_{11}$'].append(jump.tpm[0, 0])
+            data['jump']['$\phi_1$'].append(jump.stationary_dist[0])
+            data['jump']['$\phi_2$'].append(jump.stationary_dist[1])
+
 
             # Test if more than 1 state is detected
             if len(jump.tpm) > 1:
@@ -55,6 +63,8 @@ def train_rolling_window(logret, mle, jump, window_lens=[1700]):
             data['mle']['$\sigma_1$'].append(mle.std[0])
             data['mle']['$\sigma_2$'].append(mle.std[1])
             data['mle']['$q_{11}$'].append(mle.tpm[0, 0])
+            data['mle']['$\phi_1$'].append(mle.stationary_dist[0])
+            data['mle']['$\phi_2$'].append(mle.stationary_dist[1])
 
             # Test if more than 1 state is detected
             if len(mle.tpm) > 1:
@@ -65,6 +75,11 @@ def train_rolling_window(logret, mle, jump, window_lens=[1700]):
             # Add timestamps
             data['jump']['timestamp'].append(rolling.index[-1])
             data['mle']['timestamp'].append(rolling.index[-1])
+
+            ## Lav loop til at inkluder lag 1 til 100
+            for lag in range(n_lags):
+                data['mle'][f'lag_{lag}'].append(mle.squared_acf(lag=lag))
+                data['jump'][f'lag_{lag}'].append(jump.squared_acf(lag=lag))
 
         # Add model name and window len to data and output a dataframe
         for model in data.keys():
@@ -77,7 +92,6 @@ def train_rolling_window(logret, mle, jump, window_lens=[1700]):
 
 
 
-
 if __name__ == '__main__':
     # Load SP500 logrets
     logret = load_long_series_logret()
@@ -87,10 +101,9 @@ if __name__ == '__main__':
     jump = JumpHMM(n_states=2, jump_penalty=16, window_len=(6, 14),
                    epochs=2, max_iter=30, random_state=42)
 
+    logret = logret[:1510]  # Reduce sample size to speed up training
 
-    #logret = logret[:1510]  # Reduce sample size to speed up training
-
-    df = train_rolling_window(logret, mle, jump, window_lens=[1700])
+    df = train_rolling_window(logret, mle, jump, window_lens=[1500], n_lags=5)
 
 
     # Group data first by window len and the by each mode. Returns mean value of each remaining parameter
@@ -98,16 +111,8 @@ if __name__ == '__main__':
 
     print(data_table)
 
-
-
-
-
-
-
-
-
     # Save results
-    save = True
+    save = False
     if save == True:
         path = '../../analysis/stylized_facts/output_data/'
         df.to_csv(path + 'rolling_estimations.csv', index=False)

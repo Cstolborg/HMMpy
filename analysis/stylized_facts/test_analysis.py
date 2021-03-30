@@ -22,9 +22,9 @@ if __name__ == '__main__':
     path = '../../analysis/stylized_facts/output_data/'
     df = pd.read_csv(path + 'rolling_estimations.csv')
 
-
+    print(df)
     data_table = df.groupby(['window_len', 'model']).mean().sort_index(ascending=[True, False])
-    print(data_table)
+    #print(data_table)
 
 
     # Do rest of analysis here
