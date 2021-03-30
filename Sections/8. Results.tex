@@ -8,7 +8,7 @@ Sktiser index data på log scala + evt. tabel over aktivers perfomance over peri
 \begin{figure}[H]
     \centering
     \includegraphics[width=1\textwidth]{analysis/portfolio_exercise/images/asset_vals.png}
-    \caption{Assets development during the out-of-sample period.}
+    \caption{Log of historical asset prices during the out-of-sample period.}
     \label{fig:MPC_data}
 \end{figure}
 
@@ -38,10 +38,19 @@ Sktiser index data på log scala + evt. tabel over aktivers perfomance over peri
     \label{fig:MPC_port_weights}
 \end{figure}
 
+In \cref{tab:MPC_asset_performance} we show annualized\footnote
+{Daily returns are analyzed using
+\begin{flalign*}
+    \mu_{annual} &= (1+\mu_{daily})^{1/252}-1 \\
+    \Sigma_{annual} &= {\Sigma}_{daily} * 252
+\end{flalign*}
+}
+asset performance.
+
 \begin{table}[H]
-\small
 \centering
-\caption{Summary of annualized performance for each asset during the out-of-sample period. All measures are in excess of the risk-free rate.}
+\caption{Summary of annualized
+performance for each asset during the out-of-sample period. All measures are in excess of the risk-free rate.}
 \input{analysis/portfolio_exercise/output_data/asset_performance}
 \label{tab:MPC_asset_performance}
 \end{table}
