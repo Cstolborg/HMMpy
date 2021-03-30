@@ -103,7 +103,7 @@ if __name__ == '__main__':
 
     logret = logret[:1510]  # Reduce sample size to speed up training
 
-    df = train_rolling_window(logret, mle, jump, window_lens=[1500], n_lags=5)
+    df = train_rolling_window(logret, mle, jump, window_lens=[500], n_lags=20)
 
 
     # Group data first by window len and the by each mode. Returns mean value of each remaining parameter
@@ -112,7 +112,7 @@ if __name__ == '__main__':
     print(data_table)
 
     # Save results
-    save = False
+    save = True
     if save == True:
         path = '../../analysis/stylized_facts/output_data/'
         df.to_csv(path + 'rolling_estimations.csv', index=False)

@@ -376,10 +376,10 @@ class BaseHiddenMarkov(BaseEstimator):
 
     def squared_acf(self, lag):
         # Kurtosis
-        kurtosis = 2
+        kurtosis = 2  ## Update derive from fitted model.
 
         # Unconditional squared variance
-        squared_variance = 3
+        squared_variance = 3 #Update - derive from fitted model
 
         # Lambda
         tpm_trace = np.trace(self.tpm)-1
