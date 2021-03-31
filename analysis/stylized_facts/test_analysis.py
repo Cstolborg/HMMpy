@@ -13,6 +13,9 @@ from models.hidden_markov.hmm_jump import JumpHMM
 path = '../../analysis/stylized_facts/output_data/'
 df = pd.read_csv(path + 'rolling_estimations.csv')
 
+path_1 = '../../data/'
+df_returns = pd.read_csv(path_1 + 'price_series.csv')
+
 data_table = df.groupby(['window_len', 'model']).mean().sort_index(ascending=[True, False])
 
 df_mle = df[df['model'] != 'jump']
@@ -119,10 +122,15 @@ def jump_plot(mu_1 = df_jump['$\mu_1$'], mu_2 = df_jump['$\mu_2$'],
     plt.show()
     pass
 
+### Find kode fra data-filen og plot ACF^2 for returns på SP500 og plot derefter genereret ACF2 fra som linje.
+
+
 if __name__ == '__main__':
     print(df)
     mle_plot()
     jump_plot()
+    print(df_returns)
+
 
 
 

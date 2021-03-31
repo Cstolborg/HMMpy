@@ -375,11 +375,18 @@ class BaseHiddenMarkov(BaseEstimator):
         return state_sequence.astype(np.int32)
 
     def squared_acf(self, lag):
-        # Kurtosis
-        kurtosis = 2  ## Update derive from fitted model.
 
         # Unconditional squared variance
-        squared_variance = 3 #Update - derive from fitted model
+        unconditional_variance = self.stationary_dist[0]*self.std[0]**2 + (1-self.stationary_dist[0])*self.std[1]**2 \
+        + self.stationary_dist[0]  * (1-self.stationary_dist[0])*(self.mu[0]-self.mu[1])**2
+
+        # Unconditional variance 4th power
+        unconditional_variance_4p = unconditional_variance**4
+
+        # Kurtosis
+        kurtosis = (self.stationary_dist[0] * (1-self.stationary_dist[0])) / unconditional_variance_4p \
+        * (3*(self.std[0]**2 - self.std[1]**2)**2 + (self.mu[0]-self.mu[1])**4 * (1-6*self.stationary_dist[0]*(1-self.stationary_dist[0]))\
+           +6*(2*self.stationary_dist[0]-1)*(self.std[1]**2-self.std[0]**2)*(self.mu[0]-self.mu[1])**2)+3
 
         # Lambda
         tpm_trace = np.trace(self.tpm)-1
@@ -387,7 +394,7 @@ class BaseHiddenMarkov(BaseEstimator):
         # Squared ACF
         acf_1 = self.stationary_dist[0] * (1-self.stationary_dist[0]) * \
                 np.square(self.mu[0]**2-self.mu[1]**2+self.std[0]**2-self.std[1]**2)
-        acf_2 = kurtosis - squared_variance
+        acf_2 = kurtosis - unconditional_variance**2
 
         squared_acf = acf_1 / acf_2 * tpm_trace**lag
 
@@ -404,8 +411,10 @@ class BaseHiddenMarkov(BaseEstimator):
 if __name__ == '__main__':
     X = np.arange(1,1000)
 
-    #model = BaseHiddenMarkov(n_states=2)
+    model = BaseHiddenMarkov(n_states=2)
     #returns, true_regimes = simulate_2state_gaussian(plotting=False)  # Simulate some data from two normal distributions
     #model._init_params(returns)
     #probs, logprobs = model.emission_probs(returns)
     #print(probs)
+
+    model.fit(X)

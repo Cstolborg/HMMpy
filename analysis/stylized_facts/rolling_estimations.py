@@ -42,6 +42,13 @@ def train_rolling_window(logret, mle, jump, window_lens=[1700], n_lags=100):
             mle.fit(rolling, sort_state_seq=True, verbose=True)
             jump.fit(rolling, get_hmm_params=True, sort_state_seq=True, verbose=True)
 
+            ## Lav simulering her
+
+            simulation = mle.sample(n_samples=2000)[0]  #>1000  ##Generates 2000 returns to step 1
+            simulation_squared = simulation**2 # Squaring return
+            ### regn acf på simualtion squared (brug pakke stats.models eller lign)
+
+            simulation_jump = jump.sample()
             # Save data
             data['jump']['$\mu_1$'].append(jump.mu[0])
             data['jump']['$\mu_2$'].append(jump.mu[1])
@@ -80,6 +87,8 @@ def train_rolling_window(logret, mle, jump, window_lens=[1700], n_lags=100):
             for lag in range(n_lags):
                 data['mle'][f'lag_{lag}'].append(mle.squared_acf(lag=lag))
                 data['jump'][f'lag_{lag}'].append(jump.squared_acf(lag=lag))
+
+                # Lav kode der assigner ACF for hver lag der er simuleret foroven.
 
         # Add model name and window len to data and output a dataframe
         for model in data.keys():
