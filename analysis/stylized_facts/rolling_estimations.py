@@ -44,8 +44,8 @@ def train_rolling_window(logret, mle, jump, window_lens=[1700], n_lags=100):
 
             ## Lav simulering her
 
-            simulation = mle.sample(n_samples=2000)[0]  #>1000  ##Generates 2000 returns to step 1
-            simulation_squared = simulation**2 # Squaring return
+            #simulation = mle.sample(n_samples=2000)[0]  #>1000  ##Generates 2000 returns to step 1
+            #simulation_squared = simulation**2 # Squaring return
             ### regn acf på simualtion squared (brug pakke stats.models eller lign)
 
             simulation_jump = jump.sample()
@@ -89,7 +89,7 @@ def train_rolling_window(logret, mle, jump, window_lens=[1700], n_lags=100):
                 data['jump'][f'lag_{lag}'].append(jump.squared_acf(lag=lag))
 
                 # Lav kode der assigner ACF for hver lag der er simuleret foroven.
-
+                ## Bare skriv navnet på ACF variablen fra simuleret også [i] eksempelvis acf[i]
         # Add model name and window len to data and output a dataframe
         for model in data.keys():
             df_temp = pd.DataFrame(data[model])

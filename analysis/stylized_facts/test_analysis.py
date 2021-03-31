@@ -3,23 +3,81 @@ import copy
 import pandas as pd; pd.set_option('display.max_columns', 10); pd.set_option('display.width', 320)
 import numpy as np
 import matplotlib.pyplot as plt
+import statsmodels.api as sm
+from statsmodels.graphics.tsaplots import plot_acf, plot_pacf, acf, pacf
 import tqdm
+
+import warnings
+warnings.filterwarnings("ignore")
 
 from utils.data_prep import load_long_series_logret
 from models.hidden_markov.hmm_gaussian_em import EMHiddenMarkov
 from models.hidden_markov.hmm_jump import JumpHMM
 
-# Loading data and splitting dataframe
+# Loading data for fitted models
 path = '../../analysis/stylized_facts/output_data/'
 df = pd.read_csv(path + 'rolling_estimations.csv')
 
+# Loading returns data
 path_1 = '../../data/'
-df_returns = pd.read_csv(path_1 + 'price_series.csv')
-
+df_returns = pd.read_csv(path_1 + 'price_series.csv', index_col = 'Time')
+df_returns.index = pd.to_datetime(df_returns.index)
 data_table = df.groupby(['window_len', 'model']).mean().sort_index(ascending=[True, False])
 
+# Splitting the data from df into jump and MLE
 df_mle = df[df['model'] != 'jump']
 df_jump = df[df['model'] != 'mle']
+
+# Function to compute returns from the data of the S&P 500
+df_SP500 = df_returns[['S&P 500 ']]
+df_SP500['S&P 500 Index'] = df_SP500['S&P 500 '] / df_SP500['S&P 500 '][0] * 100
+df_SP500['Returns'] = df_SP500['S&P 500 Index'].pct_change()
+df_SP500['Log returns'] = np.log(df_SP500['S&P 500 Index']) - np.log(df_SP500['S&P 500 Index'].shift(1))
+print(df_SP500)
+pass
+
+# Function to compute and plot acf and squared acf of the S&P 500 log returns
+def acf_SP500():
+    # Derive ACF and Squared ACF
+    n_lags = 100
+    lags = [i for i in range(n_lags)]
+    acf = sm.tsa.acf(df_SP500['Log returns'].dropna(), nlags = n_lags)[1:]  #The 1 excludes the first observation
+    acf_squared = sm.tsa.acf(np.square(df_SP500['Log returns'].dropna()),nlags = n_lags)[1:]
+
+    # Confidence interval for ACF
+    acf_conf = [1.96 / np.sqrt(len(df_SP500)), -1.96 / np.sqrt(len(df_SP500))]
+
+    # Confidence interval for ACF^2
+    acf_square_conf = [1.96 / np.sqrt(len(np.square(df_SP500['Log returns']))),
+                    - 1.96 / np.sqrt(len(np.square(df_SP500['Log returns'])))]
+
+    # PLot ACF
+    fig, ax1 = plt.subplots(figsize=(15, 7))
+    plt.subplots_adjust(wspace=0.2, hspace=0.5)
+
+    ax1.bar(lags, acf, color="black", alpha=0.4)
+    ax1.axhline(acf_conf[0], linestyle='dashed', color='black')
+    ax1.axhline(acf_conf[1], linestyle='dashed', color='black')
+    ax1.set_ylabel("ACF(log $r_t)$")
+    ax1.set_xlabel("Lag")
+    ax1.set_xlim(left=-0.5, right=max(lags) + 1)
+    plt.tight_layout()
+    plt.show()
+    #plt.savefig(save_results_to + 'yield_ACF.png', dpi=300)
+
+    # Plot squared ACF
+    fig, ax2 = plt.subplots(figsize=(15,7))
+    plt.subplots_adjust(wspace=0.2, hspace=0.5)
+
+    ax2.bar(lags, acf_squared, color='black', alpha=0.4)
+    ax2.axhline(acf_square_conf[0], linestyle='dashed', color='black')
+    ax2.axhline(acf_square_conf[1], linestyle='dashed', color='black')
+    ax2.set_ylabel("ACF squared(log $r_t)$")
+    ax2.set_xlabel('Lag')
+    ax2.set_xlim(left=0.5, right=max(lags)+1)
+    plt.tight_layout()
+    plt.show()
+
 
 # Function for plot MLE estimation
 def mle_plot(mu_1 = df_mle['$\mu_1$'], mu_2 = df_mle['$\mu_2$'],
@@ -126,10 +184,8 @@ def jump_plot(mu_1 = df_jump['$\mu_1$'], mu_2 = df_jump['$\mu_2$'],
 
 
 if __name__ == '__main__':
-    print(df)
-    mle_plot()
-    jump_plot()
-    print(df_returns)
+    print(data_table)
+    acf_SP500()
 
 
 
