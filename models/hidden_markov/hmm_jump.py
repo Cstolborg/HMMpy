@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import pyximport;
+import tqdm
 from numpy import ndarray
 from sklearn.cluster._kmeans import kmeans_plusplus
 from sklearn.metrics import confusion_matrix
@@ -360,7 +361,7 @@ class JumpHMM(BaseHiddenMarkov):
 
     def bac_score_nd(self, X, y_true, jump_penalty, window_len=(6, 14)):
         bac = []
-        for seq in range(X.shape[1]):
+        for seq in tqdm.tqdm(range(X.shape[1])):
             bac_temp = self.bac_score_1d(X[:, seq], y_true[:, seq], jump_penalty, window_len=self.window_len)
             bac.append(bac_temp)
 
