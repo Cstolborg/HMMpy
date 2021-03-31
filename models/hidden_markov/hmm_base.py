@@ -374,6 +374,26 @@ class BaseHiddenMarkov(BaseEstimator):
                                             self.log_emission_probs_)
         return state_sequence.astype(np.int32)
 
+    def squared_acf(self, lag):
+        # Kurtosis
+        kurtosis = 2  ## Update derive from fitted model.
+
+        # Unconditional squared variance
+        squared_variance = 3 #Update - derive from fitted model
+
+        # Lambda
+        tpm_trace = np.trace(self.tpm)-1
+
+        # Squared ACF
+        acf_1 = self.stationary_dist[0] * (1-self.stationary_dist[0]) * \
+                np.square(self.mu[0]**2-self.mu[1]**2+self.std[0]**2-self.std[1]**2)
+        acf_2 = kurtosis - squared_variance
+
+        squared_acf = acf_1 / acf_2 * tpm_trace**lag
+
+        return squared_acf
+
+
     def fit(self, X):
         """
         fit model to data. Defined in respective child classes
