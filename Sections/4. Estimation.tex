@@ -1,5 +1,5 @@
 \section{Estimation}
-\label{section:estimation}
+\label{section: estimation}
 
 \subsection{Maximum likelihood estimation}
 The traditional way of estimating the parameters making up the HMM is through the Maximum Likelihood
@@ -242,6 +242,9 @@ Comparing equation \ref{eq: inductive viterbi} with equation \ref{eq: inductive 
 algorithm. The only difference is the substitution of the sum with a maximization. From a computational efficiency perspective the Viterbi algorithm remains at $O(m^2T)$, thereby making it feasible for full-scale production applications (Dittmer 2008).
 
 \subsection{Logarithmic scaling to handle numerical underflow}
+
+\textbf{Add pseudo-code for forward, backward, gamma and xi probabilities. Perhaps also for the final computation of tpm etc. Must follow code from github closely - but not be pyython obviously.}
+
 The theory above have outlined the mathematics comprising HMMs, however, a crucial aspect regarding their implementation is dealing with the underflow and/or overflow produced by the algorithms. The issues regarding underflow arises when $T$ gets large since the algorithms will begin multiplying together smaller and smaller numbers when for instance deriving the forward and backward probabilities. Overflow is the inverse to underflow and it occurs when continuously larger numbers are multiplied together. As such, underflow and overflow proposes a challenge to the implementation of the HMMs as Python or other libaries will generate an error or simply interrupt the execution of the code. The challenges associated with underflow and overflow is an area that is widely overlooked in the literature, despite the fact it is of crucial importance in terms of utilizing HMMs on a full-scale operational level. This section aims at proposing a solution towards the challenges associated with underflow and overflow.
 
 \subsubsection{Scaling the likelihood computation}
