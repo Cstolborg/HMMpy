@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 from scipy import stats
 from scipy.special import logsumexp
 from sklearn.base import BaseEstimator
@@ -377,16 +378,16 @@ class BaseHiddenMarkov(BaseEstimator):
     def squared_acf(self, lag):
 
         # Unconditional squared variance
-        unconditional_variance = self.stationary_dist[0]*self.std[0]**2 + (1-self.stationary_dist[0])*self.std[1]**2 \
-        + self.stationary_dist[0]  * (1-self.stationary_dist[0])*(self.mu[0]-self.mu[1])**2
+        unconditional_variance = self.stationary_dist[0]*self.std[0]**2+(1-self.stationary_dist[0])*self.std[1]**2 \
+        +self.stationary_dist[0]*(1-self.stationary_dist[0])*np.square(self.mu[0]-self.mu[1])**2
 
         # Unconditional variance 4th power
-        unconditional_variance_4p = unconditional_variance**4
+        unconditional_variance_4p = np.power(unconditional_variance,4)
 
         # Kurtosis
-        kurtosis = (self.stationary_dist[0] * (1-self.stationary_dist[0])) / unconditional_variance_4p \
-        * (3*(self.std[0]**2 - self.std[1]**2)**2 + (self.mu[0]-self.mu[1])**4 * (1-6*self.stationary_dist[0]*(1-self.stationary_dist[0]))\
-           +6*(2*self.stationary_dist[0]-1)*(self.std[1]**2-self.std[0]**2)*(self.mu[0]-self.mu[1])**2)+3
+        kurtosis = (self.stationary_dist[0]*(1-self.stationary_dist[0])) / unconditional_variance_4p \
+        *(3*np.square(self.std[0]**2 - self.std[1]**2)+np.power((self.mu[0]-self.mu[1]),4) * (1-6*self.stationary_dist[0]*(1-self.stationary_dist[0]))\
+        +6*(2*self.stationary_dist[0]-1)*(self.std[1]**2-self.std[0]**2)*np.square(self.mu[0]-self.mu[1]))+3
 
         # Lambda
         tpm_trace = np.trace(self.tpm)-1
@@ -394,7 +395,7 @@ class BaseHiddenMarkov(BaseEstimator):
         # Squared ACF
         acf_1 = self.stationary_dist[0] * (1-self.stationary_dist[0]) * \
                 np.square(self.mu[0]**2-self.mu[1]**2+self.std[0]**2-self.std[1]**2)
-        acf_2 = kurtosis - unconditional_variance**2
+        acf_2 = kurtosis - np.square(unconditional_variance)
 
         squared_acf = acf_1 / acf_2 * tpm_trace**lag
 
@@ -409,12 +410,24 @@ class BaseHiddenMarkov(BaseEstimator):
 
 
 if __name__ == '__main__':
-    X = np.arange(1,1000)
+    # Including data to train on S&P 500
+    path_1 = '../../data/'
+    df_returns = pd.read_csv(path_1 + 'price_series.csv', index_col='Time')
+    df_returns.index = pd.to_datetime(df_returns.index)
+    df_SP500 = df_returns[['S&P 500 ']]
+    df_SP500['S&P 500 Index'] = df_SP500['S&P 500 '] / df_SP500['S&P 500 '][0] * 100
+    df_SP500['Returns'] = df_SP500['S&P 500 Index'].pct_change()
+    df_SP500['Log returns'] = np.log(df_SP500['S&P 500 Index']) - np.log(df_SP500['S&P 500 Index'].shift(1))
+    df_SP500.dropna(inplace = True)
+    print(df_SP500)
 
+    #X = np.arange(1,1000)
+
+    X = df_SP500['S&P 500 ']
     model = BaseHiddenMarkov(n_states=2)
     #returns, true_regimes = simulate_2state_gaussian(plotting=False)  # Simulate some data from two normal distributions
-    #model._init_params(returns)
-    #probs, logprobs = model.emission_probs(returns)
-    #print(probs)
+    model._init_params(df_SP500['Log returns'])
+    probs, logprobs = model.emission_probs(df_SP500['Log returns'])
+    print(probs)
 
     model.fit(X)

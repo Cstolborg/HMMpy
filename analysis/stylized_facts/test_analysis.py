@@ -34,38 +34,23 @@ df_SP500['S&P 500 Index'] = df_SP500['S&P 500 '] / df_SP500['S&P 500 '][0] * 100
 df_SP500['Returns'] = df_SP500['S&P 500 Index'].pct_change()
 df_SP500['Log returns'] = np.log(df_SP500['S&P 500 Index']) - np.log(df_SP500['S&P 500 Index'].shift(1))
 print(df_SP500)
-pass
+
+# Get squared ACF from data_table
+n_lags = 19
+squared_acf_SP500_mle = data_table.iloc[0,8:27]  #Set manually.
+squared_acf_SP500_jump = data_table.iloc[1:8:27] #Set manually.
 
 # Function to compute and plot acf and squared acf of the S&P 500 log returns
-def acf_SP500():
-    # Derive ACF and Squared ACF
-    n_lags = 100
+def acfsquared_SP500_mle():
+    # Derive  Squared ACF
     lags = [i for i in range(n_lags)]
-    acf = sm.tsa.acf(df_SP500['Log returns'].dropna(), nlags = n_lags)[1:]  #The 1 excludes the first observation
     acf_squared = sm.tsa.acf(np.square(df_SP500['Log returns'].dropna()),nlags = n_lags)[1:]
-
-    # Confidence interval for ACF
-    acf_conf = [1.96 / np.sqrt(len(df_SP500)), -1.96 / np.sqrt(len(df_SP500))]
 
     # Confidence interval for ACF^2
     acf_square_conf = [1.96 / np.sqrt(len(np.square(df_SP500['Log returns']))),
                     - 1.96 / np.sqrt(len(np.square(df_SP500['Log returns'])))]
 
-    # PLot ACF
-    fig, ax1 = plt.subplots(figsize=(15, 7))
-    plt.subplots_adjust(wspace=0.2, hspace=0.5)
-
-    ax1.bar(lags, acf, color="black", alpha=0.4)
-    ax1.axhline(acf_conf[0], linestyle='dashed', color='black')
-    ax1.axhline(acf_conf[1], linestyle='dashed', color='black')
-    ax1.set_ylabel("ACF(log $r_t)$")
-    ax1.set_xlabel("Lag")
-    ax1.set_xlim(left=-0.5, right=max(lags) + 1)
-    plt.tight_layout()
-    plt.show()
-    #plt.savefig(save_results_to + 'yield_ACF.png', dpi=300)
-
-    # Plot squared ACF
+    # Plot squared ACF with generated squared
     fig, ax2 = plt.subplots(figsize=(15,7))
     plt.subplots_adjust(wspace=0.2, hspace=0.5)
 
@@ -77,6 +62,28 @@ def acf_SP500():
     ax2.set_xlim(left=0.5, right=max(lags)+1)
     plt.tight_layout()
     plt.show()
+
+# Function to plot the empirical ACF squared and the analytical solution.
+def acfsquared_SP500_mle_combined_plot():
+    fig, ax2 = plt.subplots(figsize=(15, 7))
+    plt.subplots_adjust(wspace=0.2, hspace=0.5)
+    lags = [i for i in range(n_lags)]
+    acf_squared = sm.tsa.acf(np.square(df_SP500['Log returns'].dropna()), nlags=n_lags)[1:]
+
+    acf_square_conf = [1.96 / np.sqrt(len(np.square(df_SP500['Log returns']))),
+                       - 1.96 / np.sqrt(len(np.square(df_SP500['Log returns'])))]
+
+    ax2.bar(lags, acf_squared, color='black', alpha=0.4)
+    ax2.plot(lags, squared_acf_SP500_mle, label="HMM 2-state")
+    ax2.axhline(acf_square_conf[0], linestyle='dashed', color='black')
+    ax2.axhline(acf_square_conf[1], linestyle='dashed', color='black')
+    ax2.set_ylabel("ACF squared(log $r_t)$")
+    ax2.set_xlabel('Lag')
+    ax2.set_xlim(left=0.5, right=max(lags) + 1)
+    plt.tight_layout()
+    plt.show()
+
+# Function to plot the empirical ACF squared and the simulated solution.
 
 
 # Function for plot MLE estimation
@@ -180,12 +187,16 @@ def jump_plot(mu_1 = df_jump['$\mu_1$'], mu_2 = df_jump['$\mu_2$'],
     plt.show()
     pass
 
-### Find kode fra data-filen og plot ACF^2 for returns på SP500 og plot derefter genereret ACF2 fra som linje.
-
-
 if __name__ == '__main__':
-    print(data_table)
-    acf_SP500()
+    #print(data_table)
+    #print(data_table.columns.values)
+
+
+
+
+
+
+
 
 
 

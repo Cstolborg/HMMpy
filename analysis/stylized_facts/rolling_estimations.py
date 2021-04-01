@@ -48,7 +48,7 @@ def train_rolling_window(logret, mle, jump, window_lens=[1700], n_lags=100):
             #simulation_squared = simulation**2 # Squaring return
             ### regn acf på simualtion squared (brug pakke stats.models eller lign)
 
-            simulation_jump = jump.sample()
+            #simulation_jump = jump.sample()
             # Save data
             data['jump']['$\mu_1$'].append(jump.mu[0])
             data['jump']['$\mu_2$'].append(jump.mu[1])
@@ -106,13 +106,13 @@ if __name__ == '__main__':
     logret = load_long_series_logret()
 
     # Instantiate HMM models
-    mle = EMHiddenMarkov(n_states=2, epochs=2, max_iter=100, random_state=42)
+    mle = EMHiddenMarkov(n_states=2, epochs=10, max_iter=100, random_state=42)
     jump = JumpHMM(n_states=2, jump_penalty=16, window_len=(6, 14),
                    epochs=2, max_iter=30, random_state=42)
 
-    logret = logret[:1510]  # Reduce sample size to speed up training
+    logret = logret[10000:15000]  # Reduce sample size to speed up training
 
-    df = train_rolling_window(logret, mle, jump, window_lens=[500], n_lags=20)
+    df = train_rolling_window(logret, mle, jump, window_lens=[1000], n_lags=20)
 
 
     # Group data first by window len and the by each mode. Returns mean value of each remaining parameter
