@@ -14,6 +14,7 @@ from utils.data_prep import load_long_series_logret
 from models.hidden_markov.hmm_gaussian_em import EMHiddenMarkov
 from models.hidden_markov.hmm_jump import JumpHMM
 
+
 # Loading data for fitted models
 path = '../../analysis/stylized_facts/output_data/'
 df = pd.read_csv(path + 'rolling_estimations.csv')
@@ -186,6 +187,7 @@ def jump_plot(mu_1 = df_jump['$\mu_1$'], mu_2 = df_jump['$\mu_2$'],
 
     plt.show()
     pass
+
 
 if __name__ == '__main__':
     #print(data_table)

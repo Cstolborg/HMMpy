@@ -4,10 +4,12 @@ import pandas as pd; pd.set_option('display.max_columns', 10); pd.set_option('di
 import numpy as np
 import matplotlib.pyplot as plt
 import tqdm
-
+import statsmodels.api as sm
 from utils.data_prep import load_long_series_logret
 from models.hidden_markov.hmm_gaussian_em import EMHiddenMarkov
 from models.hidden_markov.hmm_jump import JumpHMM
+import warnings
+warnings.filterwarnings("ignore")
 
 
 def train_rolling_window(logret, mle, jump, window_lens=[1700], n_lags=100):
@@ -43,10 +45,11 @@ def train_rolling_window(logret, mle, jump, window_lens=[1700], n_lags=100):
             jump.fit(rolling, get_hmm_params=True, sort_state_seq=True, verbose=True)
 
             ## Lav simulering her
+            simulation = mle.sample(n_samples=5000)[0]  #>1000  ##Generates 2000 returns to step 1
+            simulation_squared = np.square(simulation) # Squaring return
+            acf_square_simulated = sm.tsa.acf(simulation_squared, nlags=n_lags)[1:]
 
-            #simulation = mle.sample(n_samples=2000)[0]  #>1000  ##Generates 2000 returns to step 1
-            #simulation_squared = simulation**2 # Squaring return
-            ### regn acf på simualtion squared (brug pakke stats.models eller lign)
+            #simulation_jump = jump.sample()
 
             #simulation_jump = jump.sample()
             # Save data
@@ -87,9 +90,8 @@ def train_rolling_window(logret, mle, jump, window_lens=[1700], n_lags=100):
             for lag in range(n_lags):
                 data['mle'][f'lag_{lag}'].append(mle.squared_acf(lag=lag))
                 data['jump'][f'lag_{lag}'].append(jump.squared_acf(lag=lag))
+                acf_square_simulated[lag] #append acf simulated
 
-                # Lav kode der assigner ACF for hver lag der er simuleret foroven.
-                ## Bare skriv navnet på ACF variablen fra simuleret også [i] eksempelvis acf[i]
         # Add model name and window len to data and output a dataframe
         for model in data.keys():
             df_temp = pd.DataFrame(data[model])
@@ -106,7 +108,7 @@ if __name__ == '__main__':
     logret = load_long_series_logret()
 
     # Instantiate HMM models
-    mle = EMHiddenMarkov(n_states=2, epochs=10, max_iter=100, random_state=42)
+    mle = EMHiddenMarkov(n_states=2, epochs=2, max_iter=100, random_state=42)
     jump = JumpHMM(n_states=2, jump_penalty=16, window_len=(6, 14),
                    epochs=2, max_iter=30, random_state=42)
 
@@ -121,7 +123,7 @@ if __name__ == '__main__':
     print(data_table)
 
     # Save results
-    save = True
+    save = False
     if save == True:
         path = '../../analysis/stylized_facts/output_data/'
         df.to_csv(path + 'rolling_estimations.csv', index=False)
