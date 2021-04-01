@@ -92,7 +92,7 @@ In the next sections, we first explain the use of HMM models in the forecasting 
 \subsection{Forecasting with HMMs}
 \label{section: forecasting MPC HMM}
 
-\textbf{Consider using rolling estimation of state sequence where only 1 new state is detected each time step (like in BP) - current approach estimates a new state sequence over entire rolling window at each time step, which might make estimated means and covariances more unstable. Also, do we include rf in the estimates of mu and covariance matrix or how do we handle that asset?}
+\textbf{Consider using rolling estimation of state sequence where only 1 new state is detected each time step (like in BP) - current approach estimates a new state sequence over entire rolling window at each time step, which might make estimated means and covariances more unstable?}
 
 Forecasting will be performed using the HMM estimators described throughout previous chapters. We consider rolling windows of same length as described previously, i.e. 2000 observations. In a Markowitz portfolio optimization, we rely on expected quantities of assets' expected returns, variance their covariance. Thus, the procedure described here is structured as follows; First an HMM is estimated at time step t. Then, using the Viterbi algorithm, the state sequence over the rolling window is decoded. This allows one to estimate each asset's sample mean return, standard deviation and covariance in each state. Based on those estimates, and by assuming returns follow a multivariate log-normal distribution, parameters are transformed into normally distributed variables. Having computed conditional estimates of asset returns as a multivariate normal distribution, the unconditional distribution is found, for each time t and each time $t+H$, by weighting the conditional distribution by the state probabilities $P(s_{T+H}=i | O)$ for all $i\in\K$. We proceed by describing this procedure in greater detail in the next paragraphs.
 
@@ -125,7 +125,7 @@ Thus, once the model parameters are estimated at time t, the forecast distributi
 where $\mu_{T+H}$ and $\Sigma_{T+H}$ is the forecasted unconditional mean and covariance at time step $T+H$. Further, $\hat\gamma_s(T+H)$ denote the forecasted probability of being in state s and $mu_s$ and $\Sigma_s$ refer to the estimated conditional distribution in state s (which is not time-varying with the forecast). We note here, that since the conditional distributions are distinct gaussian distributions, then the resulting unconditional distribution described in \cref{eq:MPC_mean_uncond} and \cref{eq:MPC_var_uncond} is a mixture with non-gaussian distribution (Frühwirth-Schnatter, 2006).
 
 
-\textbf{Insert comments on where the forecast distribution goes to (stationary distribution) and other considerations. Paper G is a good source for this.}
+\textbf{Insert comments on where the forecast distribution goes to (stationary distribution) and other considerations.}
 
 \subsubsection{Shrinkage of variance-covariance matrix}
 
