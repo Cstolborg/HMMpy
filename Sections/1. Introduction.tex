@@ -1,4 +1,5 @@
 \section{Introduction}
+\label{section: introduction}
 The behavior of financial markets have been, and continue to be, subject to abrupt changes. Even though some behavioural changes are transitory, their impact often persists for several periods. As such, the global financial crisis (GFC) of 2007-2008 showed that means, volatility and correlation patterns in stock returns as well as investors' risk appetite changed significantly and continued to shift dramatically across the financial markets for the years to follow. Furthermore, the GFC demonstrated that diversification is insufficient to mitigate large drawdowns in periods where it is needed the most since the correlation between risky assets tend to strengthen during periods with high uncertainty (Pedersen 2009). 
 
 Despite this, asset allocation, defined as the choice between major asset classes, has proven to be the most important determinant regarding portfolio performance (Brinson et al. 1986, Ibbotson \& Kappland 2000). As such, time-varying investment opportunities suggest that the weights underlying the portfolio allocation should be adjusted as new information arises (Bansal et. 2004). However, even though the performance of different asset classes is strongly correlated to general economic conditions, investors utilizing strategic asset allocation (SAA), rely on optimization across a range of economic regimes in which the portfolios are re-calibrated and re-balanced at a specified time-scale, e.g. annually (Sheikh \& Sun, 2012).
@@ -53,6 +54,8 @@ control actions are reconsidered on a daily basis anyway (Nystrup, 2017). Furthe
 2. Data quality
 3. 
 
+\textbf{The introduction is omitted from this version. Instead I have briefly given an overview of the sections in the following bullet points.}
+
 \subsection{Thesis statement}
 The purpose of this thesis is to compare the performance of a regime-based asset allocation strategy under realistic assumptions to equally-weighted as well as static all weather portfolios. Since asset allocation has been shown to be the most important determinant of portfolio performance, it is clearly relevant whether a dynamic strategy can outperform a static strategy. The relevance is supported by the large amount of articles written on the subject in which particularly pensions funds and large institutional investors are looking to increasingly incorporate dynamic decision-making in terms of their portfolios, both related to return enhancement but also for risk management.
 
@@ -60,19 +63,19 @@ The asset classes considered in the analysis comprise a variety of financial ass
 
 The analysis will include the following steps:
 
-1. Analysis of temporal and distributional properties of index data
+1. Review of stylized facts, accompanied by an analysis of temporal and distributional properties of S\&P500.
 
-2. Estimation and selection of an appropriate hidden Markov model
+2. Introduction to data model - Hidden Markov Models (HMM).
 
-3. Estimation and selection of an appropriate jump-model
+3. Description of estimation methods used to train HMMs. We generally train the models using either maximum likelihood estimators or jump estimators.
 
-4. Analysis of how ell
+4. Simulation study on model convergence. The purpose of this section is analyze the convergence of the various estimators used.
 
-4. Evaluation of traditional SAA strategies
+5. Reproducing stylized facts. In this section we train the estimators on real data to analyze how well they can reproduce stylized facts.
 
-5. Evaluation of the performance of an optimized DAA portfolio, based on MPC, for different levels of risk aversion
+6. Dynamic portfolio optimization using model predictive control (MPC). In this section we explain the method behind our proposed dynamic asset allocation strategy.
 
-6. Comparison and conclusion
+7. Results.
 
 
-Python is used with regards to modeling and forecasting. The setup of the code and the associated file-management is controlled through an online Github and the PyCharm project-management software. For optimization, Python and the library CVXPY (Diamond and Boyd 2016) is used.
+%Python is used with regards to modeling and forecasting. The setup of the code and the associated file-management is controlled through an online Github and the PyCharm project-management software. For optimization, Python and the library CVXPY (Diamond and Boyd 2016) is used.
