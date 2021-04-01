@@ -109,7 +109,7 @@ def mle_plot(mu_1 = df_mle['$\mu_1$'], mu_2 = df_mle['$\mu_2$'],
 
     ## Vi kan indsætte static variables her også, hvis vi vil vise plot hvor 1 model trænes på hele batchen.
 
-    x_axis = df_mle.index  #Find en måde at erstatte dette på således at vi får årstal.
+    x_axis = df_returns.index[11945:]  #Insert the number of trading days in the rolling window.
 
     for (ax, var, symbol) in zip(axes, variables, symbol_list):
         ax.plot(x_axis, var)
@@ -159,7 +159,7 @@ def jump_plot(mu_1 = df_jump['$\mu_1$'], mu_2 = df_jump['$\mu_2$'],
 
     ## Vi kan indsætte static variables her også, hvis vi vil vise plot hvor 1 model trænes på hele batchen.
 
-    x_axis = df_jump.index  #Find en måde at erstatte dette på således at vi får årstal.
+    x_axis = df_returns.index[11945:]  # Insert the number of rolling trading days
 
     for (ax, var, symbol) in zip(axes, variables, symbol_list):
         ax.plot(x_axis, var)
@@ -190,9 +190,9 @@ def jump_plot(mu_1 = df_jump['$\mu_1$'], mu_2 = df_jump['$\mu_2$'],
 
 
 if __name__ == '__main__':
-    #print(data_table)
+    print(data_table)
     #print(data_table.columns.values)
-
+    jump_plot()
 
 
 
