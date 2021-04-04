@@ -37,9 +37,9 @@ df_SP500['Log returns'] = np.log(df_SP500['S&P 500 Index']) - np.log(df_SP500['S
 print(df_SP500)
 
 # Get squared ACF from data_table
-n_lags = 19
-squared_acf_SP500_mle = data_table.iloc[0,8:27]  #Set manually.
-squared_acf_SP500_jump = data_table.iloc[1:8:27] #Set manually.
+n_lags = 99
+squared_acf_SP500_mle = data_table.iloc[0,8:99]  #Set manually.
+squared_acf_SP500_jump = data_table.iloc[1:8:99] #Set manually.
 
 # Function to compute and plot acf and squared acf of the S&P 500 log returns
 def acfsquared_SP500_mle():
@@ -109,7 +109,7 @@ def mle_plot(mu_1 = df_mle['$\mu_1$'], mu_2 = df_mle['$\mu_2$'],
 
     ## Vi kan indsætte static variables her også, hvis vi vil vise plot hvor 1 model trænes på hele batchen.
 
-    x_axis = df_returns.index[11945:]  #Insert the number of trading days in the rolling window.
+    x_axis = df_returns.index[2645:]  #Insert the number of trading days in the rolling window.
 
     for (ax, var, symbol) in zip(axes, variables, symbol_list):
         ax.plot(x_axis, var)
@@ -159,7 +159,7 @@ def jump_plot(mu_1 = df_jump['$\mu_1$'], mu_2 = df_jump['$\mu_2$'],
 
     ## Vi kan indsætte static variables her også, hvis vi vil vise plot hvor 1 model trænes på hele batchen.
 
-    x_axis = df_returns.index[11945:]  # Insert the number of rolling trading days
+    x_axis = df_returns.index[2645:]  # Insert the number of rolling trading days
 
     for (ax, var, symbol) in zip(axes, variables, symbol_list):
         ax.plot(x_axis, var)
@@ -192,6 +192,7 @@ def jump_plot(mu_1 = df_jump['$\mu_1$'], mu_2 = df_jump['$\mu_2$'],
 if __name__ == '__main__':
     print(data_table)
     #print(data_table.columns.values)
+    mle_plot()
     jump_plot()
 
 
