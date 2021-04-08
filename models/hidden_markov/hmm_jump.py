@@ -74,18 +74,18 @@ class JumpHMM(BaseHiddenMarkov):
         for i in range(len(window_len)):
             rolling_window = df['raw_input'].rolling(window_len[i])
 
-            df['left_local_mean_'+str(i)] = rolling_window.mean()
-            df['left_local_std_'+str(i)] = rolling_window.std(ddof=1)
-            df['left_local_median_'+str(i)] = rolling_window.median() #
-            df['min_max_diff_'+str(i)] = rolling_window.max() - rolling_window.min()
+            #df['left_local_mean_'+str(i)] = rolling_window.mean()
+            #df['left_local_std_'+str(i)] = rolling_window.std(ddof=1)
+            #df['left_local_median_'+str(i)] = rolling_window.median() #
+            #df['min_max_diff_'+str(i)] = rolling_window.max() - rolling_window.min()
 
              #Absolute Price Oscillator
             #df['absolute_price_oscillator'] = df['raw_input'].rolling(2).mean() - df['raw_input'].rolling(window_len[i]) ## Fast moving average minus slow moving average #TODO get work.
 
             #Bollinger bands (Remember middle band is equal to the rolling mean)
-            df['upper_bollinger_band'] = df['left_local_mean_'+str(i)] + (1.96 * df['left_local_std_'+str(i)])
-            df['lower_bollinger_band'] = df['left_local_mean_'+str(i)] - (1.96 * df['left_local_std_'+str(i)])
-            df['band_width'] = df['upper_bollinger_band'] - df['lower_bollinger_band']
+            #df['upper_bollinger_band'] = df['left_local_mean_'+str(i)] + (1.96 * df['left_local_std_'+str(i)])
+            #df['lower_bollinger_band'] = df['left_local_mean_'+str(i)] - (1.96 * df['left_local_std_'+str(i)])
+            #df['band_width'] = df['upper_bollinger_band'] - df['lower_bollinger_band']
 
 
         #Rolling sum

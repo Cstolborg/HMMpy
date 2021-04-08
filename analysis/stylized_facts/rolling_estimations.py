@@ -112,9 +112,9 @@ if __name__ == '__main__':
     jump = JumpHMM(n_states=2, jump_penalty=16, window_len=(6, 14),
                    epochs=20, max_iter=30, random_state=42)
 
-    logret = logret[12000:15000]  # Reduce sample size to speed up training
+    logret = logret[13000:15000]  # Reduce sample size to speed up training
 
-    df = train_rolling_window(logret, mle, jump, window_lens=[2500], n_lags=20)
+    df = train_rolling_window(logret, mle, jump, window_lens=[1700], n_lags=20)
 
 
     # Group data first by window len and the by each mode. Returns mean value of each remaining parameter
@@ -123,7 +123,7 @@ if __name__ == '__main__':
     print(data_table)
 
     # Save results
-    save = False
+    save = True
     if save == True:
         path = '../../analysis/stylized_facts/output_data/'
         df.to_csv(path + 'rolling_estimations.csv', index=False)
