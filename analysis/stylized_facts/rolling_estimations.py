@@ -108,13 +108,13 @@ if __name__ == '__main__':
     logret = load_long_series_logret()
 
     # Instantiate HMM models
-    mle = EMHiddenMarkov(n_states=2, epochs=30, max_iter=100, random_state=42)
+    mle = EMHiddenMarkov(n_states=2, epochs=10, max_iter=100, random_state=42)
     jump = JumpHMM(n_states=2, jump_penalty=16, window_len=(6, 14),
                    epochs=20, max_iter=30, random_state=42)
 
-    #logret = logret[10000:15000]  # Reduce sample size to speed up training
+    logret = logret[12000:15000]  # Reduce sample size to speed up training
 
-    df = train_rolling_window(logret, mle, jump, window_lens=[1700], n_lags=100)
+    df = train_rolling_window(logret, mle, jump, window_lens=[2500], n_lags=20)
 
 
     # Group data first by window len and the by each mode. Returns mean value of each remaining parameter
@@ -123,7 +123,7 @@ if __name__ == '__main__':
     print(data_table)
 
     # Save results
-    save = True
+    save = False
     if save == True:
         path = '../../analysis/stylized_facts/output_data/'
         df.to_csv(path + 'rolling_estimations.csv', index=False)

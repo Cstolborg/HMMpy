@@ -6,10 +6,12 @@ from numpy import ndarray
 from sklearn.cluster._kmeans import kmeans_plusplus
 from sklearn.metrics import confusion_matrix
 from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
 
 from utils.hmm_sampler import SampleHMM
 from models.hidden_markov.hmm_base import BaseHiddenMarkov
 from models.hidden_markov import hmm_cython
+
 
 pyximport.install()  # TODO can only be active during development -- must be done through setup.py
 
@@ -75,7 +77,16 @@ class JumpHMM(BaseHiddenMarkov):
             df['left_local_mean_'+str(i)] = rolling_window.mean()
             df['left_local_std_'+str(i)] = rolling_window.std(ddof=1)
             df['left_local_median_'+str(i)] = rolling_window.median() #
-            df['min_max_diff_'+str(i)] = rolling_window.max() - rolling_window.min() # TODO Also gives error, but code should be ok
+            df['min_max_diff_'+str(i)] = rolling_window.max() - rolling_window.min()
+
+             #Absolute Price Oscillator
+            #df['absolute_price_oscillator'] = df['raw_input'].rolling(2).mean() - df['raw_input'].rolling(window_len[i]) ## Fast moving average minus slow moving average #TODO get work.
+
+            #Bollinger bands (Remember middle band is equal to the rolling mean)
+            df['upper_bollinger_band'] = df['left_local_mean_'+str(i)] + (1.96 * df['left_local_std_'+str(i)])
+            df['lower_bollinger_band'] = df['left_local_mean_'+str(i)] - (1.96 * df['left_local_std_'+str(i)])
+            df['band_width'] = df['upper_bollinger_band'] - df['lower_bollinger_band']
+
 
         #Rolling sum
         #df['left_local_sum'] = df['raw_input'].rolling(window_len).sum()
@@ -85,6 +96,13 @@ class JumpHMM(BaseHiddenMarkov):
         scaler = StandardScaler()
         Z = scaler.fit_transform(Z)
 
+        #Incorporating PCA into dataframe and dropping all other variables - only do so when purely testing PCA variables.
+
+        #pca = PCA(n_components=2)
+        #pca_features = pca.fit_transform(Z)
+        #Z['PCA_1'] = pca_features[:,0]
+        #Z['PCA_2'] = pca_features[:,1]
+        #Z = Z.loc[:,'PCA_1':'PCA_2']
         self.n_features = Z.shape[1]
 
         return Z
@@ -383,7 +401,6 @@ if __name__ == '__main__':
        # bac = model.bac_score_1d(X[:,i], viterbi_states[:, i] , 30)
 
     model.fit(X, verbose=True)
-
 
 
 

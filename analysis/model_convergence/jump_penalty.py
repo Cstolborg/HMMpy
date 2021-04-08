@@ -24,7 +24,7 @@ def plot_jump_penalties(bac_outer, sample_lengths, penalties, save=True):
 
     ax.legend()
     plt.tight_layout()
-    plt.savefig('./images/jump_penalties.png')
+    plt.savefig('./images/jump_penalties_all_features.png') # Remember to change name when running with different penalties.
     plt.show()
 
 def plot_jump_penalties_box(bac_outer, sample_lengths, penalties, save=True):
@@ -37,7 +37,7 @@ def plot_jump_penalties_box(bac_outer, sample_lengths, penalties, save=True):
 
     plt.xticks(list(range(len(penalties))), penalties)
     plt.tight_layout()
-    plt.savefig('./images/jump_penalties_box.png')
+    plt.savefig('./images/jump_penalties_box_all_features.png')  # Remember to change name when running with different penalities.
     plt.show()
 
 def compute_penalties(X, true_states, viterbi_states, penalties, sample_lengths=[250, 500, 1000, 2000]):
