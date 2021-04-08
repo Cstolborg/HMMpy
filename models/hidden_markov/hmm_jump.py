@@ -74,19 +74,21 @@ class JumpHMM(BaseHiddenMarkov):
         for i in range(len(window_len)):
             rolling_window = df['raw_input'].rolling(window_len[i])
 
-            #df['left_local_mean_'+str(i)] = rolling_window.mean()
-            #df['left_local_std_'+str(i)] = rolling_window.std(ddof=1)
-            #df['left_local_median_'+str(i)] = rolling_window.median() #
-            #df['min_max_diff_'+str(i)] = rolling_window.max() - rolling_window.min()
-
-             #Absolute Price Oscillator
-            #df['absolute_price_oscillator'] = df['raw_input'].rolling(2).mean() - df['raw_input'].rolling(window_len[i]) ## Fast moving average minus slow moving average #TODO get work.
+            df['left_local_mean_'+str(i)] = rolling_window.mean()
+            df['left_local_std_'+str(i)] = rolling_window.std(ddof=1)
+            df['left_local_median_'+str(i)] = rolling_window.median() #
+            df['min_max_diff_'+str(i)] = rolling_window.max() - rolling_window.min()
 
             #Bollinger bands (Remember middle band is equal to the rolling mean)
-            #df['upper_bollinger_band'] = df['left_local_mean_'+str(i)] + (1.96 * df['left_local_std_'+str(i)])
-            #df['lower_bollinger_band'] = df['left_local_mean_'+str(i)] - (1.96 * df['left_local_std_'+str(i)])
-            #df['band_width'] = df['upper_bollinger_band'] - df['lower_bollinger_band']
+            df['upper_bollinger_band'] = rolling_window.mean() + (1.96 * rolling_window.std(ddof=1))
+            df['lower_bollinger_band'] = rolling_window.mean() - (1.96 * rolling_window.std(ddof=1))
+            df['band_width'] = df['upper_bollinger_band'] - df['lower_bollinger_band']
+            df['bbands_%_bi'] = (rolling_window.mean() - df['lower_bollinger_band']) / (df['upper_bollinger_band'] - df['lower_bollinger_band']) # %B quantifies a security's average price relative to the upper and lower Bollinger Band.
 
+
+        df['ema_10'] = df['raw_input'].ewm(span=10).mean()
+
+        #df.drop('raw_input', inplace=True, axis=1) #Active this for 2nd feature set!
 
         #Rolling sum
         #df['left_local_sum'] = df['raw_input'].rolling(window_len).sum()
@@ -96,7 +98,7 @@ class JumpHMM(BaseHiddenMarkov):
         scaler = StandardScaler()
         Z = scaler.fit_transform(Z)
 
-        #Incorporating PCA into dataframe and dropping all other variables - only do so when purely testing PCA variables.
+        #Consider defining feature set from PCA?
 
         #pca = PCA(n_components=2)
         #pca_features = pca.fit_transform(Z)
