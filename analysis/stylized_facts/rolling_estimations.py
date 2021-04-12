@@ -22,7 +22,7 @@ def train_rolling_window(logret, mle, jump, window_lens=[1700], n_lags=100, acf_
         '$\mu_1$': [], '$\mu_2$': [],
         '$\sigma_1$': [], '$\sigma_2$': [],
         '$q_{11}$': [], '$q_{22}$': [], 'timestamp': [],
-        '$\phi_1$': [], '$\phi_2$':[],
+        '$\pi_1$': [], '$\pi_2$':[],
         'mean': [], 'variance': [],
         'skewness': [], 'excess_kurtosis': []
         }
@@ -56,8 +56,8 @@ def train_rolling_window(logret, mle, jump, window_lens=[1700], n_lags=100, acf_
             data['jump']['$\sigma_1$'].append(jump.std[0])
             data['jump']['$\sigma_2$'].append(jump.std[1])
             data['jump']['$q_{11}$'].append(jump.tpm[0, 0])
-            data['jump']['$\phi_1$'].append(jump.stationary_dist[0])
-            data['jump']['$\phi_2$'].append(jump.stationary_dist[1])
+            data['jump']['$\pi_1$'].append(jump.stationary_dist[0])
+            data['jump']['$\pi_2$'].append(jump.stationary_dist[1])
 
 
             # Test if more than 1 state is detected
@@ -71,8 +71,8 @@ def train_rolling_window(logret, mle, jump, window_lens=[1700], n_lags=100, acf_
             data['mle']['$\sigma_1$'].append(mle.std[0])
             data['mle']['$\sigma_2$'].append(mle.std[1])
             data['mle']['$q_{11}$'].append(mle.tpm[0, 0])
-            data['mle']['$\phi_1$'].append(mle.stationary_dist[0])
-            data['mle']['$\phi_2$'].append(mle.stationary_dist[1])
+            data['mle']['$\pi_1$'].append(mle.stationary_dist[0])
+            data['mle']['$\pi_2$'].append(mle.stationary_dist[1])
 
             # Test if more than 1 state is detected
             if len(mle.tpm) > 1:
@@ -132,11 +132,11 @@ if __name__ == '__main__':
     jump = JumpHMM(n_states=2, jump_penalty=16, window_len=(6, 14),
                    epochs=20, max_iter=30, random_state=42)
 
-    logret = logret[13200:15000]  # Reduce sample size to speed up training
+    logret = logret[13000:15000]  # Reduce sample size to speed up training
 
 
     df = train_rolling_window(logret, mle, jump, window_lens=[1700], n_lags=100, acf_type='simulated',
-                              outlier_corrected=False, n_sims=100000)
+                              outlier_corrected=False, n_sims=5000)
 
     # Group data first by window len and the by each mode. Returns mean value of each remaining parameter
     data_table = df.groupby(['window_len', 'model']).mean().sort_index(ascending=[True, False])

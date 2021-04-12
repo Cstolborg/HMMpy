@@ -59,7 +59,11 @@ def load_long_series_logret(path='../../data/price_series.csv', outlier_correcte
 
     return df_ret
 
-
+def moving_average(a, n=10) :
+    a = np.array(a)
+    ret = np.cumsum(a)
+    ret[n:] = ret[n:] - ret[:-n]
+    return ret[n - 1:] / n
 
 
 
