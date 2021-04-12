@@ -1,8 +1,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import statsmodels.api as sm
-import pandas as pd; pd.set_option('display.max_columns', 10); pd.set_option('display.width', 320)
-from utils.data_prep import load_long_series_logret
+import pandas as pd;
+from scipy import stats
+
+pd.set_option('display.max_columns', 10); pd.set_option('display.width', 320)
+from utils.data_prep import load_long_series_logret, moving_average
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -126,15 +129,63 @@ def plot_rolling_parameters(plot_type = 'mle'):
     plt.show()
 
 
+def plot_rolling_moments(df, logrets, window_len=1700, moving_window=10):
+    """ Plot the first four moments of estimated models along with returns"""
+    #Slice log returns into subsamples of window lenghts
+    # TODO move into its own function
+    logrets = logrets[-(len(df[df['model']=='mle'])+window_len-moving_window):]
+    log_rets = []
+    for t in range(window_len, len(logrets)):
+        log_rets.append(logrets.iloc[t-window_len:t])
+
+    empirical_moments = [np.mean(log_rets, axis=1), np.var(log_rets, ddof=1, axis=1),
+                         stats.skew(log_rets, axis=1), stats.kurtosis(log_rets, axis=1)]
+
+    df['timestamp'] = pd.to_datetime(df['timestamp'])
+    df.set_index('timestamp', inplace=True)
+    df = df.loc[:, ['mean', 'variance', 'skewness', 'excess_kurtosis', 'model']]
+
+    # Plotting
+    plt.rcParams.update({'font.size': 15})
+    fig, axs = plt.subplots(nrows=2, ncols=2, figsize=(15, 7), sharex=True)
+
+    models = ['mle', 'jump']
+    labels = ['Mean', 'Variance', 'Skewness', 'Excess Kurtosis']
+    colors = ['black', 'lightgrey']
+
+    # Loop through each subplot
+    for i, (ax, moment, label) in enumerate(zip(axs.flatten(), empirical_moments, labels)):
+        # Plot empirical returns moment
+        ax.plot(logrets.index[(window_len):], moment, label=r'$\log (r_t)$', color='grey', ls='--')
+        # Inner loop allows drawing of several models
+        for (model, color) in zip(models, colors):
+            plot_data = df[df['model'] == model]
+            ax.plot(plot_data.index[moving_window-1:], moving_average(plot_data.iloc[:, i], n=moving_window),
+                    label=model, color=color)
+
+
+        ax.set_xlim(df.index[moving_window-1], df.index[-1])
+        ax.set_ylabel(label)
+
+    axs[1, 0].tick_params('x', labelrotation=45)
+    axs[1, 1].tick_params('x', labelrotation=45)
+
+    plt.legend()
+    plt.subplots_adjust(wspace=0.2, hspace=0.5)
+    plt.tight_layout()
+    plt.show()
+
+
+
 if __name__ == '__main__':
     print(data_table)
     #print(data_table.columns.values)
 
     #acfsquared_SP500_mle()
-    plot_acfsquared_SP500_combined(data_table)
+    #plot_acfsquared_SP500_combined(data_table)
     #plot_rolling_parameters(plot_type='jump')
 
-
+    plot_rolling_moments(df, df_returns, moving_window=50)
 
 
 
