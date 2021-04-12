@@ -95,7 +95,7 @@ def train_rolling_window(logret, mle, jump, window_lens=[1700], n_lags=100, acf_
                 mle_simulation_squared = np.square(mle_simulation)  # Squaring return
                 mle_acf_square_simulated = acf(mle_simulation_squared, nlags=n_lags)[1:]
 
-                jump_simulation = jump.sample(n_samples=n_sims)[0]  # >1000  ##Generates 2000 returns to step 1
+                jump_simulation = jump.sample(n_samples=n_sims)[0]
                 jump_simulation_squared = np.square(jump_simulation)  # Squaring return
                 jump_acf_square_simulated = acf(jump_simulation_squared, nlags=n_lags)[1:]
 
@@ -136,7 +136,7 @@ if __name__ == '__main__':
 
 
     df = train_rolling_window(logret, mle, jump, window_lens=[1700], n_lags=100, acf_type='simulated',
-                              outlier_corrected=False, n_sims=5000)
+                              outlier_corrected=False, n_sims=100000)
 
     # Group data first by window len and the by each mode. Returns mean value of each remaining parameter
     data_table = df.groupby(['window_len', 'model']).mean().sort_index(ascending=[True, False])

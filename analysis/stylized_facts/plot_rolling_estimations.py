@@ -10,31 +10,34 @@ warnings.filterwarnings("ignore")
 
 # Load log returns from SP500
 df_returns = load_long_series_logret()
+df_returns_outlier = load_long_series_logret(outlier_corrected=True)
 
-# Loading data for fitted models
+# Loading regular and outlier corrected data. Then get means parameters across time
 path = '../../analysis/stylized_facts/output_data/'
 df = pd.read_csv(path + 'rolling_estimations.csv')
+df_outlier = pd.read_csv(path + 'rolling_estimations_outlier_corrected.csv')
 data_table = df.groupby(['window_len', 'model']).mean().sort_index(ascending=[True, False])
+data_table_outlier = df_outlier.groupby(['window_len', 'model']).mean().sort_index(ascending=[True, False])
+
+# Splitting the data from df into jump and MLE
+df_mle = df[df['model'] == 'mle']
+df_jump = df[df['model'] == 'jump']
+
+# Get squared ACF from data_table
+n_lags = len(data_table.loc[:, 'lag_0':].columns)
+squared_acf_SP500_mle = data_table.loc[(1700, 'mle'), 'lag_0':]
+squared_acf_SP500_jump = data_table.loc[(1700, 'jump'), 'lag_0':]
 
 # Loading returns data
 path_1 = '../../data/'
 df_returns = pd.read_csv(path_1 + 'price_series.csv', index_col = 'Time')
 df_returns.index = pd.to_datetime(df_returns.index)
 
-# Splitting the data from df into jump and MLE
-df_mle = df[df['model'] == 'mle']
-df_jump = df[df['model'] == 'jump']
-
 # Function to compute returns from the data of the S&P 500
 df_SP500 = df_returns[['S&P 500 ']]
 df_SP500['S&P 500 Index'] = df_SP500['S&P 500 '] / df_SP500['S&P 500 '][0] * 100
 df_SP500['Returns'] = df_SP500['S&P 500 Index'].pct_change()
 df_SP500['Log returns'] = np.log(df_SP500['S&P 500 Index']) - np.log(df_SP500['S&P 500 Index'].shift(1))
-
-# Get squared ACF from data_table
-n_lags = len(data_table.loc[:, 'lag_0':].columns)
-squared_acf_SP500_mle = data_table.loc[(1700, 'mle'), 'lag_0':]
-squared_acf_SP500_jump = data_table.loc[(1700, 'jump'), 'lag_0':]
 
 # Function to compute and plot acf and squared acf of the S&P 500 log returns
 def acfsquared_SP500_mle():  # TODO to be deleted
@@ -63,20 +66,31 @@ def acfsquared_SP500_mle():  # TODO to be deleted
 def plot_acfsquared_SP500_combined():
     lags = [i for i in range(n_lags)]
     acf_squared = sm.tsa.acf(np.square(df_SP500['Log returns'].dropna()), nlags=n_lags)[1:]
+    acf_squared_outlier = sm.tsa.acf(df_returns_outlier**2, nlags=n_lags)[1:]
     acf_square_conf = 1.96 / np.sqrt(len(np.square(df_SP500['Log returns'].dropna())))
 
     # Plotting
     plt.rcParams.update({'font.size': 15})
-    fig, ax = plt.subplots(nrows=2, ncols=1, figsize=(15, 12), sharex=True)
+    fig, ax = plt.subplots(nrows=2, ncols=1, figsize=(15, 7), sharex=True)
+
+    # Full data
+    ax[0].set_title('Full sample')
+    ax[0].bar(lags, acf_squared, color='black', alpha=0.4)
+    ax[0].plot(lags, squared_acf_SP500_mle, label="mle")
+    ax[0].plot(lags, squared_acf_SP500_jump, label="jump")
+
+    # Outlier-corrected
+    ax[1].set_title(r'Outliers limited to $\bar r_t \pm 0$')
+    ax[1].bar(lags, acf_squared_outlier, color='black', alpha=0.4)
+    ax[1].plot(lags, data_table_outlier.loc[(1700, 'mle'), 'lag_0':], label="mle")
+    ax[1].plot(lags, data_table_outlier.loc[(1700, 'jump'), 'lag_0':], label="jump")
+    ax[1].set_xlabel('Lag')
 
     for i in range(len(ax)):
-        ax[i].bar(lags, acf_squared, color='black', alpha=0.4)
-        ax[i].plot(lags, squared_acf_SP500_mle, label="mle")
-        ax[i].plot(lags, squared_acf_SP500_jump, label="jump")
         ax[i].axhline(acf_square_conf, linestyle='dashed', color='black')
         ax[i].set_ylabel("ACF squared(log $r_t)$")
-        ax[i].set_xlabel('Lag')
-        ax[i].set_xlim(left=0.5, right=max(lags) + 1)
+        ax[i].set_xlim(left=0, right=max(lags))
+        ax[i].set_ylim(top=0.4, bottom=0)
 
     plt.legend()
     plt.subplots_adjust(wspace=0.2, hspace=0.5)
