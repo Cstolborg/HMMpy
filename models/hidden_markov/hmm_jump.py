@@ -62,36 +62,62 @@ class JumpHMM(BaseHiddenMarkov):
 
             return state_seq, theta
 
-    def construct_features(self, X: ndarray, window_len: tuple):
+    def construct_features(self, X: ndarray, window_len: tuple, feature_set = 'feature_set_1'): ##Add also in def fit function in this file.
 
         df = pd.DataFrame({'raw_input': X})
 
         # Absolute changes
-        df['left_abs_change'] = np.abs(df['raw_input'].diff())  # np.abs(np.diff(X))
-        df['prev_left_abs_change'] = df['left_abs_change'].shift(1)
+        if feature_set == 'feature_set_1':
+            df['left_abs_change'] = np.abs(df['raw_input'].diff())  # np.abs(np.diff(X))
+            df['prev_left_abs_change'] = df['left_abs_change'].shift(1)
 
-        # Rolling features
-        for i in range(len(window_len)):
-            rolling_window = df['raw_input'].rolling(window_len[i])
+            # Rolling features
+            for i in range(len(window_len)):
+                rolling_window = df['raw_input'].rolling(window_len[i])
 
-            df['left_local_mean_'+str(i)] = rolling_window.mean()
-            df['left_local_std_'+str(i)] = rolling_window.std(ddof=1)
-            df['left_local_median_'+str(i)] = rolling_window.median() #
-            df['min_max_diff_'+str(i)] = rolling_window.max() - rolling_window.min()
+                df['left_local_mean_'+str(i)] = rolling_window.mean()
+                df['left_local_std_'+str(i)] = rolling_window.std(ddof=1)
+                df['left_local_median_'+str(i)] = rolling_window.median() #
+                df['min_max_diff_'+str(i)] = rolling_window.max() - rolling_window.min()
 
-            #Bollinger bands (Remember middle band is equal to the rolling mean)
-            df['upper_bollinger_band'] = rolling_window.mean() + (1.96 * rolling_window.std(ddof=1))
-            df['lower_bollinger_band'] = rolling_window.mean() - (1.96 * rolling_window.std(ddof=1))
-            df['band_width'] = df['upper_bollinger_band'] - df['lower_bollinger_band']
-            df['bbands_%_bi'] = (rolling_window.mean() - df['lower_bollinger_band']) / (df['upper_bollinger_band'] - df['lower_bollinger_band']) # %B quantifies a security's average price relative to the upper and lower Bollinger Band.
+        elif feature_set == 'feature_set_2':
+            for i in range(len(window_len)):
+                rolling_window = df['raw_input'].rolling(window_len[i])
+                #Bollinger bands (Remember middle band is equal to the rolling mean)
+                df['upper_bollinger_band'] = rolling_window.mean() + (1.96 * rolling_window.std(ddof=1))
+                df['lower_bollinger_band'] = rolling_window.mean() - (1.96 * rolling_window.std(ddof=1))
+                df['band_width'] = df['upper_bollinger_band'] - df['lower_bollinger_band']
+                df['bbands_%_bi'] = (rolling_window.mean() - df['lower_bollinger_band']) / (df['upper_bollinger_band'] - df['lower_bollinger_band']) # %B quantifies a security's average price relative to the upper and lower Bollinger Band.
 
-        #Exponential moving average 10 days
-        df['ema_10'] = df['raw_input'].ewm(span=10).mean()
+            #Exponential moving average 10 days
+            df['ema_10'] = df['raw_input'].ewm(span=10).mean()
 
-        #df.drop('raw_input', inplace=True, axis=1) #Active this for 2nd feature set!
+            df.drop('raw_input', inplace=True, axis=1) #Active this for 2nd feature set!
 
-        #Rolling sum
-        #df['left_local_sum'] = df['raw_input'].rolling(window_len).sum()
+        elif feature_set == 'feature_set_3':
+            df['left_abs_change'] = np.abs(df['raw_input'].diff())  # np.abs(np.diff(X))
+            df['prev_left_abs_change'] = df['left_abs_change'].shift(1)
+
+            # Rolling features
+            for i in range(len(window_len)):
+                rolling_window = df['raw_input'].rolling(window_len[i])
+
+                df['left_local_mean_' + str(i)] = rolling_window.mean()
+                df['left_local_std_' + str(i)] = rolling_window.std(ddof=1)
+                df['left_local_median_' + str(i)] = rolling_window.median()  #
+                df['min_max_diff_' + str(i)] = rolling_window.max() - rolling_window.min()
+
+                # Bollinger bands (Remember middle band is equal to the rolling mean)
+                df['upper_bollinger_band'] = rolling_window.mean() + (1.96 * rolling_window.std(ddof=1))
+                df['lower_bollinger_band'] = rolling_window.mean() - (1.96 * rolling_window.std(ddof=1))
+                df['band_width'] = df['upper_bollinger_band'] - df['lower_bollinger_band']
+                df['bbands_%_bi'] = (rolling_window.mean() - df['lower_bollinger_band']) / (
+                df['upper_bollinger_band'] - df['lower_bollinger_band'])  # %B quantifies a security's average price relative to the upper and lower Bollinger Band.
+
+            # Exponential moving average 10 days
+            df['ema_10'] = df['raw_input'].ewm(span=10).mean()
+
+
 
         Z = df.dropna().to_numpy()
         # Scale features
@@ -237,9 +263,9 @@ class JumpHMM(BaseHiddenMarkov):
                     old_state_seq = state_seq
                     old_objective_score = objective_score
 
-    def fit(self, X, get_hmm_params=True, sort_state_seq=False, verbose=False):
+    def fit(self, X, get_hmm_params=True, sort_state_seq=False, verbose=False, feature_set='feature_set_1'):
         self.is_fitted = False
-        Z = self.construct_features(X, window_len=self.window_len)
+        Z = self.construct_features(X, window_len=self.window_len, feature_set='feature_set_1')
 
         self._fit(X=X, Z=Z, verbose=verbose)  # Container for loop where fitting happens
 
