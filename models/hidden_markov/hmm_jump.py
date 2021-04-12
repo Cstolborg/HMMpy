@@ -114,7 +114,7 @@ class JumpHMM(BaseHiddenMarkov):
                 df['bbands_%_bi'] = (rolling_window.mean() - df['lower_bollinger_band']) / (
                 df['upper_bollinger_band'] - df['lower_bollinger_band'])  # %B quantifies a security's average price relative to the upper and lower Bollinger Band.
 
-            # Exponential moving average 10 days
+            # Exponential moving average
             df['ema_10'] = df['raw_input'].ewm(span=10).mean()
 
 
