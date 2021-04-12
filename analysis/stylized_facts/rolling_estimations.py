@@ -92,7 +92,7 @@ def train_rolling_window(logret, mle, jump, window_lens=[1700], n_lags=100, acf_
             elif acf_type == 'simulated':
                 ## Simulate data for ACF
                 mle_simulation = mle.sample(n_samples=n_sims)[0]  # Simulate returns
-                mle_simulation_squared = np.square(mle_simulation)  # Squaring return
+                mle_simulation_squared = (mle_simulation)**2  # Squaring return
                 mle_acf_square_simulated = acf(mle_simulation_squared, nlags=n_lags)[1:]
 
                 jump_simulation = jump.sample(n_samples=n_sims)[0]
