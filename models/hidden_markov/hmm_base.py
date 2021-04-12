@@ -376,10 +376,12 @@ class BaseHiddenMarkov(BaseEstimator):
         return state_sequence.astype(np.int32)
 
     def squared_acf(self, lag):
+        # Unconditional expectation
+        unconditional_expectation = self.stationary_dist[0] * self.mu[0] + (1-self.stationary_dist[0]) * self.mu[1]
 
-        # Unconditional squared variance
+        # Unconditional variance
         unconditional_variance = self.stationary_dist[0]*self.std[0]**2+(1-self.stationary_dist[0])*self.std[1]**2 \
-        +self.stationary_dist[0]*(1-self.stationary_dist[0])*np.square(self.mu[0]-self.mu[1])**2
+            + self.stationary_dist[0]*(1-self.stationary_dist[0])*(self.mu[0]-self.mu[1])**2
 
         # Unconditional variance 4th power
         unconditional_variance_4p = np.power(unconditional_variance,4)
@@ -390,14 +392,14 @@ class BaseHiddenMarkov(BaseEstimator):
         +6*(2*self.stationary_dist[0]-1)*(self.std[1]**2-self.std[0]**2)*np.square(self.mu[0]-self.mu[1]))+3
 
         # Lambda
-        tpm_trace = np.trace(self.tpm)-1
+        lambda_k = np.trace(self.tpm)-1
 
         # Squared ACF
         acf_1 = self.stationary_dist[0] * (1-self.stationary_dist[0]) * \
                 np.square(self.mu[0]**2-self.mu[1]**2+self.std[0]**2-self.std[1]**2)
         acf_2 = kurtosis - np.square(unconditional_variance)
 
-        squared_acf = acf_1 / acf_2 * tpm_trace**lag
+        squared_acf = acf_1 / acf_2 * lambda_k**lag
 
         return squared_acf
 

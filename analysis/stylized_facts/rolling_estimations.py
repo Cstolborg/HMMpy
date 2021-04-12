@@ -1,10 +1,11 @@
 import copy
 
 import pandas as pd; pd.set_option('display.max_columns', 10); pd.set_option('display.width', 320)
+from scipy import stats
 import numpy as np
 import matplotlib.pyplot as plt
 import tqdm
-import statsmodels.api as sm
+from statsmodels.tsa.stattools import acf
 from utils.data_prep import load_long_series_logret
 from models.hidden_markov.hmm_gaussian_em import EMHiddenMarkov
 from models.hidden_markov.hmm_jump import JumpHMM
@@ -12,7 +13,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 
-def train_rolling_window(logret, mle, jump, window_lens=[1700], n_lags=100):
+def train_rolling_window(logret, mle, jump, window_lens=[1700], n_lags=100, acf_type='simulated', n_sims=5000, outlier_corrected=False):
     n_obs = len(logret)
     df = pd.DataFrame()  # Create empty df to store data in
 
@@ -21,15 +22,16 @@ def train_rolling_window(logret, mle, jump, window_lens=[1700], n_lags=100):
         '$\mu_1$': [], '$\mu_2$': [],
         '$\sigma_1$': [], '$\sigma_2$': [],
         '$q_{11}$': [], '$q_{22}$': [], 'timestamp': [],
-        '$\phi_1$': [], '$\phi_2$':[]}
-
+        '$\phi_1$': [], '$\phi_2$':[],
+        'mean': [], 'variance': [],
+        'skewness': [], 'excess_kurtosis': []
+        }
     cols_1 = {f'lag_{i}': [] for i in range(n_lags)}
-
     cols.update(cols_1)
 
-
     # Compute models params for each window length
-    for window_len in tqdm.tqdm(window_lens):
+    for window_len in window_lens:
+        print(f'Training on window length = {window_len}')
         # Load empty dictionaries for each run
         data = {'jump': copy.deepcopy(cols),  # copy column names from variable cols above
                 'mle': copy.deepcopy(cols)
@@ -40,18 +42,14 @@ def train_rolling_window(logret, mle, jump, window_lens=[1700], n_lags=100):
             # Slice data into rolling sequences
             rolling = logret.iloc[t - window_len: t]
 
+            # Remove all observations with std's above 4
+            if outlier_corrected is True:
+                rolling = rolling[(np.abs(stats.zscore(rolling)) < 4)]
+
             # Fit models to rolling data
             mle.fit(rolling, sort_state_seq=True, verbose=True)
-            jump.fit(rolling, get_hmm_params=True, sort_state_seq=True, verbose=True)
+            jump.fit(rolling, sort_state_seq=True, get_hmm_params=True, verbose=True)
 
-            ## Lav simulering her
-            simulation = mle.sample(n_samples=5000)[0]  #>1000  ##Generates 2000 returns to step 1
-            simulation_squared = np.square(simulation) # Squaring return
-            acf_square_simulated = sm.tsa.acf(simulation_squared, nlags=n_lags)[1:]
-
-            #simulation_jump = jump.sample()
-
-            #simulation_jump = jump.sample()
             # Save data
             data['jump']['$\mu_1$'].append(jump.mu[0])
             data['jump']['$\mu_2$'].append(jump.mu[1])
@@ -86,11 +84,34 @@ def train_rolling_window(logret, mle, jump, window_lens=[1700], n_lags=100):
             data['jump']['timestamp'].append(rolling.index[-1])
             data['mle']['timestamp'].append(rolling.index[-1])
 
-            ## Lav loop til at inkluder lag 1 til 100
-            for lag in range(n_lags):
-                data['mle'][f'lag_{lag}'].append(mle.squared_acf(lag=lag))
-                data['jump'][f'lag_{lag}'].append(jump.squared_acf(lag=lag))
-                acf_square_simulated[lag] #append acf simulated
+            if acf_type == 'analytical': # TODO deprecate
+                for lag in range(n_lags):
+                    data['mle'][f'lag_{lag}'].append(mle.squared_acf(lag=lag))
+                    data['jump'][f'lag_{lag}'].append(jump.squared_acf(lag=lag))
+
+            elif acf_type == 'simulated':
+                ## Simulate data for ACF
+                mle_simulation = mle.sample(n_samples=n_sims)[0]  # Simulate returns
+                mle_simulation_squared = np.square(mle_simulation)  # Squaring return
+                mle_acf_square_simulated = acf(mle_simulation_squared, nlags=n_lags)[1:]
+
+                jump_simulation = jump.sample(n_samples=n_sims)[0]  # >1000  ##Generates 2000 returns to step 1
+                jump_simulation_squared = np.square(jump_simulation)  # Squaring return
+                jump_acf_square_simulated = acf(jump_simulation_squared, nlags=n_lags)[1:]
+
+                for lag in range(n_lags):
+                    data['mle'][f'lag_{lag}'].append(mle_acf_square_simulated[lag])
+                    data['jump'][f'lag_{lag}'].append(jump_acf_square_simulated[lag])
+
+                data['mle']['mean'].append(np.mean(mle_simulation))
+                data['mle']['variance'].append(np.var(mle_simulation, ddof=1))
+                data['mle']['skewness'].append(stats.skew(mle_simulation))
+                data['mle']['excess_kurtosis'].append(stats.kurtosis(mle_simulation)) # Excess kurtosis
+
+                data['jump']['mean'].append(np.mean(jump_simulation))
+                data['jump']['variance'].append(np.var(jump_simulation, ddof=1))
+                data['jump']['skewness'].append(stats.skew(jump_simulation))
+                data['jump']['excess_kurtosis'].append(stats.kurtosis(jump_simulation)) # Excess kurtosis
 
         # Add model name and window len to data and output a dataframe
         for model in data.keys():
@@ -102,7 +123,6 @@ def train_rolling_window(logret, mle, jump, window_lens=[1700], n_lags=100):
     return df
 
 
-
 if __name__ == '__main__':
     # Load SP500 logrets
     logret = load_long_series_logret()
@@ -112,14 +132,14 @@ if __name__ == '__main__':
     jump = JumpHMM(n_states=2, jump_penalty=16, window_len=(6, 14),
                    epochs=20, max_iter=30, random_state=42)
 
-    logret = logret[13000:15000]  # Reduce sample size to speed up training
+    logret = logret[13200:15000]  # Reduce sample size to speed up training
 
-    df = train_rolling_window(logret, mle, jump, window_lens=[1700], n_lags=20)
 
+    df = train_rolling_window(logret, mle, jump, window_lens=[1700], n_lags=100, acf_type='simulated',
+                              outlier_corrected=False, n_sims=5000)
 
     # Group data first by window len and the by each mode. Returns mean value of each remaining parameter
     data_table = df.groupby(['window_len', 'model']).mean().sort_index(ascending=[True, False])
-
     print(data_table)
 
     # Save results
@@ -127,5 +147,5 @@ if __name__ == '__main__':
     if save == True:
         path = '../../analysis/stylized_facts/output_data/'
         df.to_csv(path + 'rolling_estimations.csv', index=False)
-        data_table.round(4).to_latex(path + 'test.tex', escape=False)
+
 

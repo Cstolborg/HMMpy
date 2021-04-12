@@ -1,6 +1,7 @@
 import datetime as dt
 import numpy as np
 import pandas as pd
+from scipy import stats
 
 """ TODO
 Daily data begins:
@@ -46,13 +47,23 @@ def load_data_get_logret(path='../../data/price_series.csv'):
 
     return df_ret
 
-def load_long_series_logret(path='../../data/price_series.csv'):
+def load_long_series_logret(path='../../data/price_series.csv', outlier_corrected=False):
     df = pd.read_csv(path, index_col='Time', parse_dates=True)
     df = df['S&P 500 ']
     df_ret = np.log(df) - np.log(df.shift(1))
     df_ret.dropna(inplace=True)
 
+    # Remove all observations with std's above 4
+    if outlier_corrected is True:
+        df_ret = df_ret[(np.abs(stats.zscore(df_ret)) < 4)]
+
     return df_ret
+
+
+
+
+
+
 
 def get_cov_mat(df_ret):
     return df_ret.cov()
