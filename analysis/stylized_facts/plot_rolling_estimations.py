@@ -2,14 +2,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 import statsmodels.api as sm
 import pandas as pd; pd.set_option('display.max_columns', 10); pd.set_option('display.width', 320)
-
 from utils.data_prep import load_long_series_logret
-
 import warnings
 warnings.filterwarnings("ignore")
 
 # Load log returns from SP500
-df_returns_1 = load_long_series_logret()
+df_returns = load_long_series_logret()
 df_returns_outlier = load_long_series_logret(outlier_corrected=True)
 
 # Loading regular and outlier corrected data. Then get means parameters across time
@@ -23,51 +21,16 @@ data_table_outlier = df_outlier.groupby(['window_len', 'model']).mean().sort_ind
 df_mle = df[df['model'] == 'mle']
 df_jump = df[df['model'] == 'jump']
 
-# Get squared ACF from data_table
-n_lags = len(data_table.loc[:, 'lag_0':].columns)
-squared_acf_SP500_mle = data_table.loc[(1700, 'mle'), 'lag_0':]
-squared_acf_SP500_jump = data_table.loc[(1700, 'jump'), 'lag_0':]
-
-# Loading returns data
-path_1 = '../../data/'
-df_returns = pd.read_csv(path_1 + 'price_series.csv', index_col = 'Time')
-df_returns.index = pd.to_datetime(df_returns.index)
-
-# Function to compute returns from the data of the S&P 500
-df_SP500 = df_returns[['S&P 500 ']]
-df_SP500['S&P 500 Index'] = df_SP500['S&P 500 '] / df_SP500['S&P 500 '][0] * 100
-df_SP500['Returns'] = df_SP500['S&P 500 Index'].pct_change()
-df_SP500['Log returns'] = np.log(df_SP500['S&P 500 Index']) - np.log(df_SP500['S&P 500 Index'].shift(1))
-
-# Function to compute and plot acf and squared acf of the S&P 500 log returns
-def acfsquared_SP500_mle():  # TODO to be deleted
-    # Derive  Squared ACF
-    lags = [i for i in range(n_lags)]
-    acf_squared = sm.tsa.acf(np.square(df_SP500['Log returns'].dropna()),nlags = n_lags)[1:]
-
-    # Confidence interval for ACF^2
-    acf_square_conf = [1.96 / np.sqrt(len(np.square(df_SP500['Log returns'].dropna()))),
-                    - 1.96 / np.sqrt(len(np.square(df_SP500['Log returns'].dropna())))]
-
-    # Plot squared ACF with generated squared
-    fig, ax2 = plt.subplots(figsize=(15,7))
-    plt.subplots_adjust(wspace=0.2, hspace=0.5)
-
-    ax2.bar(lags, acf_squared, color='black', alpha=0.4)
-    ax2.axhline(acf_square_conf[0], linestyle='dashed', color='black')
-    ax2.axhline(acf_square_conf[1], linestyle='dashed', color='black')
-    ax2.set_ylabel("ACF squared(log $r_t)$")
-    ax2.set_xlabel('Lag')
-    ax2.set_xlim(left=0.5, right=max(lags)+1)
-    plt.tight_layout()
-    plt.show()
-
 # Function to plot the empirical ACF squared and the simulated solution.
-def plot_acfsquared_SP500_combined():
+def plot_acfsquared_SP500_combined(data_table):
+    n_lags = len(data_table.loc[:, 'lag_0':].columns)
     lags = [i for i in range(n_lags)]
-    acf_squared = sm.tsa.acf(np.square(df_SP500['Log returns'].dropna()), nlags=n_lags)[1:]
+    acf_squared = sm.tsa.acf(np.square(df_returns), nlags=n_lags)[1:]
     acf_squared_outlier = sm.tsa.acf(df_returns_outlier**2, nlags=n_lags)[1:]
-    acf_square_conf = 1.96 / np.sqrt(len(np.square(df_SP500['Log returns'].dropna())))
+    acf_square_conf = 1.96 / np.sqrt(len(np.square(df_returns)))
+
+    squared_acf_SP500_mle = data_table.loc[(1700, 'mle'), 'lag_0':]
+    squared_acf_SP500_jump = data_table.loc[(1700, 'jump'), 'lag_0':]
 
     # Plotting
     plt.rcParams.update({'font.size': 15})
@@ -168,8 +131,8 @@ if __name__ == '__main__':
     #print(data_table.columns.values)
 
     #acfsquared_SP500_mle()
-    #plot_acfsquared_SP500_combined()
-    plot_rolling_parameters(plot_type='mle')
+    plot_acfsquared_SP500_combined(data_table)
+    #plot_rolling_parameters(plot_type='jump')
 
 
 
