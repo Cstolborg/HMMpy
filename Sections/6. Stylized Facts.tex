@@ -4,7 +4,7 @@
 \label{Section: Stylized facts}
 As highlighted throughout section \ref{section: Data} the normal distribution provides a poor fit for financial returns. Furthermore, financial returns are characterised by a set of stylized facts. Researchers including Granger \& Ding (1995b), Cont (2001) and Malmsten \& Teräsvirta (2010) have found a variety of different stylized facts that are persistent across asset returns. In addition, Rýden et al. (1998) showed the how HMMs can reproduce most of the stylized facts, in which the analysis was rooted on daily returns of the S\&P 500. Rýden et al. (1998) found that most of the stylized facts could in fact be reproduced by a HMM, however, the slow decay characterising the  squared autocorrelation function of daily returns, which is of great importance in financial risk management, could not be reproduced satisfactorily. More recently, Nystrup (2017) showed promising results in terms of HMMs reproducing the the squared autocorrelation function, albeit not achieving a perfect fit. 
 
-The data analyzed in this thesis encompass daily returns of the S&P 500 stock index from 1960 to 2021. As such, the predominant amount of the time series data used by the above-mentioned authors, is represented in the data underlying this thesis. Despite the unanimity in the overall methodology of the studies conducted by the aforementioned authors there are differences in their respective objectives. For instance, Granger \& Ding (1995b) divided the time series data into ten subsamples of 1,700 observations, which corresponds to a little less than seven years. Granger \& Ding (1995b) worked under the assumption that it was likely that with such a long time span there could have been structural shifts in the datagenerating process. Using a similar approach, Rydén (1998) found that the estimated HMMs, including the number of states and the type of conditional distributions, changed considerably between the subsamples.
+The data analyzed in this thesis encompass daily returns of the S\&P 500 stock index from 1960 to 2021. As such, the predominant amount of the time series data used by the above-mentioned authors, is represented in the data underlying this thesis. Despite the unanimity in the overall methodology of the studies conducted by the aforementioned authors there are differences in their respective objectives. For instance, Granger \& Ding (1995b) divided the time series data into ten subsamples of 1,700 observations, which corresponds to a little less than seven years. Granger \& Ding (1995b) worked under the assumption that it was likely that with such a long time span there could have been structural shifts in the datagenerating process. Using a similar approach, Rydén (1998) found that the estimated HMMs, including the number of states and the type of conditional distributions, changed considerably between the subsamples.
 
 As such, this section will be reserved for training HMMs through the aforementioned MLE and JUMP methodology, after-which the corresponding models serve as subject for analysis of how well they reproduce the stylized facts. The methdology outlined in this section will take a great amount of inspiration from Granger \& Ding (1995), Rýden et al. (1998) as well as Nystrup (2017).
 
@@ -50,16 +50,32 @@ Furhtermore, it is evident that there exists some differences between the MLE an
 
 \textbf{Train a number of models and compare their first 4 moments to those of S\&P500. Also show distributional properties as a function of time i.e. the 4 moments across time (see BP)}
 
+\textbf{Add outlier corrected graphs. Consider if outlier corrections should be done on a rolling basis or a one-off procedure on full dataset}
+
+\begin{figure}[H] 
+    \centering
+    \includegraphics[width=1.0\textwidth]{analysis/stylized_facts/2-state JUMP HMM rolling params.png}
+    \caption{Development of first four moments of estimated models compared to $\log(r_t)$ using a rolling window of 1700 days. Model estimates are calculated using Monte-Carlo simulations.}
+    \label{fig:stylized_facts_rolling_moments} 
+\end{figure}
+
 
 \subsection{Temporal properties}
 
 \textbf{Show ACF plots of same figures as in previous section}
 
+\begin{figure}[H] 
+    \centering
+    \includegraphics[width=1.0\textwidth]{analysis/stylized_facts/2-state JUMP HMM rolling params.png}
+    \caption{Development of first four moments of estimated models compared to $\log(r_t)$ using a rolling window of 1700 days. Model estimates are calculated using Monte-Carlo simulations.}
+    \label{fig:stylized_facts_acf_plots} 
+\end{figure}
+
 \subsection{Smoothing}
 
 \textbf{If smoothing works, then show distributional properties and temporal proerties again.}
 
+\textbf{Show decoded states on times series}
+
 \subsection{Model estimation and selection}
 \label{Subsection: Model estimation and selection}
-
- 

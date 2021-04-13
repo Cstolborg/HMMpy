@@ -314,20 +314,21 @@ As such, equation \ref{eq: base log posterior} and \ref{eq: inductive log poster
     \label{eq: log xi}
 \end{equation}
 
-As such, it should be evident that by relying on the methodology introduced above it becomes feasible to implement the algorithms comprising the HMM, particularly in situation and environments where both $T$ and $m$ are large. The following section will introduce another approach to estimating HMMs which is known as jump estimation.
+As such, it should be evident that by relying on the methodology introduced above it becomes feasible to implement the algorithms comprising the HMM, particularly in situation and environments where both $T$ and $m$ are large. The following section will introduce pseudo-code which showcases the implementation of log scaling in HMMs. 
 
-\subsubsection{Pseudo-code showcasing the implementation of log-scalling}
-In order to provide the reader with an intuitive overview and approach to repeat the procedures outlined through scaling the likelihood computation and the associated parameters, this section will focus on providing pseudo-code for the computations. 
-
-The section will be initialized with a walkthrough of the pseudo-code underlying the transformation of $\alpha_t(i)$ after-which the remaining procedures will follow. The reader should note that the provided pseudo-code is wrapped with Cython, which speeds of the computations with a factor 15-20x.
+\subsubsection{Pseudo-code showcasing the implementation of log-scaling}
+In order to provide the reader with an intuitive overview and approach to repeat the procedures associated with scaling the likelihood computation, and the associated parameters, this section will focus on providing pseudo-code. As such, the section will be initialized with a walk-through of the pseudo-code underlying the transformation of $\alpha_t(i)$, after-which the remaining transformations will follow. The reader should note that the provided pseudo-code is wrapped with Cython, which speeds of the computations with a factor 15-20x.
 
 \begin{algorithm}[H]
-\textbf{First iteration}: for t = 0 in range(n\_states): \;
+\textbf{For} t = 1 $\forall \in K$ \textbf{do} \;
 \Indp
-log\_alphas[0,i] = log\_startprob[i] + log\_emission\_proba[0,i] \;
+\log\alpha_{1}(i) = \log\delta_i + \log b_i(o_1) \;
 \BlankLine
 \Indm
-\textbf{Inductive step}: for t = 1,...,n\_samples - 1 $\forall j \in \K$ \;
+\for{\textbf{Inductive step:}}{
+for t = 2,\ldots,T-1 \quad $\forall j \in K$ \;
+\Indp for \;
+} \;
 \Indp 
 for t in range(1, n\_samples): \;
 \Indp
@@ -337,14 +338,14 @@ for i in range (n\_states): \;
 \BlankLine
 \Indp
 alpha\_temp[i] = log\_alphas[t-1, i] + log\_tpm[i, j] \;
-\Blankline
-\Indm \Indm
+\BlankLine
+\Indm 
 log\_alphas[t, j] = logsumexp\_cython(alpha\_temp, n\_states) + log\_emission\_proba[t, j] \;
-\caption{Compute the log-scaled forward probabilities for all states $S_i$ and observations $O_t$}
+\caption{Compute the log scaled forward probabilities for all states $S_i$ and observations $O_t$}
 \label{algo: log_scaled_forward}
 \end{algorithm}
 
-The workings and mechanics of the log forward probabilities derived from algorithm \ref{algo: log_scaled_forward} are closely interconnected with the backward probabilities. In the log space Closely connected to the mechanics and workings of the forward algorithm, the objective of the log scaled backward algorithm is to derive the log scaled backward probabilities.  
+The workings and mechanics of the log forward probabilities derived from algorithm \ref{algo: log_scaled_forward} are closely interconnected with the backward probabilities. As such, the log scaling of the backward probabilities can be done in a similar fashion as the forward probabilities.   
 
 \begin{algorithm}[H]
 \textbf{First iteration}: for t = n\_samples - 1 \;
@@ -353,18 +354,18 @@ for i in range(n\_states): \;
 log\_betas[n\_samples - 1, i] = 0 \;
 \BlankLine
 \Indm
-\textbf{Inductive step}: for t = n \_samples - 2,...0 $ \forall j \in \K $ \;
+\textbf{Inductive step}: for t = n \_samples - 2,\ldots,0 $ \quad \forall j \in \K $ \;
 for t in range(n\_samples - 2, -1, -1): \;
 \Indp 
 for i in range(n\_states): \;
 \Indp
 for j in range(n\_states): \;
 \Indp
-beta\_temp[j] = (log\_q[i, j] + log\_$b_j$($o_{t+1}$ + log\_betas[t+1, j] \;
+beta\_temp[j] = (log\_tpm[i, j] + log\_emission\_proba[t+1, j] + log\_betas[t+1, j] \;
 \BlankLine
 \Indm
 log\_betas[t, i] = logsumexp\_cython(beta\_temp, n\_states) \;
-\caption{Compute the log-scaled backward probabilities for all states $S_i$ and observations $O_t$}
+\caption{Compute the log scaled backward probabilities for all states $S_i$ and observations $O_t$}
 \label{algo: log_scaled_backward}
 \end{algorithm}
 
@@ -385,11 +386,11 @@ temporary\_calculation = (log\_tpm[j, i] + log\_posterior[t - 1, j]) \;
 \Indm
 log\_posteriors[t, i] = max(temporary\_calculation) + log\_emission\_proba[t, i] \;
 \BlankLine
-\caption{Compute the posterior probabilities for all states $\K$ at each time stept $t$}
+\caption{Compute the log scaled posterior probabilities for all states $\K$ at each time stept $t$}
 \label{algo: log_scaled_posterior}
 \end{algorithm}
 
-Lastly, in order to fully implement and capitalize on the log-scaling, it is necessary to adjust the re-estimation procedure presented in the EM-algorithm which were introduced by equation \ref{eq: gamma} and \ref{eq: xi}. As such, algorithm \ref{algo: log_scaled_gamma} and \ref{algo: log_scaled_xi} will provide an overview of the log scaling for $\gamma_i(t)$ and $\xi_{ij}(t)$, since these are instrumental for the workings of the Baum-Welch algorithm underlying the MLE procedure.
+Lastly, in order to fully implement and capitalize on the log-scaling, it is necessary to adjust the re-estimation procedure presented in the EM-algorithm which was introduced by equation \ref{eq: gamma} and \ref{eq: xi}. As such, algorithm \ref{algo: log_scaled_gamma} and \ref{algo: log_scaled_xi} will provide an overview of the log scaling for $\gamma_i(t)$ and $\xi_{ij}(t)$, since these are instrumental for the workings of the Baum-Welch algorithm underlying the MLE procedure.
 
 \begin{algorithm}[H]
 def\_compute\_gamma(self, log\_alphas, log\_betas): \;
@@ -397,12 +398,13 @@ def\_compute\_gamma(self, log\_alphas, log\_betas): \;
 log\_gamma = log\_alphas + log\_betas \;
 normalizer = logsumexp(log\_gamma, axis = 1, keepdims = True) \;
 log\_gamma -= normalizer \;
-\Blankline
+\BlankLine
 return log\_gamma
 \caption{Compute the log scaled gamma probabilities, $\gamma_i(t)$ i.e. the probability of seeing state $i$ at time $t$ given the entire observation sequence $O^T$}
 \label{algo: log_scaled_gamma}
 \end{algorithm}
 
+\newpage
 \begin{algorithm}[H]
 def\_compute\_xi(self, log\_alphas, log\_betas): \;
 \Indp 
@@ -410,7 +412,8 @@ log\_xi = np.zeros(shape=(len(log\_alphas)-1, self.n\_states, self.n\_states) \;
 with np.errstate(divide = 'ignore'): \;
 \Indp 
 log\_tpm = np.log(self.tpm) \;
-\Blankline
+\BlankLine
+\BlankLine
 \Indm
 for i in range(self.n\_states): \;
 \Indp
@@ -420,14 +423,14 @@ log\_xi[:, i, j] = log\_tpm[i, j] + log\_alphas[:-1, i] + log\_betas[1:, j] + se
 \Indm
 \Indm
 normalizer = logsumexp(log\_xi, axis = (1,2)) \;
-\Blankline
+\BlankLine
 log\_xi = log\_xi - normalizer[:, np.newaxis, np.newaxis] \;
 return log\_xi
 \caption{Compute the log scaled xi, $\xi_{ij}(t)$ i.e. the expected number of transitions from state $i$ to $j$, $P(s_{t-1} = j, s_t = i |O^T)$}
 \label{algo: log_scaled_xi}
 \end{algorithm}
 
-As such, the introduced algorithms serve as a stylized work-sheet of how the code for the log scaling procedure has been implemented. It should be clear that the code is by no means collectively exhaustive as several aspects have been left out, for instance the updating of model parameters for each iteration. For a full overview of the code the authors refer to appendix XXX and github YYY. The following section labelled \ref{subsection: Jump theory} will introduce an alternative procedure to estimate HMM parameters as oppossed to the intuitive and standardized MLE approach.
+As such, the introduced algorithms serve as a stylized work-sheet of how the code for the log scaling procedure has been implemented. It should be clear that the code is by no means collectively exhaustive as several aspects have been left out, for instance the updating of model parameters for each iteration. For a full overview of the code the authors refer to appendix XXX and github YYY. The following section labelled \ref{subsection: Jump theory} will introduce an alternative procedure to estimating HMM parameters as opposed to the intuitive and standardized MLE approach. This approach is known as jump estimation.
 
 \subsection{Jump estimation}
 \label{subsection: Jump theory}
