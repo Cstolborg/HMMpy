@@ -320,27 +320,21 @@ As such, it should be evident that by relying on the methodology introduced abov
 In order to provide the reader with an intuitive overview and approach to repeat the procedures associated with scaling the likelihood computation, and the associated parameters, this section will focus on providing pseudo-code. As such, the section will be initialized with a walk-through of the pseudo-code underlying the transformation of $\alpha_t(i)$, after-which the remaining transformations will follow. The reader should note that the provided pseudo-code is wrapped with Cython, which speeds of the computations with a factor 15-20x.
 
 \begin{algorithm}[H]
-\textbf{For} t = 1 $\forall \in K$ \textbf{do} \;
+\textbf{For} t = 1 all $i \in K$ \textbf{do} \;
 \Indp
-\log\alpha_{1}(i) = \log\delta_i + \log b_i(o_1) \;
+$\log\alpha_{1}(i) = \log\delta_i + \log b_i(o_1) $ \;
 \BlankLine
 \Indm
-\for{\textbf{Inductive step:}}{
-for t = 2,\ldots,T-1 \quad $\forall j \in K$ \;
-\Indp for \;
-} \;
+\textbf{For} t = 2,\ldots,T-1 \textbf{do} \;
 \Indp 
-for t in range(1, n\_samples): \;
+\textbf{For} all $j \in K$ \textbf{do} \;
 \Indp
-for j in range(n\_states): \;
+\textbf{For} all $i \in K$ \textbf{do} \;
 \Indp
-for i in range (n\_states): \;
-\BlankLine
-\Indp
-alpha\_temp[i] = log\_alphas[t-1, i] + log\_tpm[i, j] \;
+temp\_\alpha_t(i) = \log\alpha_{t-1}(i) + \log(q_{i, j}) \;
 \BlankLine
 \Indm 
-log\_alphas[t, j] = logsumexp\_cython(alpha\_temp, n\_states) + log\_emission\_proba[t, j] \;
+$\log\alpha_{t}(j)$ = logsumexp\_cython(temp\_\alpha, $K$) + \log b_j(o_t) \;
 \caption{Compute the log scaled forward probabilities for all states $S_i$ and observations $O_t$}
 \label{algo: log_scaled_forward}
 \end{algorithm}

@@ -19,14 +19,14 @@ The results of the rolling parameter for the MLE and JUMP estimation of the 2-st
 
 \begin{figure}[H] 
     \centering
-    \includegraphics[width=1.0\textwidth]{analysis/stylized_facts/2-state MLE HMM rolling params.png}
+    \includegraphics[width=1.0\textwidth]{analysis/stylized_facts/images/2-state MLE HMM rolling params.png}
     \caption{Rolling estimation based on the MLE approach. Parameters from a 2-state Gaussian HMM using a rolling window of XXX days. The size of the estimation window is particularly visible in the bear state where $\sigma_2^2$ significantly increase after the financial crisis, and only drops back down to pre-crisis levels after approximately XXX days. Dashed lines are parameters from an HMM estimated on the full sample.}
     \label{fig: MLE estimation rolling parameters} 
 \end{figure}
 
 \begin{figure}[H] 
     \centering
-    \includegraphics[width=1.0\textwidth]{analysis/stylized_facts/2-state JUMP HMM rolling params.png}
+    \includegraphics[width=1.0\textwidth]{analysis/stylized_facts/images/2-state JUMP HMM rolling params.png}
     \caption{Rolling estimation based on the JUMP approach. Parameters from a 2-state Gaussian HMM using a rolling window of XXX days.}
     \label{fig: Jump estimation rolling parameters} 
 \end{figure}
@@ -54,9 +54,16 @@ Furhtermore, it is evident that there exists some differences between the MLE an
 
 \begin{figure}[H] 
     \centering
-    \includegraphics[width=1.0\textwidth]{analysis/stylized_facts/2-state JUMP HMM rolling params.png}
+    \includegraphics[width=1.0\textwidth]{analysis/stylized_facts/images/rolling_moments.png}
     \caption{Development of first four moments of estimated models compared to $\log(r_t)$ using a rolling window of 1700 days. Model estimates are calculated using Monte-Carlo simulations.}
     \label{fig:stylized_facts_rolling_moments} 
+\end{figure}
+
+\begin{figure}[H] 
+    \centering
+    \includegraphics[width=1.0\textwidth]{analysis/stylized_facts/images/rolling_moments.png}
+    \caption{Development of first four moments of estimated models compared to $\log(r_t)$ using a rolling window of 1700 days and correcting for outliers that are further than four standard deviations away from the mean. Outliers are treated locally in each subsample of 1700 observations. Model estimates are calculated using Monte-Carlo simulations.}
+    \label{fig:stylized_facts_rolling_moments_outliers} 
 \end{figure}
 
 
@@ -66,7 +73,7 @@ Furhtermore, it is evident that there exists some differences between the MLE an
 
 \begin{figure}[H] 
     \centering
-    \includegraphics[width=1.0\textwidth]{analysis/stylized_facts/2-state JUMP HMM rolling params.png}
+    \includegraphics[width=1.0\textwidth]{analysis/stylized_facts/images/acf_squared_models.png}
     \caption{Development of first four moments of estimated models compared to $\log(r_t)$ using a rolling window of 1700 days. Model estimates are calculated using Monte-Carlo simulations.}
     \label{fig:stylized_facts_acf_plots} 
 \end{figure}
