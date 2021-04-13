@@ -320,21 +320,21 @@ As such, it should be evident that by relying on the methodology introduced abov
 In order to provide the reader with an intuitive overview and approach to repeat the procedures associated with scaling the likelihood computation, and the associated parameters, this section will focus on providing pseudo-code. As such, the section will be initialized with a walk-through of the pseudo-code underlying the transformation of $\alpha_t(i)$, after-which the remaining transformations will follow. The reader should note that the provided pseudo-code is wrapped with Cython, which speeds of the computations with a factor 15-20x.
 
 \begin{algorithm}[H]
-\textbf{For} t = 1 all $i \in K$ \textbf{do} \;
+\textbf{For} t = 1 all $i \in \K$ \textbf{do} \;
 \Indp
 $\log\alpha_{1}(i) = \log\delta_i + \log b_i(o_1) $ \;
 \BlankLine
 \Indm
 \textbf{For} t = 2,\ldots,T-1 \textbf{do} \;
 \Indp 
-\textbf{For} all $j \in K$ \textbf{do} \;
+\textbf{For} all $j \in \K$ \textbf{do} \;
 \Indp
-\textbf{For} all $i \in K$ \textbf{do} \;
+\textbf{For} all $i \in \K$ \textbf{do} \;
 \Indp
-temp\_\alpha_t(i) = \log\alpha_{t-1}(i) + \log(q_{i, j}) \;
+temp $\alpha(i) = \log\alpha_{t-1}(i) + \log(q_{i, j})$ \;
 \BlankLine
 \Indm 
-$\log\alpha_{t}(j)$ = logsumexp\_cython(temp\_\alpha, $K$) + \log b_j(o_t) \;
+$\log\alpha_{t}(j)$ = LSE(temp $\alpha(i)$, $\K$) + $\log b_j(o_t)$ \;
 \caption{Compute the log scaled forward probabilities for all states $S_i$ and observations $O_t$}
 \label{algo: log_scaled_forward}
 \end{algorithm}
@@ -342,23 +342,21 @@ $\log\alpha_{t}(j)$ = logsumexp\_cython(temp\_\alpha, $K$) + \log b_j(o_t) \;
 The workings and mechanics of the log forward probabilities derived from algorithm \ref{algo: log_scaled_forward} are closely interconnected with the backward probabilities. As such, the log scaling of the backward probabilities can be done in a similar fashion as the forward probabilities.   
 
 \begin{algorithm}[H]
-\textbf{First iteration}: for t = n\_samples - 1 \;
-for i in range(n\_states): \;
+\textbf{For} t = T - 1 all $i \in \K$ \textbf{do} \;
 \Indp
-log\_betas[n\_samples - 1, i] = 0 \;
+$\log\beta_{T-1}(i) = 0$ \;
 \BlankLine
 \Indm
-\textbf{Inductive step}: for t = n \_samples - 2,\ldots,0 $ \quad \forall j \in \K $ \;
-for t in range(n\_samples - 2, -1, -1): \;
+\textbf{For} t = T - 2,\ldots,0  \textbf{do} \;
+\Indp
+\textbf{For} all $i \in \K$ \textbf{do} \;
 \Indp 
-for i in range(n\_states): \;
+\textbf{For} all $j \in \K$ \textbf{do} \;
 \Indp
-for j in range(n\_states): \;
-\Indp
-beta\_temp[j] = (log\_tpm[i, j] + log\_emission\_proba[t+1, j] + log\_betas[t+1, j] \;
+temp $\beta(j) = (log(q[i, j]) + \log b_j(o_t) + \log\beta_{t+1}(j)$ \;
 \BlankLine
 \Indm
-log\_betas[t, i] = logsumexp\_cython(beta\_temp, n\_states) \;
+$\log\beta_{t}(i)$ = LSE(temp $\beta(j), \K$) \;
 \caption{Compute the log scaled backward probabilities for all states $S_i$ and observations $O_t$}
 \label{algo: log_scaled_backward}
 \end{algorithm}
@@ -366,61 +364,57 @@ log\_betas[t, i] = logsumexp\_cython(beta\_temp, n\_states) \;
 In addition to the log scaled forward and backward probabilities, a crucial element is the log scaled posterior probabilities. A pseudo-code overview of the implementation is provided in algorithm \ref{algo: log_scaled_posterior}.
 
 \begin{algorithm}[H]
-for i in range(n\_states): \;
+\textbf{For} all $i \in \K$ \textbf{do} \;
 \Indp 
-log\_posterior[0, i] = log\_startprob[i] + log\_emission\_proba[0, i] \;
+$\log \upsilon_1(i) = \log \delta_i + \log b_i(o_1)$ \;
 \Indm
-for t in range(1, n\_samples): \;
+\textbf{For} t in all $\K$ \textbf{do}  \;
 \Indp
-for i in range(n\_states): \;
+\textbf{For} all $i \in \K$ \textbf{do} \;
 \Indp
-for j in range(n\_states): \;
+\textbf{For} all $j \in \K $ \textbf{do} \;
 \Indp
-temporary\_calculation = (log\_tpm[j, i] + log\_posterior[t - 1, j]) \;
+temporary\_calculation = $\log q_{j,i} + \log \upsilon_{t-1}(j)$ \;
 \Indm
-log\_posteriors[t, i] = max(temporary\_calculation) + log\_emission\_proba[t, i] \;
+$\log \upsilon_t(i)$ = max(temporary\_calculation) + $\log b_i(o_t)$ \;
 \BlankLine
-\caption{Compute the log scaled posterior probabilities for all states $\K$ at each time stept $t$}
+\caption{Compute the log scaled posterior probabilities for all states $\K$ at each time step $t$}
 \label{algo: log_scaled_posterior}
 \end{algorithm}
 
 Lastly, in order to fully implement and capitalize on the log-scaling, it is necessary to adjust the re-estimation procedure presented in the EM-algorithm which was introduced by equation \ref{eq: gamma} and \ref{eq: xi}. As such, algorithm \ref{algo: log_scaled_gamma} and \ref{algo: log_scaled_xi} will provide an overview of the log scaling for $\gamma_i(t)$ and $\xi_{ij}(t)$, since these are instrumental for the workings of the Baum-Welch algorithm underlying the MLE procedure.
 
 \begin{algorithm}[H]
-def\_compute\_gamma(self, log\_alphas, log\_betas): \;
+def\_compute $\gamma_i(t)$(self, $\log\alpha_t(i), \log\beta_t(i)$): \;
 \Indp 
-log\_gamma = log\_alphas + log\_betas \;
-normalizer = logsumexp(log\_gamma, axis = 1, keepdims = True) \;
-log\_gamma -= normalizer \;
+$\log\gamma_i(t) = \log\alpha_t(i) + \log\beta_t(i)$ \;
+normalizer = LSE($\log\gamma_i(t)$) \;
+$\log\gamma_i(t)$ -= normalizer \;
 \BlankLine
-return log\_gamma
+return $\log\gamma_i(t)$
 \caption{Compute the log scaled gamma probabilities, $\gamma_i(t)$ i.e. the probability of seeing state $i$ at time $t$ given the entire observation sequence $O^T$}
 \label{algo: log_scaled_gamma}
 \end{algorithm}
 
 \newpage
 \begin{algorithm}[H]
-def\_compute\_xi(self, log\_alphas, log\_betas): \;
+def\_compute $\xi$(self, $\log\alpha_t(i)$, $\log\beta_t(i)$): \;
 \Indp 
-log\_xi = np.zeros(shape=(len(log\_alphas)-1, self.n\_states, self.n\_states) \;
-with np.errstate(divide = 'ignore'): \;
-\Indp 
-log\_tpm = np.log(self.tpm) \;
-\BlankLine
+$\log Q$ = np.log(self.tpm) \;
 \BlankLine
 \Indm
-for i in range(self.n\_states): \;
+\textbf{For} all $i \in \K $ \textbf{do} \;
 \Indp
-for j in range(self.n\_states): \;
+\textbf{For} all $j \in \K$ \textbf{do} \;
 \Indp
-log\_xi[:, i, j] = log\_tpm[i, j] + log\_alphas[:-1, i] + log\_betas[1:, j] + self.log\_emission\_probs[1:, j] \;
+$\log\xi_{ij}$ = $\log$ $q_{i,j} +$ $\log\alpha_{t}(i)$ + $\log\beta_t(j) + b_j(o_t)$ \;
 \Indm
 \Indm
-normalizer = logsumexp(log\_xi, axis = (1,2)) \;
+normalizer = LSE($\log\xi_{ij}(t)$) \;
 \BlankLine
-log\_xi = log\_xi - normalizer[:, np.newaxis, np.newaxis] \;
-return log\_xi
-\caption{Compute the log scaled xi, $\xi_{ij}(t)$ i.e. the expected number of transitions from state $i$ to $j$, $P(s_{t-1} = j, s_t = i |O^T)$}
+$\log\xi_{ij}$ = $\log\xi_{ij}$ - normalizer[:, np.newaxis, np.newaxis] \;
+return $\log\xi_{ij}$
+\caption{Compute the log scaled $\xi_{ij}(t)$ i.e. the expected number of transitions from state $i$ to $j$, $P(s_{t-1} = j, s_t = i |O^T)$}
 \label{algo: log_scaled_xi}
 \end{algorithm}
 
