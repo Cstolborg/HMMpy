@@ -8,6 +8,7 @@ In this section, HMMs are trained based on the estimation procedure described in
 In the following, accuracy of state predictions is defined using recall/sensitivity $\frac{tp}{tp+fn}$, where $tp$ is the number of true positives, and $fn$ is the number of false negative. It measures how large a fraction of all positives that the model is able to detect. When the true state is one, then the positive class will also be one, and the negative class will be all other predictions, when the true state is two the positive class will be two$,\ldots,$ and so on. However, one of the issues with recall is its inability to account for imbalanced data sets. To account for this, Nystrup et al. (2020) suggested using the balanced accuracy score (BAC), which is the average of accuracy in each observed state
 \begin{equation}
     BAC = \frac{1}{K} \sum_{k=1}^K \frac{tp_k}{tp_k + fn_k}
+    \label{eq: BAC definition}
 \end{equation}
 where $tp_k$ is the number of true positives and $fn_k$ is the number of false negatives in state $k$. As a result, when a classifier performs equally well on all states, then BAC reduces to regular accuracy, but if a classifier only performs well by always predicting the dominating class then BAC appropriately drops to the reciprocal of the number of states. So, given data with two classes, then if 99\% of data belongs to the positive class and this is correctly detected, but the remaining 1\% belong to the negative and is incorrectly classified, then that classifier obtains a BAC of 0.50, whereas regular accuracy would be 0.99. Considering the previously mentioned gain/loss asymmetry in financial returns, where losses occur less frequently yet their movements are on average larger than the corresponding movements in gains, BAC behaves exactly as desired.
 
@@ -67,75 +68,17 @@ $$
 
 Each series simulated from this model is generated as follows: The first element $s_0$ is drawn from the stationary distribution $\pi$, and each subsequent element is drawn from $q_{t-1}$, i.e. the row of $Q$ corresponding to the last state sojourn. Based on the value of each $s_t$, observations $o_t$ are generated from the conditional distributions. By repeating this procedure, 1000 different series are simulated with sample lengths $H = 250, 500, 1000, 2000$
 
-\subsection{Choosing the jump penalizer}
+\subsection{How to choose the jump penalizer}
 \label{subsection: jump_penalizer}
-
-One of the main challenges when it comes to selecting the jump penalizer is to determine which features to show the model during estimation. As shown in algorithm \ref{algo:jump_features} a set of features was derived from the daily log returns of the S\&P 500 index, however, the challenge is centered around deciding whether to include all the features, or perhaps drop some of them. This type of analysis is desirable to conduct since it makes it possible to compare performance when including and excluding different features. For instance, if a feature's impact on BAC is minimal, it might prevent the model of obtaining any significant results, since the features will be clustered with noise and randomness. As such, selection the features for the estimation of the jump penalizer is somewhat comparable to the classical bias-variance trade-off in machine learning. 
-
-Following this, 3 different feature sets will be constructed and serve as input for the simulation procedure in which 1000 different series are simulated, with sample lengths $H = 250, 500, 1000, 2000$. Having completed the simulation, the BAC score will be calculated for each sample length $H$ and the appropriate jump penalizer can be derived. As such, the analysis will focus on selecting the most optimal size of the jump penalizer while trying to achieve the highest BAC. The reader should note that the analysis will not conclude whether the feature space is optimal, since there is no method of doing so. This is because an unlimited amount of features can be derived from the log return series. 
-
-Using windows length of $l = 6$ and $l = 14$, the first feature set is defined in algorithm \ref{algo:jump_features_set_1}. 
-
-\begin{algorithm}[H]
-\KwInput{Time series O, and window length $l$}
-\BlankLine
-1. Observation: $o_t$\;
-2. Left absolute change: $|o_t-o_{t-1}|$ \;
-3. Previous left absolute change: $|o_{t-1}-o_{t-2}|$ \;
-4. Left local mean: $mean(o_{t-l},\ldots,o_{t})$ \;
-5. Left local std: $std(o_{t-l,\ldots, o_{t}})$ \;
-6. Left local median: $median(o_{t-l},\ldots,o_{t})$ \;
-\BlankLine
-
-\KwOutput{Feature set 1, where each each feature $z_i$ is standardized as $z_i = \frac{\bar x-x_i}{\sigma}$}
-\caption{Feature set 1 used in Jump estimation of HMM's}
-\label{algo:jump_features_set_1}
-\end{algorithm}
-
-The results from the simulation based on the features from algorithm \ref{algo:jump_features_set_1} are shown in figure XXXX.  As evident by the figure, there is a substantial difference between the simulated lengths in terms of the size of the BAC score. Overall the BAC score is increasing as the sample length increases. An interesting point is the varying sensitivity of the jump penalizer $\lambda$ for the different sample lengths $H$. As such, it is evident from figure XXXX that the sensitivity of the jump penalizer stabilises at different levels of $\lambda$. For sample lengths of 250 and 500 the BAC score stabilises when $\lambda$ is $2^3$ and $2^1$ respectively, however, for sample lengths 1000 and 2000 the BAC score never fully stabilises since it is largely negatively impacted by decreasing levels of $\lambda$. This could suggest that the selected features are not strong enough to be used on a stand-alone basis when choosing the jump penalizer for the model. On the other end of the spectrum when $\lambda$ grows large, which for feature set 1 is when $\lambda > 2^5$ the jump estimator only identifies the dominating state, hence the BAC drops to around 0.50 given its definition. 
-
-As a consequence of the obtained results associated with utilizing the feature set from algorithm \ref{algo:jump_features_set_1} a new feature set will be tested. The feature set will entail a variety of different parameters that are typically found in technical analysis trading strategies. The window length remains identical to that of feature set 1.
-
-\begin{algorithm}[H]
-\KwInput{Time series O, and window length $l$}
-\BlankLine
-1. Min/Max difference: $max(o_{t-l},\ldots,o_{t}) - min(o_{t-l},\ldots,o_{t})$ \;
-2. Exponential Moving average (EMA) 10 days: $a * o_t + (1-a) * EMA_{t-1}$, \quad where $a$ is the smoothing factor, $a = \frac{2}{10+1}$ \;
-3. Upper Bollinger band: \;
-4. Lower Bollinger band: \;
-5. Bollinger band width: \;
-6. Bollinger band \%B:  \;
-\BlankLine
-
-\KwOutput{Feature set 2, where each each feature $z_i$ is standardized as $z_i = \frac{\bar x-x_i}{\sigma}$}
-\caption{Feature set 2 used in Jump estimation of HMM's}
-\label{algo:jump_features_set_1}
-\end{algorithm}
-
-
-we define feature set 2 as:
-min max diff
-exponential moving average 10 days.
-upper bollinger band
-lower bollinger band
-band width
-bbbands\_bi
-
-we define feature set 3 as:
-all features together
-
-
-
-Since the MLE model doesn't have any hyperparameters, it can be applied to the simulated data right away. However, that is not the case for the jump model which requires a given value for $\lambda$. As mentioned previously, we are testing the models' ability to correctly identify state sequences, thus we want to maximize BAC with respect to $\lambda$. Since BAC is a random quantity\footnote
-{It is a function of the data and the initial state sequence $s_0$, which in the jump estimator is generated by K-means++. Both quantities are random.
-},
-we define the estimator $\Omega(\lambda)= \mathbb{E}[BAC|\lambda]$, which is maximized with respect to $\lambda$. This can be estimated by 
+Since the MLE model does not contain any hyperparameters, it can be applied to the simulated data right away. However, this is not the case for the jump model which requires a given value for $\lambda$. As previously mentioned, the objective is to test the models' ability to correctly identify state sequences, hence the best model is the one to maximize BAC with respect to $\lambda$. Since BAC is a random quantity\footnote
+{It is a function of the data and the initial state sequence $s_0$, which in the jump estimator is generated by K-means++. Both quantities are random.},
+it is appropriate to define the estimator $\Omega(\lambda)= \mathbb{E}[BAC|\lambda]$, which is maximized with respect to $\lambda$. This can be defined as, 
 \begin{equation}
     \hat\Omega(\lambda) = \frac{1}{N} \sum_{i=1}^N BAC_{i, \lambda}^H
 \end{equation}
-where N is the amount of simulated series, and $BAC_{i, \lambda}^H$ refer to the BAC of the $i$th sequence of sample size H computed using a jump model with penalty $\lambda$.
+where $N$ is the amount of simulated series, and $BAC_{i, \lambda}^H$ refer to the BAC of the $i$th sequence of sample size $H$ computed using a jump model with penalty $\lambda$.
 
-We proceed, by computing $BAC_{i, \lambda}^H$ on samples of lengths 250, 500, 1000 and 2000. Further, penalties are considered on a grid defined on the logarithmic scale with base 2. Initially the grid was defined on a logarithmic scale with base 10, but evidently this was too course to yield meaningful results. Grid points are equidistantly placed on the closed interval $[2^{-2}, 2^{7}]$. Results are shown in \cref{fig:jump_penalties}. As evident by the figure, the primary difference between simulation lengths is the size of BAC, which is generally increasing with sample size. Once $\lambda$ is below a certain threshold, in this case around $2^5$, BAC isn't too sensitive to the precise level of the penalty. As noted earlier, when $\lambda$ is sufficiently small, BAC converges to the unpenalized case, which is essentially the same as applying a K-means model where the time ordering of observations is irrelevant. For $\lambda$ too large, the jump estimator only identifies the dominating state, and as a result BAC drops to 0.50. 
+Having defined these properties the analysis proceed by computing $BAC_{i, \lambda}^H$ on samples lengths 250, 500, 1000 and 2000. Further, penalties are considered on a grid defined on the logarithmic scale with base 2. Initially the grid was defined on a logarithmic scale with base 10, but evidently this was too course to yield meaningful results. Grid points are equidistantly placed on the closed interval $[2^{-2}, 2^{7}]$. An overview a random output have been constructed in figure \ref{fig:jump_penalties}. As evident by the figure, the primary difference between simulation lengths is the size of BAC, which is generally increasing with sample size. Once $\lambda$ is below a certain threshold, in this case around $2^5$, the BAC becomes  rather insensitive to the precise level of the penalty. As noted earlier, when $\lambda$ is sufficiently small, BAC converges to the unpenalized case, which is essentially the same as applying a K-means model where the time ordering of observations is irrelevant. For $\lambda$ too large, the jump estimator only identifies the dominating state, and as a result BAC drops to 0.50. 
 
 \begin{figure}[H]
     \centering
@@ -144,9 +87,82 @@ We proceed, by computing $BAC_{i, \lambda}^H$ on samples of lengths 250, 500, 10
     \label{fig:jump_penalties}
 \end{figure}
 
-From \cref{fig:jump_penalties}, the optimal level of $\lambda$ is roughly equivalent for all simulation lengths, though for $H=250,500$, the optimal penalty is bit higher. As the difference is still quite small, and more importantly, due to the large drop in BAC across all simulation lengths for $\lambda > 2^5$, the optimal penalty is chosen as $\lambda=2^4$ for all simulation lengths. 
+In addition, it is evident from figure \ref{fig:jump_penalties} that the optimal level of $\lambda$ is roughly equivalent for all simulation lengths, though for $H=250,500$, the optimal penalty is bit higher. As the difference is still quite small, and more importantly, due to the large drop in BAC across all simulation lengths for $\lambda > 2^5$, the optimal penalty is chosen as $\lambda=2^4$ for all simulation lengths. 
 
-\textbf{Consider discussing time-variation in $\lambda$ and how the size of $\lambda$ relates to the size of means in feature matrix.}
+\subsubsection{Selecting the optimal jump penalizer}
+One of the main challenges when it comes to selecting the jump penalizer is to determine which features to show the model during estimation. As shown in algorithm \ref{algo:jump_features} a set of features was derived from the daily log returns of the S\&P 500 index, however, the challenge is centered around deciding whether to include all the features, or perhaps drop some of them. This type of analysis is desirable to conduct since it makes it possible to compare performance when including and excluding different features. For instance, if a feature's impact on BAC is minimal, it might prevent the model of obtaining any significant results, since the features will be clustered with noise and randomness. As such, selecting the features for estimation of the jump penalizer is somewhat comparable to the classical bias-variance trade-off in machine learning. 
+
+Following this acknowledgement, 3 different feature sets will be constructed and serve as input for the simulation procedure, in which 1000 different series are simulated, with sample lengths $H = 250, 500, 1000, 2000$, as explained in section \ref{subsection: jump_penalizer}. Having completed the simulation, the BAC score will be calculated for each sample length $H$ and the appropriate jump penalizer can be derived. As such, the objective of the analysis is to select the most optimal size of the jump penalizer while achieving the highest BAC. The reader should note that the analysis will not conclude whether the feature space is optimal, since there is no method of doing so. This is because an unlimited amount of features can be derived from the log return series (Tansjö, 2020). 
+
+Using windows length of $l = 6$ and $l = 14$, the first feature set is defined as in algorithm \ref{algo:jump_features_set_1}. 
+
+\begin{algorithm}[H]
+\KwInput{Time series O, and window length $l$}
+\BlankLine
+1. Observation: $o_t$\;
+2. Left absolute change: $|o_t-o_{t-1}|$ \;
+3. Previous left absolute change: $|o_{t-1}-o_{t-2}|$ \;
+4. Left local mean: $mean(o_{t-l},\ldots,o_{t})$ \;
+5. Left local std: $std(o_{t-l},\ldots, o_{t})$ \;
+6. Left local median: $median(o_{t-l},\ldots,o_{t})$ \;
+\BlankLine
+
+\KwOutput{Feature set 1, where each each feature $z_i$ is standardized as $z_i = \frac{\bar x-x_i}{\sigma}$}
+\caption{Feature set 1 used in Jump estimation of HMM's}
+\label{algo:jump_features_set_1}
+\end{algorithm}
+
+The results from the simulation based on the features from algorithm \ref{algo:jump_features_set_1} are shown in figure \ref{fig: BAC plot feature set 1}. It is evident by the figure that there is a substantial difference between the sample lengths and their respective BAC. Overall the BAC score is increasing in the sample length. 
+
+\begin{figure}[H] 
+    \centering
+    \includegraphics[width=1\textwidth]{analysis/model_convergence/images/jump_penalties_feature_set_1.png}
+    \caption{Balanced accuracy of jump estimator as a function of the penalty $\lambda$ using different simulation lengths and the features defined in algorithm \ref{algo:jump_features_set_1}. All points are based on the estimate $\hat{\Omega} (\lambda)$ based on 1000 simulated series. Note that $\lambda$ has been log scaled with base 2.}
+    \label{fig: BAC plot feature set 1}
+\end{figure}
+
+An interesting point is the varying sensitivity of the jump penalizer $\lambda$ across the different sample lengths. As such, it is evident from figure \ref{fig: BAC plot feature set 1} that the sensitivity of the jump penalizer stabilises at different levels of $\lambda$. For sample lengths of 250 and 500 the BAC stabilises when $\lambda$ is $2^3$ and $2^1$ respectively, however, for sample lengths 1000 and 2000 the BAC never fully stabilises since it is negatively impacted by decreasing levels of $\lambda$ in the range of $2^{-1}$ to $2^4$. This could suggest that the selected features are not strong enough to be used on a stand-alone basis for obtaining a stable jump penalizer for the model. On the other end of the spectrum when $\lambda$ grows large, which for the features defined in algorithm \ref{algo:jump_features_set_1} is when $\lambda > 2^5$, the jump estimator only identifies the dominating state, hence the BAC drops to a level fluctuating between 0.50 to 0.60 depending on the sample length. This is a natural consequence of its definition in equation \ref{eq: BAC definition}. 
+
+The results showcased by figure \ref{fig: BAC plot feature set 1} indicate that the jump penalizer should be chosen as $\lambda = 2^4$ since this is around the level in which the BAC is maximized for sample lengths 500, 1000 and 2000. Unfortunately, it appears that the maximum BAC that is achievable is around 0.87, which suggests that the state predictions are prone to errors and miss estimations. As a consequence of this a new feature set will be defined and tested. The feature set will entail a variety of different parameters that are typically found in technical analysis trading strategies. The window length remains identical to that of feature set 1.
+
+\begin{algorithm}[H]
+\KwInput{Time series O, and window length $l$}
+\BlankLine
+1. Min/Max difference: $max(o_{t-l},\ldots,o_{t}) - min(o_{t-l},\ldots,o_{t})$ \;
+2. Exponential moving average (EMA) 10 days: $a * o_t + (1-a) * EMA_{t-1}$, \quad where $a$ is the smoothing factor, $a = \frac{2}{10+1}$ \;
+3. Upper Bollinger band: $mean(o_{t-l},\ldots,o_t) + 1.96 * std(o_{t-l},\ldots,o_t)$ \;
+4. Lower Bollinger band: $mean(o_{t-l},\ldots,o_t) - 1.96 * std(o_{t-l},\ldots,o_t)$\;
+5. Bollinger band width: $Upper\ Bollinger\ Band - Lower\  Bollinger\ Band$ \;
+6. Bollinger band \%B: $\frac{mean(o_{t-l},\ldots,o_{t}) - Lower\ Bollinger\ band} {Upper\ Bollinger\ band - Lower\ Bollinger\ band}$  \;
+\BlankLine
+\KwOutput{Feature set 2, where each each feature $z_i$ is standardized as $z_i = \frac{\bar x-x_i}{\sigma}$}
+\caption{Feature set 2 used in Jump estimation of HMM's}
+\label{algo:jump_features_set_2}
+\end{algorithm}
+
+The results based on the features from algorithm \ref{algo:jump_features_set_2} are shown in figure \ref{fig: BAC plot feature set 2}. It is evident from the figure that  there is a substantial difference between the sample lengths and the size of the BAC. This is in line with the results obtained through feature set 1 in algorithm \ref{algo:jump_features_set_1}. Another similarity between the two feature sets is the fact that the BAC is increasing in the sample length.
+
+\begin{figure}[H] 
+    \centering
+    \includegraphics[width=1\textwidth]{analysis/model_convergence/images/jump_penalties_feature_set_2.png}
+    \caption{Balanced accuracy of jump estimator as a function of the penalty $\lambda$ using different simulation lengths and the features defined in algorithm \ref{algo:jump_features_set_2}. All points are based on the estimate $\hat{\Omega} (\lambda)$ based on 1000 simulated series. Note that $\lambda$ has been log scaled with base 2.}
+    \label{fig: BAC plot feature set 2}
+\end{figure}
+
+Interestingly, it appears that the BAC is less sensitive to changing jump penalizers compared to figure \ref{fig: BAC plot feature set 1}. This is evident since the BAC is a horizontal line, for all sample lengths, when the jump penalizer lies in the range $2^{-1}$ to $2^3$. The horizontal line is a favourable property as it provides a higher confidence in the selected size of the jump penalizer since state prediction results will be consistent across $\lambda$. Furthermore, it is evident that the the BAC have been shifted upwards, for all sample lengths, when compared to the results from figure \ref{fig: BAC plot feature set 1}. This means that the features defined in algorithm \ref{algo:jump_features_set_2} appear to be much stronger in achieving accurate state predictions. 
+
+Finally, it was evident by figure \ref{fig: BAC plot feature set 1} that the different sample lengths appeared to maximize BAC for different levels of $\lambda$, however, when analysing figure \ref{fig: BAC plot feature set 2} it appears that the BAC maximizes at the same $\lambda$ for all sample lengths. This property further provides confidence when selecting the optimal level of $\lambda$, since the result is unanimous across sample lengths. As such, the results showcased by figure \ref{fig: BAC plot feature set 2} indicate that the jump penalizer should be chosen as $\lambda = 2^4$ since this is where BAC is maximized for all sample lengths. This finding is particularly interesting because this is the same size of $\lambda$ that was suggested by using the features defined in algorithm \ref{algo:jump_features_set_1}. Therefore, the conclusion from both feature sets point towards a jump penalizer of the size $2^4$, although the second feature set achieves a much higher BAC across samples and jump penalizers. Due to these findings an appropriate analysis would be to make an identical analysis which include all features as defined in algorithm \ref{algo:jump_features}. These results are shown in figure \ref{fig: BAC plot feature set 3}.
+
+\begin{figure}[H] 
+    \centering
+    \includegraphics[width=1\textwidth]{analysis/model_convergence/images/jump_penalties_feature_set_3_all.png}
+    \caption{Balanced accuracy of jump estimator as a function of the penalty $\lambda$ using different simulation lengths and the features defined in algorithm \ref{algo:jump_features}. All points are based on the estimate $\hat{\Omega} (\lambda)$ based on 1000 simulated series. Note that $\lambda$ has been log scaled with base 2.}
+    \label{fig: BAC plot feature set 3}
+\end{figure}
+
+Evidently, several interesting aspects occur when using all the defined features from algorithm \ref{algo:jump_features} to determine the jump penalizer. Firstly, the plots of the BAC against the jump penalizers becomes stable for a larger domain of definition, since the plots are horizontal for jump penalizers in the range of $2^{-1}$ to $2^4$, which is longer compared to that of figure \ref{fig: BAC plot feature set 2}. Secondly, the BAC is shifted slightly upwards in figure \ref{fig: BAC plot feature set 3} compared to figure \ref{fig: BAC plot feature set 2}. This means that using all the features result in a slightly better BAC compared to solely relying on the features defined in algorithm \ref{algo:jump_features_set_2}. Furthermore, a particular interesting finding is the apparent shift of the optimal jump penalizer. As such, it is evident from figure \ref{fig: BAC plot feature set 3} that the BAC maximizes when $\lambda$ is $2^5$, for all sample lengths. This is contrary to the findings from figure \ref{fig: BAC plot feature set 1} and \ref{fig: BAC plot feature set 2} both pointing towards an optimal jump penalizer of $2^4$. Despite this inconsistency, all 3 feature sets point towards a jump penalizer in the range of $2^4$ to $2^5$, which contribute to a high confidence when selecting the $\lambda$.
+
+In addition, it can be concluded from the analysis of the 3 feature sets, that increasing the sample length increases the BAC. As such, further analysis should consider testing longer sample lengths across different feature sets in order to uncover an optimal combination that pushes  the BAC even higher. This is because it appears that there is a fast decreasing marginal increase in BAC of using additional features, evident by comparing figure \ref{fig: BAC plot feature set 2} and \ref{fig: BAC plot feature set 3}. Conclusively, due to the fact that the BAC is slightly larger and horizontal for a longer domain of definition, for all sample lengths, the jump penalizer will be selected based on the feature set defined in algorithm \ref{algo:jump_features}, which means that the optimal $\lambda$ is $2^5$. 
 
 \subsection{Simulation study with correctly specified distributions}
 
