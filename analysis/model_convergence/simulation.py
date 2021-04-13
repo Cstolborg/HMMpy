@@ -25,7 +25,8 @@ def test_model_convergence(jump, mle, sampler, X, sample_lengths=(250, 500, 1000
     }
 
     # Compute models params for each sample length
-    for sample_length in tqdm.tqdm(sample_lengths):
+    for sample_length in sample_lengths:
+        print(f'Computing values for sample length = {sample_length}')
         # Load empty dictionaries for each run
         data = {'jump': copy.deepcopy(cols),
                 'mle': copy.deepcopy(cols)
@@ -129,16 +130,17 @@ if __name__ == '__main__':
     X = np.load(path + 'sampled_returns.npy')
     true_states = np.load(path + 'sampled_true_states.npy')
 
-    df = pd.read_csv(path + 'simulation_normal.csv')
+    #df = pd.read_csv(path + 'simulation_normal.csv')
     df = test_model_convergence(jump, mle, sampler, X, sample_lengths=(250, 500, 1000, 2000))
-    df.to_csv(path + 'simulation_normal.csv', index=False)
 
+    # Summarize results
     data_table = df.groupby(['sample_size', 'model']).mean().sort_index(ascending=[True, False])
     print(data_table)
 
-    save = True
+    save = False
     if save == True:
         plot_simulated_model_convergence(df, sampler, savefig='simulation_normal.png')
+        df.to_csv(path + 'simulation_normal.csv', index=False)
         data_table.round(4).to_latex(path + 'simulation_normal.tex', escape=False)
     else:
         plot_simulated_model_convergence(df, sampler, savefig=None)

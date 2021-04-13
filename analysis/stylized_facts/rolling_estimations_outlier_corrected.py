@@ -25,7 +25,7 @@ if __name__ == '__main__':
     jump = JumpHMM(n_states=2, jump_penalty=16, window_len=(6, 14),
                    epochs=20, max_iter=30, random_state=42)
 
-    logret = logret[13000:15000]  # Reduce sample size to speed up training
+    #logret = logret[13000:15000]  # Reduce sample size to speed up training
 
     df = train_rolling_window(logret, mle, jump, window_lens=[1700], n_lags=100, acf_type='simulated',
                               outlier_corrected=True, n_sims=5000)
@@ -35,7 +35,7 @@ if __name__ == '__main__':
     print(data_table)
 
     # Save results
-    save = True
+    save = False
     if save == True:
         path = '../../analysis/stylized_facts/output_data/'
         df.to_csv(path + 'rolling_estimations_outlier_corrected.csv', index=False)

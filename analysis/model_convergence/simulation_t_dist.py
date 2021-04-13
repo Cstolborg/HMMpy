@@ -23,12 +23,18 @@ if __name__ == '__main__':
     X = np.load(path + 'sampled_t_returns.npy')
     true_states = np.load(path + 'sampled_t_true_states.npy')
 
-    df = pd.read_csv(path + 'simulation_t.csv')
+    #df = pd.read_csv(path + 'simulation_t.csv')
     df = test_model_convergence(jump, mle, sampler, X, sample_lengths=(250, 500, 1000, 2000))
-    df.to_csv(path + 'simulation_t.csv', index=False)
 
-    plot_simulated_model_convergence(df, sampler, savefig='simulation_t.png')
-
+    # Summarize results
     data_table = df.groupby(['sample_size', 'model']).mean().sort_index(ascending=[True, False])
-    data_table.round(4).to_latex(path + 'simulation_t.tex', escape=False)
     print(data_table)
+
+
+    save = False
+    if save == True:
+        plot_simulated_model_convergence(df, sampler, savefig='simulation_t.png')
+        df.to_csv(path + 'simulation_t.csv', index=False)
+        data_table.round(4).to_latex(path + 'simulation_t.tex', escape=False)
+    else:
+        plot_simulated_model_convergence(df, sampler, savefig=None)

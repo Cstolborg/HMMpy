@@ -25,12 +25,12 @@ df_mle = df[df['model'] == 'mle']
 df_jump = df[df['model'] == 'jump']
 
 # Function to plot the empirical ACF squared and the simulated solution.
-def plot_acfsquared_SP500_combined(data_table):
+def plot_acf(data_table, savefig=None):
     n_lags = len(data_table.loc[:, 'lag_0':].columns)
     lags = [i for i in range(n_lags)]
-    acf_squared = sm.tsa.acf(np.square(df_returns), nlags=n_lags)[1:]
+    acf_squared = sm.tsa.acf(df_returns**2, nlags=n_lags)[1:]
     acf_squared_outlier = sm.tsa.acf(df_returns_outlier**2, nlags=n_lags)[1:]
-    acf_square_conf = 1.96 / np.sqrt(len(np.square(df_returns)))
+    acf_square_conf = 1.96 / np.sqrt(len(df_returns))
 
     squared_acf_SP500_mle = data_table.loc[(1700, 'mle'), 'lag_0':]
     squared_acf_SP500_jump = data_table.loc[(1700, 'jump'), 'lag_0':]
@@ -61,10 +61,13 @@ def plot_acfsquared_SP500_combined(data_table):
     plt.legend()
     plt.subplots_adjust(wspace=0.2, hspace=0.5)
     plt.tight_layout()
+
+    if not savefig == None:
+        plt.savefig('./images/' + savefig)
     plt.show()
 
 # Function for plotting rolling parameters for different estimation procedures.
-def plot_rolling_parameters(plot_type = 'mle'):
+def plot_rolling_parameters(plot_type = 'mle', savefig=None):
     if plot_type == 'mle':
         mu_1 = df_mle['$\mu_1$']
         mu_2 = df_mle['$\mu_2$']
@@ -103,7 +106,7 @@ def plot_rolling_parameters(plot_type = 'mle'):
     x_axis = df_returns.index[-len(mu_1):]  #Insert the number of trading days in the rolling window.
 
     for (ax, var, symbol) in zip(axes, variables, symbol_list):
-        ax.plot(x_axis, var)
+        ax.plot(x_axis, var, color='black')
         ax.set_ylabel(symbol, size=15)
         ax.tick_params('x', labelrotation=45)
         ax.tick_params(
@@ -124,12 +127,13 @@ def plot_rolling_parameters(plot_type = 'mle'):
         if symbol == "$q_{11}$" or symbol == "$q_{22}$":
             ax.set_ylim(bottom=0.85, top=1.0)
 
-    plt.savefig("2-state MLE HMM rolling params")
+    if not savefig == None:
+        plt.savefig('./images/' + savefig)
 
     plt.show()
 
 
-def plot_rolling_moments(df, logrets, window_len=1700, moving_window=10):
+def plot_rolling_moments(df, logrets, window_len=1700, moving_window=10, savefig=None):
     """ Plot the first four moments of estimated models along with returns"""
     #Slice log returns into subsamples of window lenghts
     # TODO move into its own function
@@ -147,14 +151,14 @@ def plot_rolling_moments(df, logrets, window_len=1700, moving_window=10):
 
     # Plotting
     plt.rcParams.update({'font.size': 15})
-    fig, axs = plt.subplots(nrows=2, ncols=2, figsize=(15, 7), sharex=True)
+    fig, axs = plt.subplots(nrows=4, ncols=1, figsize=(15, 12), sharex=True)
 
     models = ['mle', 'jump']
     labels = ['Mean', 'Variance', 'Skewness', 'Excess Kurtosis']
     colors = ['black', 'lightgrey']
 
     # Loop through each subplot
-    for i, (ax, moment, label) in enumerate(zip(axs.flatten(), empirical_moments, labels)):
+    for i, (ax, moment, label) in enumerate(zip(axs, empirical_moments, labels)):
         # Plot empirical returns moment
         ax.plot(logrets.index[(window_len):], moment, label=r'$\log (r_t)$', color='grey', ls='--')
         # Inner loop allows drawing of several models
@@ -167,14 +171,17 @@ def plot_rolling_moments(df, logrets, window_len=1700, moving_window=10):
         ax.set_xlim(df.index[moving_window-1], df.index[-1])
         ax.set_ylabel(label)
 
-    axs[1, 0].tick_params('x', labelrotation=45)
-    axs[1, 1].tick_params('x', labelrotation=45)
+    axs[-1].tick_params('x', labelrotation=45)
+    #axs[1, 1].tick_params('x', labelrotation=45)
 
     plt.legend()
     plt.subplots_adjust(wspace=0.2, hspace=0.5)
     plt.tight_layout()
-    plt.show()
 
+    if not savefig == None:
+        plt.savefig('./images/' + savefig)
+
+    plt.show()
 
 
 if __name__ == '__main__':
@@ -182,10 +189,20 @@ if __name__ == '__main__':
     #print(data_table.columns.values)
 
     #acfsquared_SP500_mle()
-    #plot_acfsquared_SP500_combined(data_table)
+    plot_acf(data_table)
     #plot_rolling_parameters(plot_type='jump')
 
-    plot_rolling_moments(df, df_returns, moving_window=50)
+    save = True
+    if save is True:
+        plot_rolling_moments(df, df_returns, moving_window=50, savefig='rolling_moments.png')
+        plot_acf(data_table, savefig='acf_squared_models.png')
+        plot_rolling_parameters(plot_type='jump', savefig='2-state JUMP HMM rolling params.png')
+        plot_rolling_parameters(plot_type='mle', savefig='2-state MLE HMM rolling params.png')
+    else:
+        plot_rolling_moments(df, df_returns, moving_window=50, savefig=None)
+        plot_acf(data_table, savefig=None)
+        plot_rolling_parameters(plot_type='jump', savefig=None)
+        plot_rolling_parameters(plot_type='mle', savefig=None)
 
 
 

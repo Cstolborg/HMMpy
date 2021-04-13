@@ -62,12 +62,14 @@ class JumpHMM(BaseHiddenMarkov):
 
             return state_seq, theta
 
-    def construct_features(self, X: ndarray, window_len: tuple, feature_set = 'feature_set_1'): ##Add also in def fit function in this file.
+    def construct_features(self, X: ndarray, window_len: tuple, feature_set='feature_set_2'):
+        if not feature_set in ['feature_set_1', 'feature_set_2', 'feature_set_3']:
+            raise Exception('Invalid feature set. Valid options are [feature_set_1, feature_set_2, feature_set_3]')
 
         df = pd.DataFrame({'raw_input': X})
 
-        # Absolute changes
         if feature_set == 'feature_set_1':
+            # Absolute changes
             df['left_abs_change'] = np.abs(df['raw_input'].diff())  # np.abs(np.diff(X))
             df['prev_left_abs_change'] = df['left_abs_change'].shift(1)
 
@@ -263,9 +265,9 @@ class JumpHMM(BaseHiddenMarkov):
                     old_state_seq = state_seq
                     old_objective_score = objective_score
 
-    def fit(self, X, get_hmm_params=True, sort_state_seq=False, verbose=False, feature_set='feature_set_1'):
+    def fit(self, X, get_hmm_params=True, sort_state_seq=False, verbose=False, feature_set='feature_set_2'):
         self.is_fitted = False
-        Z = self.construct_features(X, window_len=self.window_len, feature_set='feature_set_1')
+        Z = self.construct_features(X, window_len=self.window_len, feature_set=feature_set)
 
         self._fit(X=X, Z=Z, verbose=verbose)  # Container for loop where fitting happens
 
