@@ -60,7 +60,7 @@ def test_model_convergence(jump, mle, sampler, X, sample_lengths=(250, 500, 1000
         for model in data.keys():
             df_temp = pd.DataFrame(data[model])
             df_temp['model'] = model
-            df_temp['sample_size'] = sample_length
+            df_temp['Simulation length'] = sample_length
             df = df.append(df_temp)
 
     # Add true values to data
@@ -73,7 +73,7 @@ def test_model_convergence(jump, mle, sampler, X, sample_lengths=(250, 500, 1000
              '$\sigma_2$': sampler.std[1],
              '$q_{11}$': sampler.tpm[0, 0],
              '$q_{22}$': sampler.tpm[1, 1],
-             'sample_size': sample_length
+             'Simulation length': sample_length
              }
         df = df.append(pd.DataFrame(true_data, index=[0]))
 
@@ -95,7 +95,7 @@ def plot_simulated_model_convergence(df, sampler, savefig=None):
     for (model, color) in zip(models, colors):
         # Slice df to get desired column
         to_plot = df[df['model'] == model]
-        to_plot = to_plot.groupby('sample_size').mean()
+        to_plot = to_plot.groupby('Simulation length').mean()
         k = 0  # columns indexer
         for i in range(3):
             for j in range(2):
@@ -134,7 +134,7 @@ if __name__ == '__main__':
     df = test_model_convergence(jump, mle, sampler, X, sample_lengths=(250, 500, 1000, 2000))
 
     # Summarize results
-    data_table = df.groupby(['sample_size', 'model']).mean().sort_index(ascending=[True, False])
+    data_table = df.groupby(['Simulation length', 'model']).mean().sort_index(ascending=[True, False])
     print(data_table)
 
     save = False

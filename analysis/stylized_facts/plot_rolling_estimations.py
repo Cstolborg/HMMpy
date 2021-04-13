@@ -9,20 +9,6 @@ from utils.data_prep import load_long_series_logret, moving_average
 import warnings
 warnings.filterwarnings("ignore")
 
-# Load log returns from SP500
-df_returns = load_long_series_logret()
-df_returns_outlier = load_long_series_logret(outlier_corrected=True)
-
-# Loading regular and outlier corrected data. Then get means parameters across time
-path = '../../analysis/stylized_facts/output_data/'
-df = pd.read_csv(path + 'rolling_estimations.csv')
-df_outlier = pd.read_csv(path + 'rolling_estimations_outlier_corrected.csv')
-data_table = df.groupby(['window_len', 'model']).mean().sort_index(ascending=[True, False])
-data_table_outlier = df_outlier.groupby(['window_len', 'model']).mean().sort_index(ascending=[True, False])
-
-# Splitting the data from df into jump and MLE
-df_mle = df[df['model'] == 'mle']
-df_jump = df[df['model'] == 'jump']
 
 # Function to plot the empirical ACF squared and the simulated solution.
 def plot_acf(data_table, savefig=None):
@@ -46,7 +32,7 @@ def plot_acf(data_table, savefig=None):
     ax[0].plot(lags, squared_acf_SP500_jump, label="jump")
 
     # Outlier-corrected
-    ax[1].set_title(r'Outliers limited to $\bar r_t \pm 0$')
+    ax[1].set_title(r'Outliers limited to $\bar r_t \pm 4\sigma$')
     ax[1].bar(lags, acf_squared_outlier, color='black', alpha=0.4)
     ax[1].plot(lags, data_table_outlier.loc[(1700, 'mle'), 'lag_0':], label="mle")
     ax[1].plot(lags, data_table_outlier.loc[(1700, 'jump'), 'lag_0':], label="jump")
@@ -67,22 +53,15 @@ def plot_acf(data_table, savefig=None):
     plt.show()
 
 # Function for plotting rolling parameters for different estimation procedures.
-def plot_rolling_parameters(plot_type = 'mle', savefig=None):
-    if plot_type == 'mle':
-        mu_1 = df_mle['$\mu_1$']
-        mu_2 = df_mle['$\mu_2$']
-        sigma_1 = df_mle['$\sigma_1$']
-        sigma_2 = df_mle['$\sigma_2$']
-        q_11 = df_mle['$q_{11}$']
-        q_22 = df_mle['$q_{22}$']
+def plot_rolling_parameters(df, model ='mle', savefig=None):
+    df = df[df['model'] == model]
 
-    elif plot_type == 'jump':
-        mu_1 = df_jump['$\mu_1$']
-        mu_2 = df_jump['$\mu_2$']
-        sigma_1 = df_jump['$\sigma_1$']
-        sigma_2 = df_jump['$\sigma_2$']
-        q_11 = df_jump['$q_{11}$']
-        q_22 = df_jump['$q_{22}$']
+    mu_1 = df['$\mu_1$']
+    mu_2 = df['$\mu_2$']
+    sigma_1 = df['$\sigma_1$']
+    sigma_2 = df['$\sigma_2$']
+    q_11 = df['$q_{11}$']
+    q_22 = df['$q_{22}$']
 
     plt.rcParams.update({'font.size': 15})
     fig, ax = plt.subplots(2,2, figsize=(15,10), sharex=True)
@@ -133,20 +112,37 @@ def plot_rolling_parameters(plot_type = 'mle', savefig=None):
     plt.show()
 
 
-def plot_rolling_moments(df, logrets, window_len=1700, moving_window=10, savefig=None):
+def plot_rolling_moments(df, logrets, window_len=1700, moving_window=10,
+                         outlier_corrected=False, savefig=None):
     """ Plot the first four moments of estimated models along with returns"""
+
     #Slice log returns into subsamples of window lenghts
     # TODO move into its own function
     logrets = logrets[-(len(df[df['model']=='mle'])+window_len-moving_window):]
     log_rets = []
     for t in range(window_len, len(logrets)):
-        log_rets.append(logrets.iloc[t-window_len:t])
+        logrets_temp = logrets.iloc[t - window_len:t]
 
+        # If true remove outliers, otherwise do nothing
+        if outlier_corrected is True:
+            # Outliers more extreme 4 standard deviations are replaced with mean +- 4*std.
+            outlier_value_pos = logrets_temp.mean() + 4*logrets_temp.std()
+            outlier_value_neg = logrets_temp.mean() - 4*logrets_temp.std()
+
+            # Handle positive and negative returns separately
+            outliers_idx = (np.abs(stats.zscore(logrets_temp)) >= 4)
+            logrets_temp[outliers_idx & (logrets_temp > 0)] = outlier_value_pos
+            logrets_temp[outliers_idx & (logrets_temp < 0)] = outlier_value_neg
+
+            log_rets.append(logrets_temp)
+        else:
+            log_rets.append(logrets_temp)
+
+    # Compute moments for each subsample of logrets
     empirical_moments = [np.mean(log_rets, axis=1), np.var(log_rets, ddof=1, axis=1),
                          stats.skew(log_rets, axis=1), stats.kurtosis(log_rets, axis=1)]
 
-    df['timestamp'] = pd.to_datetime(df['timestamp'])
-    df.set_index('timestamp', inplace=True)
+    # Slice model output data
     df = df.loc[:, ['mean', 'variance', 'skewness', 'excess_kurtosis', 'model']]
 
     # Plotting
@@ -184,25 +180,39 @@ def plot_rolling_moments(df, logrets, window_len=1700, moving_window=10, savefig
     plt.show()
 
 
+
+
 if __name__ == '__main__':
+    # Load log returns from SP500
+    df_returns = load_long_series_logret()
+    df_returns_outlier = load_long_series_logret(outlier_corrected=True)
+
+    # Loading regular and outlier corrected data. Then get means parameters across time
+    path = '../../analysis/stylized_facts/output_data/'
+    df_rolling = pd.read_csv(path + 'rolling_estimations.csv', index_col='timestamp', parse_dates=True)
+    df_rolling_outlier = pd.read_csv(path + 'rolling_estimations_outlier_corrected.csv',
+                                     index_col='timestamp', parse_dates=True)
+    data_table = df_rolling.groupby(['window_len', 'model']).mean().sort_index(ascending=[True, False])
+    data_table_outlier = df_rolling_outlier.groupby(['window_len', 'model']).mean().sort_index(ascending=[True, False])
+
     print(data_table)
-    #print(data_table.columns.values)
 
-    #acfsquared_SP500_mle()
-    plot_acf(data_table)
-    #plot_rolling_parameters(plot_type='jump')
 
-    save = True
+    save = False
+    moving_window = 50
     if save is True:
-        plot_rolling_moments(df, df_returns, moving_window=50, savefig='rolling_moments.png')
+        plot_rolling_moments(df_rolling, df_returns, moving_window=moving_window, savefig='rolling_moments.png')
+        #plot_rolling_moments(df_rolling_outlier, df_returns, moving_window=moving_window, outlier_corrected=True,
+        #                     savefig='rolling_moments_outlier_corrected.png')
         plot_acf(data_table, savefig='acf_squared_models.png')
-        plot_rolling_parameters(plot_type='jump', savefig='2-state JUMP HMM rolling params.png')
-        plot_rolling_parameters(plot_type='mle', savefig='2-state MLE HMM rolling params.png')
+        plot_rolling_parameters(df_rolling, model='jump', savefig='2-state JUMP HMM rolling params.png')
+        plot_rolling_parameters(df_rolling, model='mle', savefig='2-state MLE HMM rolling params.png')
     else:
-        plot_rolling_moments(df, df_returns, moving_window=50, savefig=None)
+        plot_rolling_moments(df_rolling, df_returns, moving_window=moving_window, outlier_corrected=False, savefig=None)
+        #plot_rolling_moments(df_rolling_outlier, df_returns, moving_window=moving_window, outlier_corrected=True, savefig=None)
         plot_acf(data_table, savefig=None)
-        plot_rolling_parameters(plot_type='jump', savefig=None)
-        plot_rolling_parameters(plot_type='mle', savefig=None)
+        plot_rolling_parameters(df_rolling, model='jump', savefig=None)
+        plot_rolling_parameters(df_rolling, model='mle', savefig=None)
 
 
 
