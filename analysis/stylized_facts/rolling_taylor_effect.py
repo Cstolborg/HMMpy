@@ -15,19 +15,12 @@ warnings.filterwarnings("ignore")
 
 
 def compute_rolling_simulations(logret, mle, jump, frequency=100, window_len=1700,
-                                n_lags=500, n_sims=5000, outlier_corrected=False,
-                                compute_taylor_effect=True, compute_acf=True,
-                                compute_acf_subperiods=False):
+                                n_lags=500, n_sims=5000, outlier_corrected=False):
     n_obs = len(logret)
 
     simulations = {'mle': [],
                    'jump': [],
-                   'mle_taylor': np.array([]),
-                   'jump_taylor': np.array([]),
-                   'logrets_taylor': np.array([]),
-                   'logrets_acf_sub': np.array([]),
-                   'mle_acf_sub': np.array([]),
-                   'jump_acf_sub': np.array([])}
+                   'logrets_taylor': np.array([])}
 
     # Loop through data and fit models at each time step
     for t in tqdm.tqdm(range(window_len, n_obs, frequency)):
@@ -49,36 +42,18 @@ def compute_rolling_simulations(logret, mle, jump, frequency=100, window_len=170
         simulations['mle'].append(mle_simulation)
         simulations['jump'].append(jump_simulation)
 
-        if compute_taylor_effect == True:
-            # Maximize first-order acf for rolling logrets and models
-            object_fun = lambda power, data: -acf(np.abs(data) ** power, nlags=1)[-1]
-            simulations['logrets_taylor'] = np.append(simulations['logrets_taylor'],
-                                                      opt.minimize(object_fun, x0=1, args=rolling).x)
-            simulations['mle_taylor'] = np.append(simulations['mle_taylor'],
-                                                  opt.minimize(object_fun, x0=1, args=simulations['mle'][-1]).x)
-            simulations['jump_taylor'] = np.append(simulations['jump_taylor'],
-                                                   opt.minimize(object_fun, x0=1, args=simulations['jump'][-1]).x)
+        # Maximize first-order acf for rolling logrets
+        object_fun = lambda power: -acf(np.abs(rolling) ** power, nlags=1)[-1]
+        simulations['logrets_taylor'] = np.append(simulations['logrets_taylor'], opt.minimize(object_fun, x0=1).x)
 
-        if compute_acf_subperiods == True:
-            simulations['logrets_acf_sub'] = np.append(simulations['logrets_acf_sub'], acf(np.abs(rolling), nlags=n_lags)[1:])
-            simulations['mle_acf_sub'] = np.append(simulations['mle_acf_sub'],
-                                                   acf(np.abs(simulations['mle'][-1]), nlags=n_lags)[1:])
-            simulations['jump_acf_sub'] = np.append(simulations['jump_acf_sub'],
-                                                    acf(np.abs(simulations['jump'][-1]), nlags=n_lags)[1:])
-    # Reshape subperiods
-    if compute_acf_subperiods == True:
-        simulations['logrets_acf_sub'] = simulations['logrets_acf_sub'].reshape(-1, n_lags)
-        simulations['mle_acf_sub'] = simulations['mle_acf_sub'].reshape(-1, n_lags)
-        simulations['jump_acf_sub'] = simulations['jump_acf_sub'].reshape(-1, n_lags)
 
     simulations['mle'] = np.array(simulations['mle'])
     simulations['jump'] = np.array(simulations['jump'])
 
-    if compute_acf == True:
-        print('Computing ACF on simulated data...')
-        simulations['mle_acf'] = acf(np.abs(simulations['mle'][:, :2000].ravel()), nlags=n_lags)[1:]
-        simulations['jump_acf'] = acf(np.abs(simulations['jump'][:, :2000].ravel()), nlags=n_lags)[1:]
-        print('Finished computing ACF')
+    print('Computing ACF on simulated data...')
+    simulations['mle_acf'] = acf(np.abs(simulations['mle']), nlags=n_lags)[1:]
+    simulations['jump_acf'] = acf(np.abs(simulations['jump']), nlags=n_lags)[1:]
+    print('Finished computing ACF')
 
     return simulations
 
@@ -152,7 +127,16 @@ def plot_simulated_acf_outliers(simulations, simulations_outliers, logret, logre
         plt.savefig('./images/' + savefig)
     plt.show()
 
+def compute_taylor_effect(simulations, powers=None):
+    """ Compute the power that mazimize first-order acf of absolute returns using different powers """
+    if powers == None:
+        powers = np.arange(0.1, 2.1, 0.2)
 
+    # Maximize acf with respect to the power of absolute returns
+    simulations['mle_taylor'] = np.array([])
+    for t in range(simulations['mle'].shape[0]):
+        object_fun = lambda power: -acf(np.abs(simulations['mle'][t]) ** power, nlags=1)[-1]
+        simulations['mle_taylor'] = np.append(simulations['mle_taylor'], opt.minimize(object_fun, x0=1).x)
 
 
 if __name__ == '__main__':
@@ -169,28 +153,24 @@ if __name__ == '__main__':
 
     # Compute dict with long lists of simulations for mle and jump models
     # Also contains acf for both models
-    frequency = 100
-    simulations = compute_rolling_simulations(logret, mle, jump, frequency=frequency, window_len=1700,
-                                              outlier_corrected=False, n_sims=10000,
-                                              compute_acf=True, compute_taylor_effect=True)
-
+    simulations = compute_rolling_simulations(logret, mle, jump, frequency=100, window_len=1700,
+                                              outlier_corrected=False, n_sims=1700)
 
     # Repeat procedure with outlier corrected data
-    #simulations_outliers = compute_rolling_simulations(logret, mle, jump, frequency=100, window_len=1700,
-    #                                          outlier_corrected=False, n_sims=1700)
-
-
-
-
+    simulations_outliers = compute_rolling_simulations(logret, mle, jump, frequency=100, window_len=1700,
+                                              outlier_corrected=False, n_sims=1700)
 
     # Save results
     save = False
     if save == True:
         plot_simulated_acf(simulations, logret, n_lags=500, savefig='simulated_abs_acf.png')
-        #plot_simulated_acf_outliers(simulations, simulations_outliers, logret, logret_outliers,
-        #                            n_lags=500, savefig='simulated_abs_acf_outliers.png')
+        plot_simulated_acf_outliers(simulations, simulations_outliers, logret, logret_outliers,
+                                    n_lags=500, savefig='simulated_abs_acf_outliers.png')
     else:
         plot_simulated_acf(simulations, logret, n_lags=500, savefig=None)
-        #plot_simulated_acf_outliers(simulations, simulations_outliers, logret, logret_outliers,
-        #                            n_lags=500, savefig=None)
+        plot_simulated_acf_outliers(simulations, simulations_outliers, logret, logret_outliers,
+                                    n_lags=500, savefig=None)
+
+
+
 

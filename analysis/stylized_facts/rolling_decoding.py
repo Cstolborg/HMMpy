@@ -97,15 +97,12 @@ if __name__ == '__main__':
     decoded_states = rolling_state_decoding(logret, mle, jump, window_len=1700,
                                 outlier_corrected=False)
 
+    plot_decoded_states(decoded_states, logret, savefig=None)
 
 
     # Save results
     save = False
-    #if save == True:
-        #plot_simulated_acf(simulations, logret, n_lags=500, savefig='simulated_abs_acf.png')
-        #plot_simulated_acf_outliers(simulations, simulations_outliers, logret, logret_outliers,
-        #                            n_lags=500, savefig='simulated_abs_acf_outliers.png')
-    #else:
-        #plot_simulated_acf(simulations, logret, n_lags=500, savefig=None)
-        #plot_simulated_acf_outliers(simulations, simulations_outliers, logret, logret_outliers,
-        #                            n_lags=500, savefig=None)
+    if save == True:
+        plot_decoded_states(decoded_states, logret, savefig='decoded_states.png')
+    else:
+        plot_decoded_states(decoded_states, logret, savefig=None)
