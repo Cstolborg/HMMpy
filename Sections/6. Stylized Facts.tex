@@ -32,15 +32,17 @@ The results of the rolling parameter for the MLE and JUMP estimation of the 2-st
 \end{figure}
 
 From figure \ref{fig: MLE estimation rolling parameters} and \ref{fig: Jump estimation rolling parameters} it is evident that neither the mean nor variance parameters exhibit stationarity across time
-for the 2-state Gaussian HMM regardless of whether the estimation procedure relies on MLE or JUMP. Starting with the MLE approach showcased in figure \ref{fig: MLE estimation rolling parameters} it becomes eveident that around the global financial crisis an interesting pattern emerges since $\sigma_2^2$ increases and stabilizes at a new long-term level, however, it appears that the parameter falls back to its original pre-crisis level after approximately 1700 days. As such, it is peculiar that $\sigma_2^2$ should decreases almost 1700 days later, where the observations witnessed during the GFC gets dropped due to the length of the chosen rolling window. This could imply that the bear state fluctuates around some long-run level, in which large deviations only occur for extreme events such as the financial crisis and the COVID-19 recession. 
+for the 2-state Gaussian HMM regardless of whether the estimation procedure relies on MLE or JUMP. Starting with the MLE approach showcased in figure \ref{fig: MLE estimation rolling parameters} it becomes eveident that around the global financial crisis an interesting pattern emerges since $\sigma_2^2$ increases and stabilizes at a new long-term level, however, it appears that the parameter falls back to its original pre-crisis level after approximately 1700 days. As such, it is peculiar that $\sigma_2^2$ should decreases almost 1700 days later, where the observations witnessed during the GFC gets dropped due to the length of the chosen rolling window. This is further evident from the spike in the second state variance on Black Mon-
+day in 1987, since the variance does not return to its pre-1987 level until 1,700 days later. This means that due to this 1 observations from Black monday, the model could be misspeccified for the following 1700 days until the observations is dropped. This could imply that the bear state fluctuates around some long-run level, in which large deviations only occur for extreme events such as the financial crisis and the COVID-19 recession. 
 
-Interestingly, figure \ref{fig: MLE estimation rolling parameters} reveals that the
+Interestingly, figure \ref{fig: MLE estimation rolling parameters} reveals that the mean for the first state is stable at the long-term level with periodic outbreaks following large events that negatively impacted the markets, hence the 3 spikes can be thought of as a positive rebounce after a big market drop. However, when analysing the mean for the second state it becomes evident that there is much more variation in the parameter. This means that the model provides a good estimation for the mean in the first state, due to it being rather constant through time, however, the mean in the second state fluctuates around thereby signalling a poor fit. When analysing the non-constant transition probabilities resulting from the MLE approach in figure \ref{fig: MLE estimation rolling parameters} it can easily be inferred that the sojourn times are not memoryless. Throughout the plot, the bull market has a high persistence, meaning that there is a high probability of a bull market being followed by an additional bull market. Keep in mind that the model is still operating on a daily timescale, thus the finding is expected. Contrary, the transition probabilities of the bear market, i.e. $\sigma_2^2$ and its inverse, are characterised by a higher degree of fluctuations across time. The fluctuations become evident during the GFC, the big market correction of 2016 as well the recent COVID-19 bounce since the probability of staying in the bear market decreases, whilst the probability of remaining in the bull state is more or less unaffected, with the exception of the correction in 2016. This means that the HMM will predict much shorter sojourn times in the bear state, thereby implying that the predictions will be characterised as much more volatile than for instance the bull state predictions. This is a natural consequence of the properties of the transition probabilities because when $q_{22}$ decreases $q_{21}$ increases as $q_{22} + q_{21} = 1$, hence a low value of $q_{22}$ will result in more frequent transitions between states. As such, the persistence of the model will be worse in these periods and it is a clear sign of model weakness, as it will impact the temporal properties by reducing the fit to the empirical squared autocorrelation functions of returns and thus negatively impact the reproduction of the long memory of financial markets. 
 
-When analysing the non-constant transition probabilities resulting from the MLE approach in figure \ref{fig: MLE estimation rolling parameters} it can easily be inferred that the sojourn times are not memoryless. Throughout the plot, the bull market has a high persistence, meaning that there is a high probability of a bull market being followed by an additional bull market. Keep in mind that the model is still operating on a daily timescale, thus the finding is expected. Contrary, the transition probabilities of the bear market, i.e. $\sigma_2^2$ and its inverse, are characterised by a higher degree of fluctuations across time. The fluctuations become evident during the GFC, the big market correction of 2016 as well the recent COVID-19 bounce since the probability of staying in the bear market decreases, whilst the probability of remaining in the bull state is more or less unaffected, with the exception of the correction in 2016. This means that the HMM will predict much shorter sojourn times in the bear state, thereby implying that the predictions will be characterised as much more volatile than for instance the bull state predictions. This is a natural consequence of the properties of the transition probabilities because when $q_{22}$ decreases $q_{21}$ increases as $q_{22} + q_{21} = 1$, hence a low value of $q_{22}$ will result in more frequent transitions between states. As such, the persistence of the model will be worse in these periods and it is a clear sign of model weakness, as it will impact the temporal properties by reducing the fit to the empirical squared autocorrelation functions of returns and thus negatively impact the reproduction of the long memory of financial markets. 
+The general substantial variation of the parameters could indicate that the regime-
+switching model, based on the MLE approach is unsuitable for the S\&P 500 series, however, this can only be concluded based on a stylized facts analysis. This will be done in section \ref{Sec: Temporal properties} and \ref{Sec: Distributional properties}. In addition, the general level of fluctuation across the parameters, with the exception of the mean in the first state, could be an indication that the model is miss-specified, i.e., that it has too few states or a wrong kind of conditional distributions. As such, it was shown by Rydén et al. (1998) that in some periods there was a need for a third so-called outlier state with a low unconditional probability. Adding a third state, however, does not lead to smaller variations, thereby suggesting the miss-specification is a consequence of the lack of adaption of the parameters. Fitting the parameters through a jump framework or a conditional t-distribution could reduce the variation in the estimated parameters.
 
-In addition, it is evident from the JUMP estimation showcased in figure \ref{fig: Jump estimation rolling parameters} that this methodology also captures the time-varying nature of the underlying HMM parameters. 
+Moving on to figure \ref{fig: Jump estimation rolling parameters} it is evident that this methodology also captures the time-varying nature of the underlying HMM parameters. 
 
-Furhtermore, it is evident that there exists some differences between the MLE and JUMP approach.....
+Furthermore, it is evident that there exists some differences between the MLE and JUMP approach.....
 
 
 . 
@@ -49,6 +51,7 @@ Furhtermore, it is evident that there exists some differences between the MLE an
 
 
 \subsection{Distributional properties}
+\label{Sec: Distributional properties}
 
 \textbf{Train a number of models and compare their first 4 moments to those of S\&P500. Also show distributional properties as a function of time i.e. the 4 moments across time (see BP)}
 
@@ -70,23 +73,39 @@ Furhtermore, it is evident that there exists some differences between the MLE an
 
 
 \subsection{Temporal properties}
+\label{Sec: Temporal properties}
 
-\textbf{Show ACF plots of same figures as in previous section}
 
 \begin{figure}[H] 
     \centering
-    \includegraphics[width=1.0\textwidth]{analysis/stylized_facts/images/acf_squared_models.png}
-    \caption{Development of first four moments of estimated models compared to $\log(r_t)$ using a rolling window of 1700 days. Model estimates are calculated using Monte-Carlo simulations.}
+    \includegraphics[width=1.0\textwidth]{analysis/stylized_facts/images/acf_abs_models.png}
+    \caption{ACF of models as well as log returns.}
     \label{fig:stylized_facts_acf_plots} 
+\end{figure}
+
+\begin{figure}[H] 
+    \centering
+    \includegraphics[width=1.0\textwidth]{analysis/stylized_facts/images/acf_abs_subperiods.png}
+    \caption{ACf of models and log returns in a breakdown of 10 sub-periods each of 1700 observations.}
+    \label{fig:stylized_facts_acf_plots} 
+\end{figure}
+
+\begin{figure}[H] 
+    \centering
+    \includegraphics[width=1.0\textwidth]{analysis/stylized_facts/images/acf_taylor_effect.png}
+    \caption{Comparison of the $\theta$ maximizing first order autocorrelations of the data as well as for the models. It is computed by Monte-Carlo simulations and subsequent use of numerical maximization.}
+    \label{fig:stylized_facts_taylor_effect} 
 \end{figure}
 
 \subsection{Smoothing}
 
+\begin{figure}[H] 
+    \centering
+    \includegraphics[width=1.0\textwidth]{analysis/stylized_facts/images/decoded_states.png}
+    \caption{S\&P 500 log returns plotted with the respective model's decoded states. States are decoded using a rolling window of 1700 trading days.}
+    \label{fig:stylized_facts_decoded_states} 
+\end{figure}
 
-
-\textbf{If smoothing works, then show distributional properties and temporal proerties again.}
-
-\textbf{Show decoded states on times series}
 
 \subsection{Model estimation and selection}
 \label{Subsection: Model estimation and selection}
