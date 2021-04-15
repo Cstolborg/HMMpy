@@ -1,4 +1,5 @@
 import copy
+import datetime
 
 import pandas as pd; pd.set_option('display.max_columns', 10); pd.set_option('display.width', 320)
 from scipy import stats
@@ -60,7 +61,7 @@ def plot_taylor_effect(simulations, logret, frequency=100, window_len=1700, save
     ax.plot(index, simulations['jump_taylor'], label='jump', color='black')
 
     ax.set_ylabel(r"ACF($\log |r_t|$)")
-    ax.set_xlim(left=index[0], right=index[-1])
+    ax.set_xlim(left=index[0], right=index[-1] + datetime.timedelta(days=700))
     #ax.set_ylim(top=0.4, bottom=0)
 
     plt.legend()
@@ -89,7 +90,7 @@ if __name__ == '__main__':
     frequency = 1400
 
     simulations_subperiods = compute_rolling_simulations(logret, mle, jump, frequency=frequency, window_len=1700,
-                                              outlier_corrected=False, n_sims=100000,
+                                              outlier_corrected=False, n_sims=10000,
                                               compute_acf=False, compute_taylor_effect=True,
                                               compute_acf_subperiods=True)
 

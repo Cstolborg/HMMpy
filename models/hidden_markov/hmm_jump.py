@@ -265,7 +265,7 @@ class JumpHMM(BaseHiddenMarkov):
                     old_state_seq = state_seq
                     old_objective_score = objective_score
 
-    def fit(self, X, get_hmm_params=True, sort_state_seq=False, verbose=False, feature_set='feature_set_2'):
+    def fit(self, X, get_hmm_params=True, sort_state_seq=True, verbose=False, feature_set='feature_set_2'):
         self.is_fitted = False
         Z = self.construct_features(X, window_len=self.window_len, feature_set=feature_set)
 

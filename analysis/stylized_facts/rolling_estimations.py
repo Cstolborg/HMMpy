@@ -13,7 +13,8 @@ import warnings
 warnings.filterwarnings("ignore")
 
 
-def train_rolling_window(logret, mle, jump, window_lens=[1700], n_lags=100, acf_type='simulated', n_sims=5000, outlier_corrected=False):
+def train_rolling_window(logret, mle, jump, window_lens=[1700], n_lags=100, n_sims=5000,
+                         get_acf=True, absolute_moments=False, outlier_corrected=False):
     n_obs = len(logret)
     df = pd.DataFrame()  # Create empty df to store data in
 
@@ -26,8 +27,10 @@ def train_rolling_window(logret, mle, jump, window_lens=[1700], n_lags=100, acf_
         'mean': [], 'variance': [],
         'skewness': [], 'excess_kurtosis': []
         }
-    cols_1 = {f'lag_{i}': [] for i in range(n_lags)}
-    cols.update(cols_1)
+
+    if get_acf is True:
+        cols_1 = {f'lag_{i}': [] for i in range(n_lags)}
+        cols.update(cols_1)
 
     # Compute models params for each window length
     for window_len in window_lens:
@@ -84,34 +87,33 @@ def train_rolling_window(logret, mle, jump, window_lens=[1700], n_lags=100, acf_
             data['jump']['timestamp'].append(rolling.index[-1])
             data['mle']['timestamp'].append(rolling.index[-1])
 
-            if acf_type == 'analytical': # TODO deprecate
-                for lag in range(n_lags):
-                    data['mle'][f'lag_{lag}'].append(mle.squared_acf(lag=lag))
-                    data['jump'][f'lag_{lag}'].append(jump.squared_acf(lag=lag))
+            ## Simulate data to test temporal and distributionalt properties
+            mle_simulation = mle.sample(n_samples=n_sims)[0]  # Simulate returns
+            jump_simulation = jump.sample(n_samples=n_sims)[0]
 
-            elif acf_type == 'simulated':
-                ## Simulate data for ACF
-                mle_simulation = mle.sample(n_samples=n_sims)[0]  # Simulate returns
-                mle_simulation_squared = (mle_simulation)**2  # Squaring return
-                mle_acf_square_simulated = acf(mle_simulation_squared, nlags=n_lags)[1:]
-
-                jump_simulation = jump.sample(n_samples=n_sims)[0]
-                jump_simulation_squared = np.square(jump_simulation)  # Squaring return
-                jump_acf_square_simulated = acf(jump_simulation_squared, nlags=n_lags)[1:]
+            if get_acf is True:
+                mle_simulation_abs = np.abs(mle_simulation)
+                jump_simulation_abs = np.abs(jump_simulation)
+                jump_acf_abs_simulated = acf(jump_simulation_abs, nlags=n_lags)[1:]
+                mle_acf_abs_simulated = acf(mle_simulation_abs, nlags=n_lags)[1:]
 
                 for lag in range(n_lags):
-                    data['mle'][f'lag_{lag}'].append(mle_acf_square_simulated[lag])
-                    data['jump'][f'lag_{lag}'].append(jump_acf_square_simulated[lag])
+                    data['mle'][f'lag_{lag}'].append(mle_acf_abs_simulated[lag])
+                    data['jump'][f'lag_{lag}'].append(jump_acf_abs_simulated[lag])
 
-                data['mle']['mean'].append(np.mean(mle_simulation))
-                data['mle']['variance'].append(np.var(mle_simulation, ddof=1))
-                data['mle']['skewness'].append(stats.skew(mle_simulation))
-                data['mle']['excess_kurtosis'].append(stats.kurtosis(mle_simulation)) # Excess kurtosis
+            if absolute_moments is True:
+                mle_simulation = np.abs(mle_simulation)
+                jump_simulation = np.abs(jump_simulation)
 
-                data['jump']['mean'].append(np.mean(jump_simulation))
-                data['jump']['variance'].append(np.var(jump_simulation, ddof=1))
-                data['jump']['skewness'].append(stats.skew(jump_simulation))
-                data['jump']['excess_kurtosis'].append(stats.kurtosis(jump_simulation)) # Excess kurtosis
+            data['mle']['mean'].append(np.mean(mle_simulation))
+            data['mle']['variance'].append(np.var(mle_simulation, ddof=1))
+            data['mle']['skewness'].append(stats.skew(mle_simulation))
+            data['mle']['excess_kurtosis'].append(stats.kurtosis(mle_simulation)) # Excess kurtosis
+
+            data['jump']['mean'].append(np.mean(jump_simulation))
+            data['jump']['variance'].append(np.var(jump_simulation, ddof=1))
+            data['jump']['skewness'].append(stats.skew(jump_simulation))
+            data['jump']['excess_kurtosis'].append(stats.kurtosis(jump_simulation)) # Excess kurtosis
 
         # Add model name and window len to data and output a dataframe
         for model in data.keys():
@@ -132,20 +134,20 @@ if __name__ == '__main__':
     jump = JumpHMM(n_states=2, jump_penalty=16, window_len=(6, 14),
                    epochs=20, max_iter=30, random_state=42)
 
-    #logret = logret[13000:15000]  # Reduce sample size to speed up training
+    #logret = logret[13200:15000]  # Reduce sample size to speed up training
 
 
-    df = train_rolling_window(logret, mle, jump, window_lens=[1700], n_lags=100, acf_type='simulated',
-                              outlier_corrected=False, n_sims=20000)
+    df = train_rolling_window(logret, mle, jump, window_lens=[1700], n_lags=100, get_acf=True,
+                              absolute_moments=True, outlier_corrected=False, n_sims=20000)
 
     # Group data first by window len and the by each mode. Returns mean value of each remaining parameter
     data_table = df.groupby(['window_len', 'model']).mean().sort_index(ascending=[True, False])
     print(data_table)
 
     # Save results
-    save = False
+    save = True
     if save == True:
         path = '../../analysis/stylized_facts/output_data/'
-        df.to_csv(path + 'rolling_estimations.csv', index=False)
+        df.to_csv(path + 'rolling_estimations_abs.csv', index=False)
 
 

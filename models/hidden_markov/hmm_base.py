@@ -144,7 +144,9 @@ class BaseHiddenMarkov(BaseEstimator):
         Returns
         ----------
         probs : ndarray of shape (n_samples, n_states)
-            Output the probability for sampling from a particular state distribution
+            Probability for sampling from a particular state distribution
+        log_probs : ndarray of shape (n_samples, n_states)
+            Log probability for sampling from a particular state distribution
         """
 
         T = len(X)
@@ -368,14 +370,13 @@ class BaseHiddenMarkov(BaseEstimator):
     def _viterbi(self, X):
         self.emission_probs_, self.log_emission_probs_ = self.emission_probs(X)
         n_obs, n_states = self.log_emission_probs_.shape
-        log_alphas = np.zeros((n_obs, n_states))
         state_sequence = hmm_cython.viterbi(n_obs, n_states,
                                             np.log(self.start_proba),
                                             np.log(self.tpm),
                                             self.log_emission_probs_)
         return state_sequence.astype(np.int32)
 
-    def squared_acf(self, lag):
+    def squared_acf(self, lag):  # TODO deprecate
         # Unconditional expectation
         unconditional_expectation = self.stationary_dist[0] * self.mu[0] + (1-self.stationary_dist[0]) * self.mu[1]
 
@@ -403,12 +404,29 @@ class BaseHiddenMarkov(BaseEstimator):
 
         return squared_acf
 
-
     def fit(self, X):
         """
         fit model to data. Defined in respective child classes
         """
         pass
+
+    def rolling_posteriors(self, X):
+        """ Compute the posterior probability of being in state i at time T.
+
+        Function should be used as part of rolling estimation when one is
+        interested only in the final smoothing probability of the current window sample.
+        """
+        if not self.is_fitted is True:
+            print('Warning. Trying to predict using an unfitted model.')
+
+        # Use emission probs to do a forward pass
+        # Note only forward probs are needed as backward probs at time T is 1 by definition.
+        self.emission_probs(X)
+        llk, log_alphas = self._log_forward_proba()
+
+        # Probability of being in state i in time T
+        posterior = np.exp(log_alphas[-1] - llk)
+        return posterior
 
 
 if __name__ == '__main__':

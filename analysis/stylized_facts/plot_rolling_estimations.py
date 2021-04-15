@@ -208,8 +208,6 @@ def plot_rolling_parameters(df, model ='mle', savefig=None):
 
     plt.show()
 
-
-
 def plot_rolling_moments(df, logrets, window_len=1700, moving_window=50,
                          outlier_corrected=False, savefig=None):
     """ Plot the first four moments of estimated models along with returns"""
@@ -285,17 +283,9 @@ if __name__ == '__main__':
         plot_rolling_parameters(df_rolling, model='jump', savefig='2-state JUMP HMM rolling params.png')
         plot_rolling_parameters(df_rolling, model='mle', savefig='2-state MLE HMM rolling params.png')
     else:
-        plot_rolling_moments(df_rolling, df_returns, moving_window=moving_window, outlier_corrected=False, savefig=None)
+        #plot_rolling_moments(df_rolling, df_returns, moving_window=moving_window, outlier_corrected=False, savefig=None)
         #plot_rolling_moments(df_rolling_outlier, df_returns, moving_window=moving_window, outlier_corrected=True, savefig=None)
         plot_acf_2D(data_table, df_returns, savefig=None)
         #plot_acf_3D(df_rolling, df_returns, savefig=None)
         plot_rolling_parameters(df_rolling, model='jump', savefig=None)
         plot_rolling_parameters(df_rolling, model='mle', savefig=None)
-
-
-
-
-
-
-
-
