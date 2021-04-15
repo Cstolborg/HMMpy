@@ -15,6 +15,23 @@ Sktiser index data på log scala + evt. tabel over aktivers perfomance over peri
     \label{fig:MPC_data}
 \end{figure}
 
+In \cref{tab:MPC_asset_performance} we show annualized\footnote
+{Daily returns are analyzed using
+\begin{flalign*}
+    \mu_{annual} &= (1+\mu_{daily})^{1/252}-1 \\
+    \Sigma_{annual} &= {\Sigma}_{daily} * 252
+\end{flalign*}
+}
+asset performance.
+
+\begin{table}[H]
+\centering
+\caption{Summary of annualized
+performance for each asset during the out-of-sample period. All measures are in excess of the risk-free rate.}
+\input{analysis/portfolio_exercise/output_data/asset_performance}
+\label{tab:MPC_asset_performance}
+\end{table}
+
 
 \subsection{In-sample training: Tuning hyperparameters}
 
@@ -41,22 +58,7 @@ Sktiser index data på log scala + evt. tabel over aktivers perfomance over peri
     \label{fig:MPC_port_weights}
 \end{figure}
 
-In \cref{tab:MPC_asset_performance} we show annualized\footnote
-{Daily returns are analyzed using
-\begin{flalign*}
-    \mu_{annual} &= (1+\mu_{daily})^{1/252}-1 \\
-    \Sigma_{annual} &= {\Sigma}_{daily} * 252
-\end{flalign*}
-}
-asset performance.
 
-\begin{table}[H]
-\centering
-\caption{Summary of annualized
-performance for each asset during the out-of-sample period. All measures are in excess of the risk-free rate.}
-\input{analysis/portfolio_exercise/output_data/asset_performance}
-\label{tab:MPC_asset_performance}
-\end{table}
 
 
 \subsubsection{Comparison}
