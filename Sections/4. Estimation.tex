@@ -320,6 +320,13 @@ As such, it should be evident that by relying on the methodology introduced abov
 In order to provide the reader with an intuitive overview and approach to repeat the procedures associated with scaling the likelihood computation, and the associated parameters, this section will focus on providing pseudo-code. As such, the section will be initialized with a walk-through of the pseudo-code underlying the transformation of $\alpha_t(i)$, after-which the remaining transformations will follow. The reader should note that the provided pseudo-code is wrapped with Cython, which speeds of the computations with a factor 15-20x.
 
 \begin{algorithm}[H]
+
+\For{t=1 to T}
+    {Execute outer loop \;
+    \For{For i=1 to K}
+        {Execute inner loop \;
+        \For{dsfsdfsd}{wer}}}
+        
 \textbf{For} t = 1 all $i \in \K$ \textbf{do} \;
 \Indp
 $\log\alpha_{1}(i) = \log\delta_i + \log b_i(o_1) $ \;
@@ -334,7 +341,7 @@ $\log\alpha_{1}(i) = \log\delta_i + \log b_i(o_1) $ \;
 temp $\alpha(i) = \log\alpha_{t-1}(i) + \log(q_{i, j})$ \;
 \BlankLine
 \Indm 
-$\log\alpha_{t}(j)$ = LSE(temp $\alpha(i)$, $\K$) + $\log b_j(o_t)$ \;
+$\log\alpha_{t}(j)$ = LSE(temp $\alpha(i)$) + $\log b_j(o_t)$ \;
 \caption{Compute the log scaled forward probabilities for all states $S_i$ and observations $O_t$}
 \label{algo: log_scaled_forward}
 \end{algorithm}
@@ -356,7 +363,7 @@ $\log\beta_{T-1}(i) = 0$ \;
 temp $\beta(j) = (log(q[i, j]) + \log b_j(o_t) + \log\beta_{t+1}(j)$ \;
 \BlankLine
 \Indm
-$\log\beta_{t}(i)$ = LSE(temp $\beta(j), \K$) \;
+$\log\beta_{t}(i)$ = LSE(temp $\beta(j)$) \;
 \caption{Compute the log scaled backward probabilities for all states $S_i$ and observations $O_t$}
 \label{algo: log_scaled_backward}
 \end{algorithm}

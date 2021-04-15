@@ -9,6 +9,7 @@ The data analyzed in this thesis encompass daily returns of the S\&P 500 stock i
 As such, this section will be reserved for training HMMs through the aforementioned MLE and JUMP methodology, after-which the corresponding models serve as subject for analysis of how well they reproduce the stylized facts. The methdology outlined in this section will take a great amount of inspiration from Granger \& Ding (1995), Rýden et al. (1998) as well as Nystrup (2017).
 
 \subsection{Rolling estimation}
+\label{Sec: rolling estimation}
 Rýden et al. (1998) relied on a methodology in which a Gaussian HMM is estimated for ten subseries of a log return series generated from 17,000 daily observations from the S\&P 500 index. This methodology also closely follows the methodology originally put forward by Grangner \& Ding (1995b). In recent publications Bulla (2011) and Nystrup (2014) rely on estimating univariate HMMs through a rolling window of (1000 or 2000) trading days. This will result in ($\text{Number of observations} - 2000$) models being estimated, which thereby allows for capturing the time-varying nature of the HMMs' parameters. The advantage of Nystrup's methodology is the fact that the rolling window allows for gradually forgetting previous observations when estimation the models, whereas the subset methodology presented by Granger \& Ding estimates 10 unique HMMs from non-overlapping observations from the return series. 
 
 As highlighted in section \ref{section: Data} this thesis relies on daily observations due to the favorable properties associated with early detection. The explanatory variable will be the daily returns of the S\&P 500 index, thereby making the results somewhat comparable to the aforementioned authors. It should be noted that it is not important whether the explanatory variable is tradeable as it will purely be used for signalling regime changes. Stock indices and yield spreads both serve as popular explanatory variables as they tend to lead the economy (Dungey et al, 2000). Essentially this means that stock indices and yield spreads will exhibit local maxima/minima approximately around the time of an economic regimes change. As such, both are suitable indicators, however, to increase comparability to the aforementioned literature, stock indices, and more precisely, the S\&P 500 index is preferred. 
@@ -20,7 +21,7 @@ The results of the rolling parameter for the MLE and JUMP estimation of the 2-st
 \begin{figure}[H] 
     \centering
     \includegraphics[width=1.0\textwidth]{analysis/stylized_facts/images/2-state MLE HMM rolling params.png}
-    \caption{Rolling estimation based on the MLE approach. Parameters from a 2-state Gaussian HMM using a rolling window of XXX days. The size of the estimation window is particularly visible in the bear state where $\sigma_2^2$ significantly increase after the financial crisis, and only drops back down to pre-crisis levels after approximately XXX days. Dashed lines are parameters from an HMM estimated on the full sample.}
+    \caption{Rolling estimation based on the MLE approach. Parameters from a 2-state Gaussian HMM using a rolling window of 1700 days. The size of the estimation window is particularly visible in the bear state where $\sigma_2^2$ significantly increase after the financial crisis, and only drops back down to pre-crisis levels after approximately 1700 days.}
     \label{fig: MLE estimation rolling parameters} 
 \end{figure}
 
@@ -40,14 +41,53 @@ Interestingly, figure \ref{fig: MLE estimation rolling parameters} reveals that 
 The general substantial variation of the parameters could indicate that the regime-
 switching model, based on the MLE approach is unsuitable for the S\&P 500 series, however, this can only be concluded based on a stylized facts analysis. This will be done in section \ref{Sec: Temporal properties} and \ref{Sec: Distributional properties}. In addition, the general level of fluctuation across the parameters, with the exception of the mean in the first state, could be an indication that the model is miss-specified, i.e., that it has too few states or a wrong kind of conditional distributions. As such, it was shown by Rydén et al. (1998) that in some periods there was a need for a third so-called outlier state with a low unconditional probability. Adding a third state, however, does not lead to smaller variations, thereby suggesting the miss-specification is a consequence of the lack of adaption of the parameters. Fitting the parameters through a jump framework or a conditional t-distribution could reduce the variation in the estimated parameters.
 
-Moving on to figure \ref{fig: Jump estimation rolling parameters} it is evident that this methodology also captures the time-varying nature of the underlying HMM parameters. 
+Moving on to figure \ref{fig: Jump estimation rolling parameters} it is evident that this methodology also captures the time-varying nature of the underlying HMM parameters, however, the overall variation in the model parameters are less evident for the JUMP approach compared to the MLE. As such, from a first glance it appears that the jump approach reduces the fluctuations regarding parameter estimation, thereby resulting in more stable and correct model specifications. Despite this, some of the same problems associated with the MLE approach are also present with the JUMP approach. For instance, when analysing the variance parameter of state 2 $\sigma_2^2$ it spikes during the Black monday event in 1987, after which the parameter stabilizes at a new level, only to fall down to its original previous approximately 1700 days after the event, thereby indicating that due to the short amount of observations from Black monday, 1700 days of incorrect variance in the second state follows. As such,it can be concluded that the JUMP framework also suggests that the variance of state 2 stabilizes at a long-term level. The biggest improvement of running the JUMP framework as opposed to the MLE approach is seen through the estimation of the transitions probabilities for both states. Comparing $q_{11}$ and $q_{22}$ in figure \ref{fig: MLE estimation rolling parameters} to figure \ref{fig: Jump estimation rolling parameters} it appears that the transitions probabilities are much more stable across states when estimating the model parameters through the jump approach, thereby suggesting a more stable model with less miss-specifications. Furthermore, it appears that both model estimation procedures suggest a similar level of the different parameters. For instance, the variance of state 1 generally fluctuates around a level of 0.005 to 0.010 for both approaches. This provides a high degree of confidence since it is highly unlikely that two complicated estimation procedures should arrive at similar parameters randomly. Conclusively, by analysing figure \ref{fig: MLE estimation rolling parameters} and \ref{fig: Jump estimation rolling parameters} it appears that the JUMP approach provides the most stable and persistent parameters across time, thereby suggesting that its the strongest methodology, however, further analysis of the reproduction of the stylized facts have to be conducted before this can be cemented.
 
-Furthermore, it is evident that there exists some differences between the MLE and JUMP approach.....
+\subsection{Temporal properties}
+\label{Sec: Temporal properties}
+Granger \& Ding (1995b), Rýden et al. (1998) and more recently Bulla et al. (2011) have provided research into whether hidden Markov models are able to reproduce a set of stylized facts. More precisely, the authors investigate 4 temporal properties and 3 distributional properties of daily returns from the S\&P 500 index. As such, the overall conclusion suggests that HMMs are able to reproduce most of the properties quite well, however, Rýden et al. (1998) and Bulla et al. (2011) found that HMMs are inadequate when it comes to reproducing the slow decay of the autocorrelation function of absolute daily returns which is often referred to as volatility clustering. In this section the thesis will investigate whether the HMMs generated by the mle and jump approach are able to reproduce a set of stylized facts, and determine which of the estimation methodologies that provides the best fit of the properties. The analysis will closely follow the procedures put forward in Bulla et al. (2011) as this is one of the most acknowledged and recent papers regarding stylized facts analysis for HMMs. The stylized facts, established by Granger \& Ding (1995b) are as follows: 
+
+TP1: Returns are not autocorrelated (except for, possibly, at lag 1) \newline
+TP2: $|r_t|$ and $r_t^2$ are the 'long memory' i.e. their autocorrelation functions decay slowly starting from the first autocorrelation and $corr(|r_t|, |r_{t-k}) > (r_t^2, r^2_{t-k})$ \newline
+TP3: The Taylor effect $corr(|r_t|, |r_{t-k}|) > corr(|r_t|^{\theta}, |r_{t-k}|^{\theta})$, $0 \# 1$. Autocorrelations of powers of absolute returns are highest at power one. \newline
+TP4: The autocorrelation of $sign(r_t)$ are negligibly small
+
+The reader should note that these only include the temporal properties and the distributional properties will be introduced in section \ref{subsection: distributional properties}. In terms of TP1 it has already been shown by Rýden (1998) and Bulla (2011) that HMMs are able to reproduce this property, and they furthermore showed that TP4 is not violated. As such, the following section will particularly focus on TP2 and TP3. According to Rýden et al. (1998) and Bulla et al. (2011), the slow decay of the absolute ACF of daily returns is unable to be reproduced by HMMs because the decay of the autocorrelations occur faster than that of the observed autocorrelation. In order to test whether those conclusions hold true for the models utilized in this thesis figure \ref{fig:stylized_facts_acf_plots_sub_periods} shows the autocorrelation functions of absolute returns for the first 100 lags for 10 different sub-periods each containing 1700 observations. Note that both the fit of the mle and jump approach have been plotted.   
+
+\begin{figure}[H] 
+    \centering
+    \includegraphics[width=1.0\textwidth]{analysis/stylized_facts/images/acf_abs_subperiods.png}
+    \caption{ACf of models and log returns in a breakdown of 10 sub-periods each of 1700 observations.}
+    \label{fig:stylized_facts_acf_plots_sub_periods} 
+\end{figure}
+
+From the figure, it is evident that the autocorrelation functions estimated directly from the mle and jump model show a much faster decay than the decay of the empirical absolute ACF, thereby confirming the results of both Rýden et al (1998) and Bulla et al. (2011). Despite this property, the autocorrelation function generated by both the mle and jump model, does capture the general tendency of the empirical absolute ACF reasonably well, with the exception of the models in sub-period 9 and 10. However, it also appears that the jump model provide a better fit compared to the model which is estimated through the mle approach. This is in line with the fact that Bulla et al. (2011) concluded that t-distributed HMMs estimated by the mle approach provide a superior fit compared to a traditional Gaussian HMM. Even though the thesis neglect the fitting of a t-distribution, the general conclusion that constraining the models either through distributional properties or jump penalizers provide a better fit holds. The neat aspect associated with splitting the the observations of the full sample absolute autocorrelation of the log returns into smaller digestable sub-periods is that the time-varying nature of the absolute autocorrelation of the empirical log returns becomes visible. As such, it appears that the long memory property associated with financial returns is better captured by splitting the full sample data into sub-periods, which in this case is 10. As such, figure \ref{fig:stylized_facts_acf_plots_sub_periods} points towards a similar conclusion as figure \ref{fig:stylized_facts_acf_plots}, since both the mle and jump methodology, in general, reproduces volatility clustering quite well. However, there are periods in which the models, and their associated parameters, fail to fit the absolute ACF of the log returns, which could be due to the models being miss-specified for some time-periods due to the rolling estimation procedure as argued for figure \ref{fig: MLE estimation rolling parameters} and \ref{fig: Jump estimation rolling parameters}. 
+
+% Comment for the large series
+ In order to get an overview for the full sample period figure \ref{fig:stylized_facts_acf_plots} plots the full sample empirical absolute autocorrelation function together with the simulated absolute ACF functions of the mle and jump model. The dashed line is the upper boundary of the 95\% confidence interval under the null hypothesis of independence (Madsen, 2008). Furthermore, given the findings from section \ref{Sec: rolling estimation}, which highlighted the impact that outlier observations had on the estimation procedure, the second plot in figure \ref{fig:stylized_facts_acf_plots} contain the outlier adjusted absolute autocorrelation function of the log returns generated from the S\&P500 index. As such, values outside the interval $\Bar{r_t}\pm 4\hat{\sigma}$, where $\Bar{r_t}$ and $\hat{\sigma}$ are the estimated sample mean and standard deviation, are removed. Granger \& Ding (1995b) proposed setting the observation that are more than 4 standard deviations away from the mean equal to the nearest boundary, however, given the analysis and conclusions of section \ref{Sec: rolling estimation}, removing the outliers is deemed more appropriate. 
+
+Furthermore, according to Granger et al. (2000) the choice of making the cut-off at four standard deviations was arbitrary, but later experimentation and analysis concluded that the results were not
+substantially altered if the value was changed slightly. Nevertheless, the long memory of the absolute autocorrelation is evident from both plots in figure \ref{fig:stylized_facts_acf_plots} even though the omission of a large number of exceptional observations greatly reduces the magnitude of the absolute ACF of the outlier limited returns. Furthermore, the reader should note that the persistence of the ACF of the absolute returns is, to some extent, both for the full sample and the outlier adjusted, a consequence of the aforementioned volatility clustering, however, the significant level of the lags above lag 100 is more likely a result of the data-generating process being nonstationary (Nystrup, 2017). 
+
+\begin{figure}[H] 
+    \centering
+    \includegraphics[width=1.0\textwidth]{analysis/stylized_facts/images/acf_abs_models.png}
+    \caption{ACF of models as well as log returns.}
+    \label{fig:stylized_facts_acf_plots} 
+\end{figure}
+
+From the plot in figure \ref{fig:stylized_facts_acf_plots} it is evident that that jump approach does a better job at reproducing the shape of the absolute ACF for the first 200 lags, however, the mle procedure obtains a better fit for lags above 200. Particularly, the jump model decays more slowly, which is evident by the increasing gap between the mle and jump models. In addition, it was shown by Bulla et al. (2011) that increased persistence was achieved as the level for excess kurtosis increased. This allowed for fewer state changes, and hence explains the pattern in figure \ref{fig:stylized_facts_acf_plots}. Interestingly, the mle model displays less absolute autocorrelation than the absolute empirical ACF, however, the jump model displays higher absolute autocorrelation compared to the absolute empirical ACF. As such, neither of the models reproduce the long memory associated with financial returns. In addition, neither of the model's absolute autocorrelation become insignificant, which is in-line with the actual autocorrelation of the absolute empirical ACF. The reader should note, that since the computation underpinning the autocorrelation plots of figure \ref{fig:stylized_facts_acf_plots} relies on simulations, the true autocorrelations are probably higher, as the bouncing behaviour from simulations exhibited in figure \ref{fig:stylized_facts_rolling_moments_outliers}, should reduce autocorrelation. Future analysis should be conducted to uncover whether the autocorrelation can be reproduced more accurately, for instance by increasing excess kurtosis or through modelling the sojourn times through exponentially decaying weights in order to improve persistence in the model estimation procedure (Nystrup et al., 2017).
+
+The remaining stylized fact is TP3, which is often referred to as the Taylor effect. In order to analyse whether the Taylor effect holds, the coefficient $\theta$ is estimated for every period by maximizing the first order autocorrelation of $|r_t|^{\theta}$. The estimation relies on the approach of Rýden et al. (1998) in which the value of 
 
 
-. 
 
-
+\begin{figure}[H] 
+    \centering
+    \includegraphics[width=1.0\textwidth]{analysis/stylized_facts/images/acf_taylor_effect.png}
+    \caption{Taylor effect. Comparison of the $\theta$ maximizing first order autocorrelations of the data as well as for the models. It is computed by Monte-Carlo simulations and subsequent use of numerical maximization.}
+    \label{fig:stylized_facts_taylor_effect} 
+\end{figure}
 
 
 \subsection{Distributional properties}
@@ -72,32 +112,8 @@ Furthermore, it is evident that there exists some differences between the MLE an
 \end{figure}
 
 
-\subsection{Temporal properties}
-\label{Sec: Temporal properties}
-
-
-\begin{figure}[H] 
-    \centering
-    \includegraphics[width=1.0\textwidth]{analysis/stylized_facts/images/acf_abs_models.png}
-    \caption{ACF of models as well as log returns.}
-    \label{fig:stylized_facts_acf_plots} 
-\end{figure}
-
-\begin{figure}[H] 
-    \centering
-    \includegraphics[width=1.0\textwidth]{analysis/stylized_facts/images/acf_abs_subperiods.png}
-    \caption{ACf of models and log returns in a breakdown of 10 sub-periods each of 1700 observations.}
-    \label{fig:stylized_facts_acf_plots} 
-\end{figure}
-
-\begin{figure}[H] 
-    \centering
-    \includegraphics[width=1.0\textwidth]{analysis/stylized_facts/images/acf_taylor_effect.png}
-    \caption{Comparison of the $\theta$ maximizing first order autocorrelations of the data as well as for the models. It is computed by Monte-Carlo simulations and subsequent use of numerical maximization.}
-    \label{fig:stylized_facts_taylor_effect} 
-\end{figure}
-
-\subsection{Smoothing}
+\subsection{Decoding and prediction}
+As mentioned in section \ref{section: estimation} the hidden states are uncovered through the Viterbi algorithm. Since the estimation procedure is based on a rolling window, the state at time $t$
 
 \begin{figure}[H] 
     \centering
@@ -106,6 +122,7 @@ Furthermore, it is evident that there exists some differences between the MLE an
     \label{fig:stylized_facts_decoded_states} 
 \end{figure}
 
+\subsubsection{Smoothing}
 
 \subsection{Model estimation and selection}
 \label{Subsection: Model estimation and selection}

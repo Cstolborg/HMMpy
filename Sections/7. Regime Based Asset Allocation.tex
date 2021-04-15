@@ -122,7 +122,7 @@ Thus, once the model parameters are estimated at time t, the forecast distributi
     \Sigma_{T+H} &= \sum_s \hat\gamma_s(T+H) \Sigma_s + \sum_s \hat\gamma_s(T+H) (\mu_s-\mu_{T+H})(\mu_s-\mu_{T+H})^T ,
     \quad s\in\K  \label{eq:MPC_var_uncond}
 \end{align}
-where $\mu_{T+H}$ and $\Sigma_{T+H}$ is the forecasted unconditional mean and covariance at time step $T+H$. Further, $\hat\gamma_s(T+H)$ denote the forecasted probability of being in state s and $mu_s$ and $\Sigma_s$ refer to the estimated conditional distribution in state s (which is not time-varying with the forecast). We note here, that since the conditional distributions are distinct gaussian distributions, then the resulting unconditional distribution described in \cref{eq:MPC_mean_uncond} and \cref{eq:MPC_var_uncond} is a mixture with non-gaussian distribution (Frühwirth-Schnatter, 2006).
+where $\mu_{T+H}$ and $\Sigma_{T+H}$ is the forecasted unconditional mean and covariance at time step $T+H$. Further, $\hat\gamma_s(T+H)$ denote the forecasted probability of being in state s and $\mu_s$ and $\Sigma_s$ refer to the estimated conditional distribution in state s (which is not time-varying with the forecast). We note here, that since the conditional distributions are distinct gaussian distributions, then the resulting unconditional distribution described in \cref{eq:MPC_mean_uncond} and \cref{eq:MPC_var_uncond} is a mixture with non-gaussian distribution (Frühwirth-Schnatter, 2006).
 
 
 \textbf{Insert comments on where the forecast distribution goes to (stationary distribution) and other considerations.}
