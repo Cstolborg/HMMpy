@@ -9,14 +9,6 @@ from sklearn.base import BaseEstimator
 import pyximport; pyximport.install()  # TODO can only be active during development -- must be done through setup.py
 from models.hidden_markov import hmm_cython
 
-""" TODO
-
-Which emission probs are used after a model is fitted?
-
-When only 1 states exists 
-
-"""
-
 
 class BaseHiddenMarkov(BaseEstimator):
     """
@@ -184,7 +176,7 @@ class BaseHiddenMarkov(BaseEstimator):
         -------
 
         """
-        self.fit(X)
+        self.fit(X, sort_state_seq=True, verbose=False,)
         if self.is_fitted == False:  # Check if model is fitted
             max_iter = self.max_iter
             self.max_iter = max_iter * 2  # Double amount of iterations
@@ -410,7 +402,7 @@ class BaseHiddenMarkov(BaseEstimator):
 
         return squared_acf
 
-    def fit(self, X):
+    def fit(self, X, get_hmm_params=True, sort_state_seq=True, verbose=False, feature_set='feature_set_2'):
         """
         fit model to data. Defined in respective child classes
         """

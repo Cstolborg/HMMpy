@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from datetime import datetime
 
-from utils.data_prep import load_data
+from utils.data_prep import load_prices
 
 import warnings
 warnings.filterwarnings('ignore')
@@ -51,7 +51,7 @@ def compute_asset_metrics(df,start=None):
 
     return metrics
 
-def plot_asset_vals(df, start=None, show=True, save=False):
+def plot_asset_vals(df, start=None, show=True, savefig=False):
     # Prepare data
     df.dropna(inplace=True)
     if not start == None:
@@ -67,107 +67,37 @@ def plot_asset_vals(df, start=None, show=True, save=False):
     custom_labels = df.columns
 
     # Labels have to be assigned this way if one wants to avoid a loop
-    ax.legend(lineObjects, custom_labels,bbox_to_anchor=(1.05, 1), loc='upper left')
+    ax.legend(lineObjects, custom_labels, loc='upper left')#,bbox_to_anchor=(1.05, 1))#, loc='upper left')
 
-    ax.set_yscale('log')
-    ax.set_ylabel('log $P_t$')
+    #ax.set_yscale('log')
+    ax.set_ylabel(r'$\log(P_t)$')
     ax.set_xlim(df.index[0], df.index[-1])
     plt.tight_layout()
 
-    if save:
-        plt.savefig('../../analysis/portfolio_exercise/images/asset_vals.png')
+    if not savefig == None:
+        plt.savefig('./images/' + savefig)
     if show:
         plt.show()
 
     return fig, ax
-
-def plot_port_weights(weights, df, start=None, constraints=None, show=True, save=False):
-    # Prepare data
-    df.dropna(inplace=True)
-    df = df.iloc[-len(weights):]
-    if not start == None:
-        df = df.loc[start:]
-        #weights = weights[-len(df):]
-
-    df = df / df.iloc[0] * 100
-
-    # Plotting
-    plt.rcParams.update({'font.size': 15})
-    fig, ax = plt.subplots(nrows = 1, ncols=1, figsize=figsize)
-
-    ax.stackplot(df.index, weights.T, labels=df.columns)
-
-    if constraints in ['long_only', 'LLO', 'lo']:
-        ax.set_ylim(top=1.)
-
-    ax.set_xlim(df.index[0], df.index[-1])
-    ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
-    ax.set_ylabel('Asset weight')
-    plt.tight_layout()
-
-    if save == True:
-        plt.savefig('../../analysis/portfolio_exercise/images/port_weights')
-    if show == True:
-        plt.show()
-
-    return fig, ax
-
-def plot_performance(df, port_val, weights, start=None, show=True, save=False):
-    # Prepare data
-    df.dropna(inplace=True)
-    df = df.iloc[-len(port_val):]
-    df['port_val'] = port_val
-
-    if not start == None:
-        df = df.loc[start:]
-        weights = weights[-len(df):]
-
-    df = df / df.iloc[0] * 100
-
-    # Plotting
-    plt.rcParams.update({'font.size': 15})
-    fig, ax = plt.subplots(nrows = 2, ncols=1, sharex=True, figsize=figsize)
-
-    ax[0].plot(df.index, df)
-    ax[0].set_yscale('log')
-    ax[0].set_ylabel('log $P_t$')
-
-    ax[1].stackplot(df.index, weights.T, labels=df.drop('port_val',axis=1).columns)
-    ax[1].legend(bbox_to_anchor=(1.05, 1), loc='upper left')
-    ax[1].set_ylabel('Asset weight')
-
-    ax[1].set_xlim(df.index[0], df.index[-1])
-
-    plt.tight_layout()
-
-    if save:
-        plt.savefig('../../analysis/portfolio_exercise/images/port_performance')
-    if show:
-        plt.show()
-
-    return fig, ax
-
-
-
 
 
 if __name__ == '__main__':
-    df = load_data()
-    port_val = np.load('../../analysis/portfolio_exercise/output_data/port_val.npy')
-    weights = np.load('../..//analysis/portfolio_exercise/output_data/mpc_weights.npy')
+    prices_oos_df = load_prices(out_of_sample=True)
+    prices_insample_df = load_prices(out_of_sample=False)
+    start = None
 
-    start = '2000-09-01'
-
-    metrics = compute_asset_metrics(df, start=start).round(4)
-    print(metrics)
+    metrics_oos = compute_asset_metrics(prices_oos_df, start=start).round(4)
+    metrics_insample = compute_asset_metrics(prices_insample_df, start=start).round(4)
+    print(metrics_oos)
+    print(metrics_insample)
 
     save = True
     if save:
-        metrics.to_latex('../../analysis/portfolio_exercise/output_data/asset_performance.tex')
-        plot_asset_vals(df, start=start, save=True)
-        plot_port_weights(weights, df, start=None, constraints='long_only', save=True)
-        #plot_performance(df, port_val, weights, save=True)
+        metrics_oos.to_latex('../../analysis/portfolio_exercise/output_data/asset_performance.tex')
+        plot_asset_vals(prices_oos_df, start=start, savefig='asset_vals_oos.png')
+        plot_asset_vals(prices_insample_df, start=start, savefig='asset_vals_insample')
     else:
-        plot_asset_vals(df, start=start, save=False)
-        plot_port_weights(weights, df, start=None, constraints='long_only', save=False)
-        # plot_performance(df, port_val, weights, save=False)
+        plot_asset_vals(prices_oos_df, start=start, savefig=None)
+        plot_asset_vals(prices_insample_df, start=start, savefig=None)
+

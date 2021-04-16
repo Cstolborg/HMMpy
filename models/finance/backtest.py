@@ -4,7 +4,7 @@ import tqdm
 
 from models.hidden_markov.hmm_gaussian_em import EMHiddenMarkov
 from models.finance.mpc_model import MPC
-from utils.data_prep import load_data_get_ret , load_data_get_logret, load_data
+from utils.data_prep import load_data_get_ret , load_data_get_logret, load_prices
 from analysis.portfolio_exercise.data_description import plot_performance
 
 import warnings
@@ -462,7 +462,7 @@ if __name__ == "__main__":
 
     port_val = np.load(path + 'port_val.npy')
     weights = np.load(path + 'mpc_weights.npy')
-    df = load_data()
+    df = load_prices()
 
     metrics = backtester.performance_metrics(df, port_val, compare_assets=True)
 

@@ -172,7 +172,7 @@ class EMHiddenMarkov(BaseHiddenMarkov):
                 else:
                     self.old_llk = llk
 
-    def fit(self, X: ndarray, sort_state_seq=False, verbose=False):
+    def fit(self, X: ndarray, sort_state_seq=True, verbose=False):
         """
         Function iterates through the e-step and the m-step recursively to find the optimal model parameters.
 

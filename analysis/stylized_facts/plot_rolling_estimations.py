@@ -264,7 +264,7 @@ if __name__ == '__main__':
 
     # Loading regular and outlier corrected data. Then get means parameters across time
     path = '../../analysis/stylized_facts/output_data/'
-    df_rolling = pd.read_csv(path + 'rolling_estimations.csv', index_col='timestamp', parse_dates=True)
+    df_rolling = pd.read_csv(path + 'rolling_estimations_abs.csv', index_col='timestamp', parse_dates=True)
     df_rolling_outlier = pd.read_csv(path + 'rolling_estimations_outlier_corrected.csv',
                                      index_col='timestamp', parse_dates=True)
     data_table = df_rolling.groupby(['window_len', 'model']).mean().sort_index(ascending=[True, False])
@@ -283,7 +283,7 @@ if __name__ == '__main__':
         plot_rolling_parameters(df_rolling, model='jump', savefig='2-state JUMP HMM rolling params.png')
         plot_rolling_parameters(df_rolling, model='mle', savefig='2-state MLE HMM rolling params.png')
     else:
-        #plot_rolling_moments(df_rolling, df_returns, moving_window=moving_window, outlier_corrected=False, savefig=None)
+        plot_rolling_moments(df_rolling, df_returns, moving_window=moving_window, outlier_corrected=False, savefig=None)
         #plot_rolling_moments(df_rolling_outlier, df_returns, moving_window=moving_window, outlier_corrected=True, savefig=None)
         plot_acf_2D(data_table, df_returns, savefig=None)
         #plot_acf_3D(df_rolling, df_returns, savefig=None)

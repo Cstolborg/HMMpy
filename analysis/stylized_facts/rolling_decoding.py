@@ -161,14 +161,12 @@ if __name__ == '__main__':
     jump = JumpHMM(n_states=2, jump_penalty=16, window_len=(6, 14),
                    epochs=20, max_iter=30, random_state=42)
 
-    #logret = logret[13000:15000]  # Reduce sample size to speed up training
+    logret = logret[13210:15000]  # Reduce sample size to speed up training
 
     # Compute dict with long lists of simulations for mle and jump models
     # Also contains acf for both models
     decoded_states = rolling_state_decoding(logret, mle, jump, window_len=1700,
                                             outlier_corrected=False)
-
-    plot_decoded_states(decoded_states, logret, savefig=None)
 
     # Save results
     save = False

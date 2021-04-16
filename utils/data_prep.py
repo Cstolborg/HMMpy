@@ -15,32 +15,31 @@ Daily data begins:
 
 """
 
-def load_data(path='../../data/price_series.csv'):
+def load_prices(path='../../data/price_series.csv', out_of_sample=True):
     df = pd.read_csv(path, index_col='Time', parse_dates=True)
-    df = df.drop(['Hedge Funds Global', 'Private Equity', 'DAX ',
-                  'European Public Real Estate'], axis=1)
+
+    if out_of_sample is True:
+        df = df.drop(['MSCI World', 'DAX '], axis=1)
+    else:
+        # In-sample data
+        df = df.drop(['Hedge Funds Global', 'Private Equity', 'DAX ',
+                  'MSCI World', 'European Public Real Estate'] ,axis=1)
+        df = df.loc['1994-02-28':'2003-11-20']  # Daily data Barclays from 1994 and oos begins 2003
+
     df.interpolate(method='linear', inplace=True)
     df.dropna(inplace=True)
-    df = df.loc['1994-02-28':]
 
     return df
 
-def load_data_get_ret(path='../../data/price_series.csv'):
-    df = pd.read_csv(path, index_col='Time', parse_dates=True)
-    df = df.drop(['Hedge Funds Global' ,'Private Equity', 'DAX ',
-                  'European Public Real Estate'], axis=1)
-    df.interpolate(method='linear', inplace=True)
+def load_data_get_ret(path='../../data/price_series.csv', out_of_sample=True):
+    df = load_prices(path ,out_of_sample=out_of_sample)
     df_ret = df.pct_change()
     df_ret.dropna(inplace=True)
-    df_ret = df_ret.loc['1994-02-28':]
 
     return df_ret
 
-def load_data_get_logret(path='../../data/price_series.csv'):
-    df = pd.read_csv(path, index_col='Time', parse_dates=True)
-    df = df.drop(['Hedge Funds Global', 'Private Equity', 'DAX ',
-                  'European Public Real Estate'], axis=1)
-    df.interpolate(method='linear', inplace=True)
+def load_data_get_logret(path='../../data/price_series.csv', out_of_sample=True):
+    df = load_prices(path, out_of_sample=out_of_sample)
     df_ret = np.log(df) - np.log(df.shift(1))
     df_ret.dropna(inplace=True)
     df_ret = df_ret.loc['1994-02-28':]  # We start here because otherwise too many assets have monthly values only.
@@ -75,5 +74,5 @@ def get_cov_mat(df_ret):
 
 if __name__ == '__main__':
     path = '../data/price_series.csv'
-    df = load_data_get_ret(path)
-    df_logret = load_data_get_logret(path)
+    df = load_data_get_ret(path=path)
+    df_logret = load_data_get_logret(path=path)
