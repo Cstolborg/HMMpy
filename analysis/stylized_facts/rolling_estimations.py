@@ -138,7 +138,7 @@ if __name__ == '__main__':
 
 
     df = train_rolling_window(logret, mle, jump, window_lens=[1700], n_lags=100, get_acf=True,
-                              absolute_moments=True, outlier_corrected=False, n_sims=20000)
+                              absolute_moments=True, outlier_corrected=False, n_sims=5000)
 
     # Group data first by window len and the by each mode. Returns mean value of each remaining parameter
     data_table = df.groupby(['window_len', 'model']).mean().sort_index(ascending=[True, False])

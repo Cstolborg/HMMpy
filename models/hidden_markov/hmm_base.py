@@ -1,3 +1,5 @@
+import sys
+
 import numpy as np
 import pandas as pd
 from scipy import stats
@@ -244,7 +246,11 @@ class BaseHiddenMarkov(BaseEstimator):
                 # Each new state is chosen using the transition probs corresponding to the previous state sojourn.
                 sample_states[t, seq] = np.random.choice(a=state_index, size=1, p=tpm[sample_states[t - 1, seq], :])
 
-            samples[:, seq] = stats.norm.rvs(loc=mu[sample_states[:, seq]], scale=std[sample_states[:, seq]], size=n_samples)
+            try: # Prevents program from crashing due to "Domain errors"
+                samples[:, seq] = stats.norm.rvs(loc=mu[sample_states[:, seq]], scale=std[sample_states[:, seq]], size=n_samples)
+            except Exception:
+                print(sys.exc_info()[0])
+                print(f'Error occurrred with params: MU {self.mu} -- STD {self.std}, -- TPM {self.tpm.ravel()}')
 
         if n_sequences == 1:
             sample_states = sample_states[:, 0]

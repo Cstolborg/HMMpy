@@ -1,5 +1,6 @@
 import copy
 import json
+import pickle
 
 import pandas as pd;
 from matplotlib.collections import LineCollection
@@ -176,8 +177,8 @@ if __name__ == '__main__':
         plot_decoded_states(decoded_states, logret, savefig='decoded_states.png')
         plot_decoded_states_filter(decoded_states, logret, savefig='decoded_states_filter.png')
 
-        with open('./output_data/rolling_decoded_states.json', 'w') as f:
-            json.dump(decoded_states, f, indent=4)
+        with open('./output_data/rolling_decoded_states.p', 'wb') as f:
+            pickle.dump(decoded_states, f, protocol=pickle.HIGHEST_PROTOCOL)
     else:
         plot_decoded_states(decoded_states, logret, savefig=None)
         plot_decoded_states_filter(decoded_states, logret, savefig=None)
