@@ -321,27 +321,14 @@ In order to provide the reader with an intuitive overview and approach to repeat
 
 \begin{algorithm}[H]
 
-\For{t=1 to T}
-    {Execute outer loop \;
-    \For{For i=1 to K}
-        {Execute inner loop \;
-        \For{dsfsdfsd}{wer}}}
+\For{t = 1 all $i \in \K$}
+    {$\log\alpha_{1}(i) = \log\delta_i + \log b_i(o_1) $}  \;
+\For{t = 2,\ldots,T-1}{
+    \For{all $j \in \K$}{
+        \For{ all $i \in \K$}{
+            temp $\alpha(i) = \log\alpha_{t-1}(i) + \log(q_{i, j})$}
+        $\log\alpha_{t}(j)$ = LSE(temp $\alpha(i)$) + $\log b_j(o_t)$} \;   }
         
-\textbf{For} t = 1 all $i \in \K$ \textbf{do} \;
-\Indp
-$\log\alpha_{1}(i) = \log\delta_i + \log b_i(o_1) $ \;
-\BlankLine
-\Indm
-\textbf{For} t = 2,\ldots,T-1 \textbf{do} \;
-\Indp 
-\textbf{For} all $j \in \K$ \textbf{do} \;
-\Indp
-\textbf{For} all $i \in \K$ \textbf{do} \;
-\Indp
-temp $\alpha(i) = \log\alpha_{t-1}(i) + \log(q_{i, j})$ \;
-\BlankLine
-\Indm 
-$\log\alpha_{t}(j)$ = LSE(temp $\alpha(i)$) + $\log b_j(o_t)$ \;
 \caption{Compute the log scaled forward probabilities for all states $S_i$ and observations $O_t$}
 \label{algo: log_scaled_forward}
 \end{algorithm}
@@ -349,21 +336,11 @@ $\log\alpha_{t}(j)$ = LSE(temp $\alpha(i)$) + $\log b_j(o_t)$ \;
 The workings and mechanics of the log forward probabilities derived from algorithm \ref{algo: log_scaled_forward} are closely interconnected with the backward probabilities. As such, the log scaling of the backward probabilities can be done in a similar fashion as the forward probabilities.   
 
 \begin{algorithm}[H]
-\textbf{For} t = T - 1 all $i \in \K$ \textbf{do} \;
-\Indp
-$\log\beta_{T-1}(i) = 0$ \;
-\BlankLine
-\Indm
-\textbf{For} t = T - 2,\ldots,0  \textbf{do} \;
-\Indp
-\textbf{For} all $i \in \K$ \textbf{do} \;
-\Indp 
-\textbf{For} all $j \in \K$ \textbf{do} \;
-\Indp
-temp $\beta(j) = (log(q[i, j]) + \log b_j(o_t) + \log\beta_{t+1}(j)$ \;
-\BlankLine
-\Indm
-$\log\beta_{t}(i)$ = LSE(temp $\beta(j)$) \;
+\For{t = T - 1 all $i \in \K$}
+{$\log\beta_{T-1}(i) = 0$} \;
+
+
+
 \caption{Compute the log scaled backward probabilities for all states $S_i$ and observations $O_t$}
 \label{algo: log_scaled_backward}
 \end{algorithm}
@@ -371,20 +348,15 @@ $\log\beta_{t}(i)$ = LSE(temp $\beta(j)$) \;
 In addition to the log scaled forward and backward probabilities, a crucial element is the log scaled posterior probabilities. A pseudo-code overview of the implementation is provided in algorithm \ref{algo: log_scaled_posterior}.
 
 \begin{algorithm}[H]
-\textbf{For} all $i \in \K$ \textbf{do} \;
-\Indp 
-$\log \upsilon_1(i) = \log \delta_i + \log b_i(o_1)$ \;
-\Indm
-\textbf{For} t in all $\K$ \textbf{do}  \;
-\Indp
-\textbf{For} all $i \in \K$ \textbf{do} \;
-\Indp
-\textbf{For} all $j \in \K $ \textbf{do} \;
-\Indp
-temporary\_calculation = $\log q_{j,i} + \log \upsilon_{t-1}(j)$ \;
-\Indm
-$\log \upsilon_t(i)$ = max(temporary\_calculation) + $\log b_i(o_t)$ \;
-\BlankLine
+\For{all $i \in \K$}
+{$\log \upsilon_1(i) = \log \delta_i + \log b_i(o_1)$}\;
+
+\For{t in all $\K$}{
+    \For{all $i \in \K$}{
+        \For{ all $j \in \K$}{
+           temporary\_calculation = $\log q_{j,i} + \log \upsilon_{t-1}(j)$}
+      $\log \upsilon_t(i)$ = max(temporary\_calculation) + $\log b_i(o_t)$} \;   }
+
 \caption{Compute the log scaled posterior probabilities for all states $\K$ at each time step $t$}
 \label{algo: log_scaled_posterior}
 \end{algorithm}
@@ -409,18 +381,14 @@ def\_compute $\xi$(self, $\log\alpha_t(i)$, $\log\beta_t(i)$): \;
 \Indp 
 $\log Q$ = np.log(self.tpm) \;
 \BlankLine
-\Indm
-\textbf{For} all $i \in \K $ \textbf{do} \;
-\Indp
-\textbf{For} all $j \in \K$ \textbf{do} \;
-\Indp
-$\log\xi_{ij}$ = $\log$ $q_{i,j} +$ $\log\alpha_{t}(i)$ + $\log\beta_t(j) + b_j(o_t)$ \;
-\Indm
-\Indm
-normalizer = LSE($\log\xi_{ij}(t)$) \;
-\BlankLine
-$\log\xi_{ij}$ = $\log\xi_{ij}$ - normalizer[:, np.newaxis, np.newaxis] \;
-return $\log\xi_{ij}$
+
+\For{all $i \in \K$}{
+    \For{all $j \in \K$}{
+        $\log\xi_{ij}$ = $\log$ $q_{i,j} +$ $\log\alpha_{t}(i)$ + $\log\beta_t(j) + b_j(o_t)$}
+    normalizer = LSE($\log\xi_{ij}(t)$) \;
+    $\log\xi_{ij}$ = $\log\xi_{ij}$ - normalizer[:, np.newaxis, np.newaxis] \;
+    return $\log\xi_{ij}$}
+
 \caption{Compute the log scaled $\xi_{ij}(t)$ i.e. the expected number of transitions from state $i$ to $j$, $P(s_{t-1} = j, s_t = i |O^T)$}
 \label{algo: log_scaled_xi}
 \end{algorithm}
@@ -443,7 +411,7 @@ which is minimized with respect to $\Theta=(\theta_1,\ldots,\theta_K)$ and the l
 \label{eq:jump_objective}
 \end{equation}
 
-In \cref{eq:jump_objective}, $\lambda$ is a penalty that applies each time a state switch occur. It is essentially a hyper-parameter of the model, and potential tuning methods is shown in \cref{subsection: jump_penalizer}. Note that for $\lambda=0$, \cref{eq:jump_objective} reduces to a generalized K-means model (Lloyd, 1982), as the time ordering of observations become irrelevant. For $\lambda$ large enough, the model will converge towards a single state which will cover the entire dataset, thus $\lambda$ can be used to tune the persistence of states. The same loss as used by Nystrup et al. (2020) will be used in this analysis, making the loss function equal to the squared L2 norm\footnote{The squared L2 norm is defined as $\|\mathbf{x}\|_2^2 = (\sqrt{\sum_i x_i^2})^2 = \sum_i x_i^2 = \mathbf{x'x} $} $\ell(o_t, \theta_{s_t}) = \| o_t - \theta_{s_t} \|_2^2$, which is equivalent to the loss in K-means clustering.
+In \cref{eq:jump_objective}, $\lambda$ is a penalty that applies each time a state switch occur. It is essentially a hyper-parameter of the model, and potential tuning methods is shown in \cref{subsection: jump_penalizer}. Note that for $\lambda=0$, \cref{eq:jump_objective} reduces to a generalized K-means model as the time ordering of observations become irrelevant (Lloyd, 1982). When $\lambda$ is large enough, the model will converge towards a single state which will cover the entire dataset, thus $\lambda$ can be used to tune the persistence of states. The same loss as used by Nystrup et al. (2020) will be used in this analysis, making the loss function equal to the squared L2 norm\footnote{The squared L2 norm is defined as $\|\mathbf{x}\|_2^2 = (\sqrt{\sum_i x_i^2})^2 = \sum_i x_i^2 = \mathbf{x'x} $} $\ell(o_t, \theta_{s_t}) = \| o_t - \theta_{s_t} \|_2^2$, which is equivalent to the loss in K-means clustering.
 
 \cref{algo:jump_fit} describes our estimation approach to fitting jump models. From a univariate time series $O$, a number of standardized features $Z$ are constructed and inputted to the algorithm along with the number of latent states K and an initial guess of the state sequence $\mathcal{S}$. Then, the algorithm iterates between fitting the model that minimizes the loss function for a given state sequence, and finding the state sequence that minimize the objective given in \cref{eq:jump_objective}. The algorithm is terminated once the state sequence doesn't change from one iteration to the next, or when the change in the objective function is below some tolerance level. Upon termination, transition probabilities are found by counting the number of state transitions and sojourns from the final state sequence $\mathcal{S}^i$. The distributional properties of the HMM is estimated from the sample mean and sample variance in each state.
 
@@ -468,30 +436,9 @@ In \cref{eq:jump_objective}, $\lambda$ is a penalty that applies each time a sta
 
 The objective function in \cref{eq:jump_objective} is guaranteed to stay the same or decrease for every iteration in \cref{algo:jump_fit}, yet just as the EM algorithm from previous sections, \cref{algo:jump_fit} is sensitive towards initial starting values and may converge towards local minima. As a result, we run \cref{algo:jump_fit} from 10 different starting values generated using K-means++ (Arthur \& Vassilvitskii, 2007) the same way as proposed by Nystrup et al. (2020).
 
-In part 1 of \cref{algo:jump_fit}, we construct a number of standardized features from the observed data $O$. The point of this exercise is that the inclusion of time series features might reveal additional information which we can use in making the model better respond to state switches. Zheng et al. (2019) originally introduced a feature set, with the purpose of better characterising their conditional distributions in a spectral clustering estimator for HMMs. We will build on these features, however, we will exclude all forward looking variables. Using windows length of of $l=6$ and $l=14$, the features are summarized in \cref{algo:jump_features}.
+In part 1 of \cref{algo:jump_fit}, we construct a number of standardized features from the observed data $O$. The point of this exercise is that the inclusion of time series features might reveal additional information which we can use in making the model respond better to state switches. Zheng et al. (2019) originally introduced a feature set, with the purpose of better characterising their conditional distributions in a spectral clustering estimator for HMMs. We will build on these features, however, we will exclude all forward looking variables. The selected features will be explained in detail throughout section \ref{subsection: jump_penalizer}.
 
-\begin{algorithm}[H]
-
-\KwInput{Time series O, and window length $l$}
-\BlankLine
-
-1. Observation: $o_t$\;
-2. Left absolute change: $|o_t-o_{t-1}|$ \;
-3. Previous left absoulte change: $|o_{t-1}-o_{t-2}|$ \;
-4. Left local mean: $mean(o_{t-l},\ldots,o_{t})$ \;
-5. Left local std; $std(o_{t-l,\ldots, o_{t}})$ \;
-6. Left local median: $median(o_{t-l},\ldots,o_{t})$ \;
-7. Min/Max difference: $max(o_{t-l},\ldots,o_{t}) - min(o_{t-l},\ldots,o_{t})$ \;
-\BlankLine
-
-
-\KwOutput{Feature set Z, where each each feature $z_i$ is standardized as $z_i = \frac{\bar x-x_i}{\sigma}$}
-
-\caption{Features used in Jump estimation of HMM's}
-\label{algo:jump_features}
-\end{algorithm}
-
-Part 2.a in \cref{algo:jump_fit} can be easily minimized analytically when the loss has strictly convex forms such as the squared L2 norm used here, thus guaranteeing the solution to be the global minimum. Taking the partial derivative of $\sum_{t=1}^T \ell(z_t, \theta_{s_t^{i-1}})$ with respect to $\theta_j$ yields
+Part 2.a in \cref{algo:jump_fit} can easily be minimized analytically when the loss has strictly convex forms such as the squared L2 norm used here, thus guaranteeing the solution to be the global minimum. Taking the partial derivative of $\sum_{t=1}^T \ell(z_t, \theta_{s_t^{i-1}})$ with respect to $\theta_j$ yields
 \begin{equation}
    \frac{\delta \sum_{t=1}^{T} ((z_t-\theta_{s_t})'(z_t-\theta_{s_t}) }{\delta \theta_j}
    = \frac{\delta \sum_{t=1}^T (z_t'z_t - 2z_t'\theta_{st}+ \theta_{s_t}'\theta_{s_t} )}{\delta  \theta_j}
@@ -515,6 +462,6 @@ Then, the least costly state sequence is found by
 \end{align}
 $\upsilon$ is thus defined as the least costly path from state $i$ to $j$ between two discrete time steps, as it merely determined by the tradeoff between the jump penalty $\lambda$ and the cost associated with moving to state j. Viewing all entries of $V$ one can easily see how this will represent costs associated with each specific path through T data points in $\upsilon$. \cref{eq:jump_state_seq_path} can therefore be interpreted as the least costly path through $V$. 
 
-One of the main advantages to the jump model over maximum likelihood estimation is that the jump model fitting is entirely based on squared Euclidean distances and does not assume the states to follow any specific distributions. As such it is expected to be more robust when trained on data in which the underlying distribution(s) is unknown, which is often the case with financial data. This is an extremely important progression since misspecified distributions often are a huge error source in HMMs (and other probabilistic times series models), so the freedom from this assumption will potentially significantly improve the model fit. Additionally, as shown in \cref{algo:jump_features} it is very easy to add more features to the estimator, allowing the use of a variety of both endogenously and exogenously given variables. This makes it feasible to potentially test many different features and feature sets when training models - no small advantage when pursuing models with highly persistent states
+One of the main advantages to the jump model over maximum likelihood estimation is that the jump model fitting is entirely based on squared Euclidean distances and does not assume the states to follow any specific distributions. As such it is expected to be more robust when trained on data in which the underlying distribution(s) is unknown, which is often the case with financial data. This is an extremely important progression since misspecified distributions often are a huge error source in HMMs (and other probabilistic times series models), so the freedom from this assumption will potentially significantly improve the model fit. Additionally, as will be shown in section \ref{subsection: jump_penalizer} it is very easy to add more features to the estimator, allowing the use of a variety of both endogenously and exogenously given variables. This makes it feasible to potentially test many different features and feature sets when training models - no small advantage when pursuing models with highly persistent states.
 
 Finally, the model is computationally lighter to fit and often only requires between 5-10 operations to converge whereas the MLE estimator often requires 50-100. In the following sections we will show how both models converge when trained in a number of simulation environments.
