@@ -337,8 +337,12 @@ The workings and mechanics of the log forward probabilities derived from algorit
 
 \begin{algorithm}[H]
 \For{t = T - 1 all $i \in \K$}
-{$\log\beta_{T-1}(i) = 0$} \;
-
+{$\log \beta_{T-1}(i) = 0$} \;
+\For{t = 1\ldots T-2}{
+    \For{all $i \in \K$}{
+        \For{all $j \in \K$}{
+            temp $\beta(j)$ = $\log q_{ij}$ + $\log b_j(o_t)$ + $\log \beta_{t+1}(j)$  }
+        $\log \beta_t(i)$ = LSE(temp$\beta(j))$}}
 
 
 \caption{Compute the log scaled backward probabilities for all states $S_i$ and observations $O_t$}
