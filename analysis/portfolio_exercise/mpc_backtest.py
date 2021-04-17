@@ -1,17 +1,17 @@
-import numpy as np;
+import warnings
+
+import numpy as np
+import pandas as pd;
 from matplotlib import pyplot as plt
 
+from models.finance.backtest import Backtester
+from models.hidden_markov.hmm_gaussian_em import EMHiddenMarkov
 from models.hidden_markov.hmm_jump import JumpHMM
+from utils.data_prep import load_returns, load_logreturns, load_prices
 
 np.seterr(divide='ignore')
-import pandas as pd; pd.set_option('display.max_columns', 10); pd.set_option('display.width', 320)
-
-from models.hidden_markov.hmm_gaussian_em import EMHiddenMarkov
-from models.finance.backtest import Backtester
-from utils.data_prep import load_data_get_ret , load_data_get_logret, load_prices
-
-import warnings
 warnings.filterwarnings('ignore')
+pd.set_option('display.max_columns', 10); pd.set_option('display.width', 320)
 
 figsize = (20 ,10)
 def plot_port_weights(weights, df, start=None, constraints=None, show=True, save=False):
@@ -85,7 +85,7 @@ if __name__ == "__main__":
     path = '../../analysis/portfolio_exercise/output_data/'
 
     # Get log-returns - used in times series model
-    df_logret = load_data_get_logret()
+    df_logret = load_logreturns(out_of_sample=False)
     X = df_logret["S&P 500 "]
 
     # Instantiate models to test and backtester
@@ -96,7 +96,7 @@ if __name__ == "__main__":
 
     # Uncomment this section to perform new backtest - generating forecast distributions
     # Leave commented to used existing preds and covariances from file
-    #preds, cov = backtester.rolling_preds_cov_from_hmm(X, df_logret, mle, window_len=1700, shrinkage_factor=(0.3, 0.3), verbose=True)
+    preds, cov = backtester.rolling_preds_cov_from_hmm(X, df_logret, mle, window_len=1700, shrinkage_factor=(0.3, 0.3), verbose=True)
     #np.save(path + 'rolling_preds.npy', preds)
     #np.save(path + 'rolling_cov.npy', cov)
 
@@ -105,18 +105,18 @@ if __name__ == "__main__":
     cov = np.load(path + 'rolling_cov.npy')
 
     # Get actual returns - used to test performance of trading strategy
-    df_ret = load_data_get_ret()
+    df_ret = load_returns(out_of_sample=False)
 
     # Use forecast distribution to test trading strategy
-    #weights, port_val, gamma = backtester.backtest_mpc(df_ret, preds, cov, short_cons='LLO')
+    weights, port_val, gamma = backtester.backtest_mpc(df_ret, preds, cov, short_cons='LLO')
     #np.save(path + 'mpc_weights.npy', weights)
     #np.save(path + 'port_val.npy', port_val)
     #np.save(path + 'gamma.npy', gamma)
 
     # Leave uncommented to use previously tested trading strategy from file
-    port_val = np.load(path + 'port_val.npy')
-    weights = np.load(path + 'mpc_weights.npy')
-    df = load_prices()  # Price - not returns
+    #port_val = np.load(path + 'port_val.npy')
+    #weights = np.load(path + 'mpc_weights.npy')
+    df = load_prices(out_of_sample=False)  # Price - not returns
 
     # Compare portfolio to df with benchmarks
     metrics = backtester.performance_metrics(df, port_val, compare_assets=True)

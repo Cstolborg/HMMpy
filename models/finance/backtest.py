@@ -4,8 +4,7 @@ import tqdm
 
 from models.hidden_markov.hmm_gaussian_em import EMHiddenMarkov
 from models.finance.mpc_model import MPC
-from utils.data_prep import load_data_get_ret , load_data_get_logret, load_prices
-from analysis.portfolio_exercise.data_description import plot_performance
+from utils.data_prep import load_returns , load_logreturns, load_prices
 
 import warnings
 warnings.filterwarnings('ignore')
@@ -440,7 +439,7 @@ class Backtester:
 
 if __name__ == "__main__":
     path = '../../analysis/portfolio_exercise/output_data/'
-    df_logret = load_data_get_logret()
+    df_logret = load_logreturns()
     X = df_logret["MSCI World"]
 
     model1 = EMHiddenMarkov(n_states=2, init="random", random_state=42, epochs=20, max_iter=100)
@@ -450,7 +449,7 @@ if __name__ == "__main__":
     #np.save(path + 'rolling_preds.npy', preds)
     #np.save(path + 'rolling_cov.npy', cov)
 
-    df_ret = load_data_get_ret()
+    df_ret = load_returns()
     preds = np.load(path + 'rolling_preds.npy')
     cov = np.load(path + 'rolling_cov.npy')
 
@@ -471,11 +470,3 @@ if __name__ == "__main__":
     #print('highest trans cost', backtester.trans_cost.max())
 
     df = df.iloc[-len(port_val):]
-
-
-    save = False
-    if save == True:
-        metrics.round(4).to_latex(path + 'asset_performance.tex')
-        plot_performance(df, port_val, weights, save=True)
-    else:
-        plot_performance(df, port_val, weights, save=False)

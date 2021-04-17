@@ -31,14 +31,14 @@ def load_prices(path='../../data/price_series.csv', out_of_sample=True):
 
     return df
 
-def load_data_get_ret(path='../../data/price_series.csv', out_of_sample=True):
+def load_returns(path='../../data/price_series.csv', out_of_sample=True):
     df = load_prices(path ,out_of_sample=out_of_sample)
     df_ret = df.pct_change()
     df_ret.dropna(inplace=True)
 
     return df_ret
 
-def load_data_get_logret(path='../../data/price_series.csv', out_of_sample=True):
+def load_logreturns(path='../../data/price_series.csv', out_of_sample=True):
     df = load_prices(path, out_of_sample=out_of_sample)
     df_ret = np.log(df) - np.log(df.shift(1))
     df_ret.dropna(inplace=True)
@@ -74,5 +74,5 @@ def get_cov_mat(df_ret):
 
 if __name__ == '__main__':
     path = '../data/price_series.csv'
-    df = load_data_get_ret(path=path)
-    df_logret = load_data_get_logret(path=path)
+    df = load_returns(path=path)
+    df_logret = load_logreturns(path=path)

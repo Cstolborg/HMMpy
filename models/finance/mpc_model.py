@@ -3,7 +3,7 @@ import pandas as pd; pd.set_option('display.max_columns', 10); pd.set_option('di
 import matplotlib.pyplot as plt
 import cvxpy as cp
 
-from utils.data_prep import load_data_get_ret
+from utils.data_prep import load_returns
 
 """ TODO
 
@@ -204,7 +204,7 @@ class MPC:
         return port_var
 
 if __name__ == "__main__":
-    df_ret = load_data_get_ret()
+    df_ret = load_returns()
     cov = df_ret.cov().to_numpy()
 
     ret_pred = df_ret.iloc[-15:].to_numpy()
