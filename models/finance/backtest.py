@@ -1,14 +1,3 @@
-import numpy as np; np.seterr(divide='ignore')
-import pandas as pd; pd.set_option('display.max_columns', 10); pd.set_option('display.width', 320)
-import tqdm
-
-from models.hidden_markov.hmm_gaussian_em import EMHiddenMarkov
-from models.finance.mpc_model import MPC
-from utils.data_prep import load_returns , load_logreturns, load_prices
-
-import warnings
-warnings.filterwarnings('ignore')
-
 """ TODO
 In Backtester.get_asset_dist when only 1 state is present the other takes on mean
 values of 0 and covariances of 0. Is this a good result ?
@@ -18,14 +7,25 @@ We need a solution for this; currently setting it equal to zero in those cases.
 
 Create some way to do in-sample crossvalidation for hyperparameters
 
-TRANSACTION COSTS: Do we subtract transaction_costs() method fom gross returns or multiply by (1-trans_costs)
-
 SHRINKAGE: Sort portfolios according to variance
     EVMA OR Hyperbolic
     Eksponentielt vægtet
-    
+
 
 """
+import warnings
+
+import numpy as np
+import pandas as pd
+import tqdm
+
+from models.hidden_markov.hmm_gaussian_em import EMHiddenMarkov
+from models.finance.mpc_model import MPC
+from utils.data_prep import DataPrep, load_returns, load_logreturns, load_prices
+
+warnings.filterwarnings('ignore')
+pd.set_option('display.max_columns', 10); pd.set_option('display.width', 320)
+np.seterr(divide='ignore')
 
 class FinanceHMM:
     """
@@ -220,7 +220,7 @@ class Backtester:
     cov : ndarray of shape(n_samples-window_len, n_preds, n_assets, n_assets)
         predicted covariance matrix h time steps into the future at each time t.
     """
-    def __init__(self, window_len=1500):
+    def __init__(self, window_len=1700):
         self.preds = None
         self.cov = None
         self.n_states = None
@@ -302,7 +302,7 @@ class Backtester:
        covariances : ndarray of shape (n_samples, n_preds, n_assets, n_assets)
            list of covariance matrix of returns for each time step t.
        port_val : float, default=1000
-           Current portfolio value.
+           Starting portfolio value.
        start_weights : ndarray of shape (n_assets,)
            Current (known) portfolio weights at the start of backtest. Default is 100% allocation to cash.
            Cash must be the last column in df_rets.
@@ -323,7 +323,7 @@ class Backtester:
         self.weights[0] = start_weights
 
         gamma = np.array([])  # empty array
-        trade_cost = []
+        trade_cost, turnover = [], []
 
         # Instantiate MPC object
         mpc_solver = MPC(rets=preds[0], covariances=covariances[0], prev_port_vals=self.port_val,
@@ -348,14 +348,22 @@ class Backtester:
             gross_ret = (self.weights[t + 1] @ (1 + df_rets.iloc[t]))
             shorting_cost = self.short_costs(self.weights[t + 1], rf_return=df_rets.iloc[t, -1])
             trans_cost = self.transaction_costs(delta_weights, trans_cost=0.001)
-            new_port_val = (gross_ret-shorting_cost) * (1-trans_cost) * self.port_val[-1]  # TODO trans+short costs???
+            new_port_val = (gross_ret-shorting_cost) * (1-trans_cost) * self.port_val[-1]
             self.port_val = np.append(self.port_val, new_port_val)
 
             trade_cost.append(trans_cost)
+            turnover.append(np.linalg.norm(delta_weights, ord=1) / 2)  # Half L1 norm
 
         self.port_val = self.port_val[1:]  # Throw away first observation since it is artificially set to zero
         self.gamma = gamma
+
+        # Annualized average trading ost
         self.trans_cost = np.array(trade_cost)
+        self.annual_trans_cost = 252 / len(self.trans_cost) * self.trans_cost.sum()
+
+        # Compute average annualized portfolio turnover
+        self.daily_turnover = np.array(turnover)
+        self.annual_turnover = 252 / len(self.daily_turnover) * self.daily_turnover.sum()
 
         return self.weights, self.port_val, gamma
 
@@ -363,7 +371,8 @@ class Backtester:
         """
         Compute shorting costs, assuming a fee equal to the risk-free asset is paid.
         """
-        short_weights = weights[:-1][weights[:-1] < 0.0].sum()  # Sum of all port weights below 0.0
+        weights_no_rf = weights[:-1]  # Remove risk-free asset from array
+        short_weights = weights_no_rf[weights_no_rf < 0.0].sum()  # Sum of all port weights below 0.0
         return -short_weights * rf_return
 
     def transaction_costs(self, delta_weights, trans_cost=0.001):
@@ -376,13 +385,47 @@ class Backtester:
 
         return delta_weights * trans_cost
 
-    def performance_metrics(self, df, port_val, compare_assets=False):
+    def asset_metrics(self, df_prices):
+        """Compute performance metrics for a given portfolio/asset"""
+        df_ret = df_prices.pct_change().dropna()
+        n_years = len(df_ret) / 252
+
+        # Get regular cagr and std
+        ret = df_ret.drop('T-bills rf', axis=1)
+        cagr = ((1 + ret).prod(axis=0)) ** (1 / n_years) - 1
+        std = ret.std(axis=0, ddof=1) * np.sqrt(252)
+
+        # Compute metrics in excess of the risk-free asset
+        excess_ret = df_ret.subtract(df_ret['T-bills rf'], axis=0).drop('T-bills rf', axis=1)
+        excess_cagr = ((1 + excess_ret).prod(axis=0)) ** (1 / n_years) - 1
+        excess_std = excess_ret.std(axis=0 ,ddof=1) * np.sqrt(252)
+        sharpe = excess_cagr / excess_std
+
+        df_prices = df_prices.drop('T-bills rf', axis=1)
+        peaks = df_prices.cummax(axis=0)
+        drawdown = -(df_prices - peaks) / peaks
+        max_drawdown = drawdown.max(axis=0)
+        calmar = excess_cagr / max_drawdown
+
+        metrics = {'return': cagr,
+                   'std': std,
+                   'excess_return': excess_cagr,
+                   'excess_std': excess_std,
+                   'sharpe': sharpe,
+                   'max_drawdown': max_drawdown,
+                   'calmar_ratio': calmar}
+
+        metrics = pd.DataFrame(metrics)
+
+        return metrics
+
+    def performance_metrics(self, df_prices, port_val, compare_assets=False):
         """Compute performance metrics for a given portfolio/asset"""
         # Merge port_val with data
-        df = df.iloc[-len(port_val):]
-        df['port_val'] = port_val
-        df.dropna(inplace=True)
-        df_ret = df.pct_change().dropna()
+        df_prices = df_prices.iloc[-len(port_val):]
+        df_prices['port_val'] = port_val
+        df_prices.dropna(inplace=True)
+        df_ret = df_prices.pct_change().dropna()
 
         # Annual returns, std
         n_years = len(port_val) / 252
@@ -411,9 +454,9 @@ class Backtester:
             excess_std = excess_ret.std(axis=0 ,ddof=1) * np.sqrt(252)
             sharpe = excess_cagr / excess_std
 
-            df = df.drop('T-bills rf', axis=1)
-            peaks = df.cummax(axis=0)
-            drawdown = -(df - peaks) / peaks
+            df_prices = df_prices.drop('T-bills rf', axis=1)
+            peaks = df_prices.cummax(axis=0)
+            drawdown = -(df_prices - peaks) / peaks
             max_drawdown = drawdown.max(axis=0)
             calmar = excess_cagr / max_drawdown
 
@@ -436,37 +479,20 @@ class Backtester:
 
         return metrics
 
-
 if __name__ == "__main__":
-    path = '../../analysis/portfolio_exercise/output_data/'
-    df_logret = load_logreturns()
-    X = df_logret["MSCI World"]
+    data = DataPrep(out_of_sample=True)
+    df_prices = data.prices
+    df_ret = data.rets
+    df_logret = data.logrets
+    X = df_logret["S&P 500 "]
 
     model1 = EMHiddenMarkov(n_states=2, init="random", random_state=42, epochs=20, max_iter=100)
     backtester = Backtester()
 
-    #preds, cov = backtester.rolling_preds_cov_from_hmm(X, df_logret, model1, window_len=1700, shrinkage_factor=(0.3, 0.3), verbose=True)
-    #np.save(path + 'rolling_preds.npy', preds)
-    #np.save(path + 'rolling_cov.npy', cov)
-
-    df_ret = load_returns()
-    preds = np.load(path + 'rolling_preds.npy')
-    cov = np.load(path + 'rolling_cov.npy')
-
+    #preds = np.load(path + 'rolling_preds.npy')
+    #cov = np.load(path + 'rolling_cov.npy')
     #weights, port_val, gamma = backtester.backtest_mpc(df_ret, preds, cov, short_cons='LLO')
+    #port_val = np.load(path + 'port_val.npy')
+    #weights = np.load(path + 'mpc_weights.npy')
+    #metrics = backtester.asset_metrics(df_prices)
 
-    #np.save(path + 'mpc_weights.npy', weights)
-    #np.save(path + 'port_val.npy', port_val)
-    #np.save(path + 'gamma.npy', gamma)
-
-    port_val = np.load(path + 'port_val.npy')
-    weights = np.load(path + 'mpc_weights.npy')
-    df = load_prices()
-
-    metrics = backtester.performance_metrics(df, port_val, compare_assets=True)
-
-    print(metrics)
-    #print('transaction costs:', (1-backtester.trans_cost).prod())
-    #print('highest trans cost', backtester.trans_cost.max())
-
-    df = df.iloc[-len(port_val):]

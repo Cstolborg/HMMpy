@@ -14,7 +14,7 @@ warnings.filterwarnings('ignore')
 pd.set_option('display.max_columns', 10); pd.set_option('display.width', 320)
 
 figsize = (20 ,10)
-def plot_port_weights(weights, df, start=None, constraints=None, show=True, save=False):
+def plot_port_weights(weights, df, start=None, constraints=None, show=True, savefig=None):
     # Prepare data
     df.dropna(inplace=True)
     df = df.iloc[-len(weights):]
@@ -38,14 +38,14 @@ def plot_port_weights(weights, df, start=None, constraints=None, show=True, save
     ax.set_ylabel('Asset weight')
     plt.tight_layout()
 
-    if save == True:
-        plt.savefig('../../analysis/portfolio_exercise/images/port_weights')
+    if not savefig == None:
+        plt.savefig('./images/' + savefig)
     if show == True:
         plt.show()
 
     return fig, ax
 
-def plot_performance(df, port_val, weights, start=None, show=True, save=False):
+def plot_performance(df, port_val, weights, start=None, show=True, savefig=None):
     # Prepare data
     df.dropna(inplace=True)
     df = df.iloc[-len(port_val):]
@@ -73,8 +73,8 @@ def plot_performance(df, port_val, weights, start=None, show=True, save=False):
 
     plt.tight_layout()
 
-    if save:
-        plt.savefig('../../analysis/portfolio_exercise/images/port_performance')
+    if not savefig == None:
+        plt.savefig('./images/' + savefig)
     if show:
         plt.show()
 
@@ -82,41 +82,48 @@ def plot_performance(df, port_val, weights, start=None, show=True, save=False):
 
 
 if __name__ == "__main__":
-    path = '../../analysis/portfolio_exercise/output_data/'
+    # Set path, model to test and in-sample vs. out-of-sample
+    model_str = 'mle'
+    path = '../../analysis/portfolio_exercise/output_data/' + model_str + '/'
+    out_of_sample = False
 
-    # Get log-returns - used in times series model
-    df_logret = load_logreturns(out_of_sample=False)
-    X = df_logret["S&P 500 "]
+    sample_type = 'oos' if out_of_sample is True else 'is'  # Used to specify suffix in file names
 
     # Instantiate models to test and backtester
-    mle = EMHiddenMarkov(n_states=2, init="random", random_state=42, epochs=20, max_iter=100)
-    jump = JumpHMM(n_states=2, jump_penalty=16, window_len=(6, 14),
-                   epochs=20, max_iter=30, random_state=42)
+    if model_str == 'mle':
+        model = EMHiddenMarkov(n_states=2, init="random", random_state=42, epochs=20, max_iter=100)
+    elif model_str == 'jump':
+        model = JumpHMM(n_states=2, jump_penalty=16, window_len=(6, 14),
+                       epochs=20, max_iter=30, random_state=42)
+
     backtester = Backtester()
+
+    # Get data - logreturns is used in HMM model
+    df = load_prices(out_of_sample=out_of_sample)  # Price - not returns
+    df_ret = load_returns(out_of_sample=out_of_sample)  # Actual returns - used to test performance of trading strategy
+    df_logret = load_logreturns(out_of_sample=out_of_sample)
+    X = df_logret["S&P 500 "]
+
 
     # Uncomment this section to perform new backtest - generating forecast distributions
     # Leave commented to used existing preds and covariances from file
-    preds, cov = backtester.rolling_preds_cov_from_hmm(X, df_logret, mle, window_len=1700, shrinkage_factor=(0.3, 0.3), verbose=True)
-    #np.save(path + 'rolling_preds.npy', preds)
-    #np.save(path + 'rolling_cov.npy', cov)
+    #preds, cov = backtester.rolling_preds_cov_from_hmm(X, df_logret, model, window_len=1700, shrinkage_factor=(0.3, 0.3), verbose=True)
+    #np.save(path + 'preds_' + sample_type + '.npy', preds)
+    #np.save(path + 'cov_' + sample_type + '.npy', cov)
 
-    # Leave uncomennted to use forecast distributions from file
-    preds = np.load(path + 'rolling_preds.npy')
-    cov = np.load(path + 'rolling_cov.npy')
-
-    # Get actual returns - used to test performance of trading strategy
-    df_ret = load_returns(out_of_sample=False)
+    # Leave uncomented to use forecast distributions from file
+    preds = np.load(path + 'preds_'+ sample_type + '.npy')
+    cov = np.load(path + 'cov_' + sample_type + '.npy')
 
     # Use forecast distribution to test trading strategy
-    weights, port_val, gamma = backtester.backtest_mpc(df_ret, preds, cov, short_cons='LLO')
-    #np.save(path + 'mpc_weights.npy', weights)
-    #np.save(path + 'port_val.npy', port_val)
-    #np.save(path + 'gamma.npy', gamma)
+    weights, port_val, gamma = backtester.backtest_mpc(df_ret, preds, cov, short_cons='LO')
+    np.save(path + 'weights_' + sample_type + '.npy', weights)
+    np.save(path + 'port_val_' + sample_type + 'npy', port_val)
+    np.save(path + 'gamma_' + sample_type + '.npy', gamma)
 
     # Leave uncommented to use previously tested trading strategy from file
     #port_val = np.load(path + 'port_val.npy')
     #weights = np.load(path + 'mpc_weights.npy')
-    df = load_prices(out_of_sample=False)  # Price - not returns
 
     # Compare portfolio to df with benchmarks
     metrics = backtester.performance_metrics(df, port_val, compare_assets=True)
@@ -128,10 +135,10 @@ if __name__ == "__main__":
 
     save = False
     if save == True:
-        metrics.round(4).to_latex(path + 'asset_performance.tex')
-        plot_performance(df, port_val, weights, save=True)
+        metrics.round(4).to_latex(path + 'asset_performance_' + sample_type +  '.tex')
+        plot_performance(df, port_val, weights, savefig='/' + model_str + 'performance.png')
     else:
-        plot_performance(df, port_val, weights, save=False)
+        plot_performance(df, port_val, weights, savefig=None)
 
 
 
