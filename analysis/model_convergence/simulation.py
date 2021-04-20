@@ -137,7 +137,7 @@ if __name__ == '__main__':
     data_table = df.groupby(['Simulation length', 'model']).mean().sort_index(ascending=[True, False])
     print(data_table)
 
-    save = False
+    save = True
     if save == True:
         plot_simulated_model_convergence(df, sampler, savefig='simulation_normal.png')
         df.to_csv(path + 'simulation_normal.csv', index=False)

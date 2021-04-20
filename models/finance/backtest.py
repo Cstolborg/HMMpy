@@ -287,6 +287,35 @@ class Backtester:
 
         return self.preds, self.cov
 
+    def gridsearch_mpc(self, grid, df_rets, preds, covariances, n_preds=15, port_val=1000,
+                     start_weights=None, max_drawdown=0.4, max_leverage=2.0, gamma_0=5, kappa1=0.008,
+                     rho2=0.0005, max_holding=0.4, short_cons="LO", eps=1e-6):
+        results = pd.DataFrame()
+        for max_holding in grid['max_holding']:
+            for trans_costs in grid['trans_costs']:
+                for holding_costs in grid['holding_costs']:
+                    print(f"""Computing grid -- max_holding {max_holding} -- trans_costs {trans_costs} holding_costs {holding_costs}""")
+                    try:
+                        annual_ret, annual_std, annual_turnover = \
+                            self.backtest_mpc(df_rets, preds, covariances, n_preds=n_preds, port_val=port_val,
+                         start_weights=start_weights, max_drawdown=max_drawdown, max_leverage=max_leverage,
+                        gamma_0=gamma_0, kappa1=trans_costs, rho2=holding_costs, max_holding=max_holding,
+                                          short_cons=short_cons, eps=eps)
+
+                        results_dict = {'max_holding': max_holding,
+                                        'trans_costs': trans_costs,
+                                        'holding_costs': holding_costs,
+                                        'return': annual_ret,
+                                        'std': annual_std,
+                                        'turnover': annual_turnover}
+                        print(results_dict)
+                        results = results.append(results_dict, ignore_index=True)
+                    except:
+                        print('No convergence')
+                        continue
+        self.gridsearch_df = results
+        return results
+
     def backtest_mpc(self, df_rets, preds, covariances, n_preds=15, port_val=1000,
                      start_weights=None, max_drawdown=0.4, max_leverage=2.0, gamma_0=5, kappa1=0.008,
                      rho2=0.0005, max_holding=0.4, short_cons="LLO", eps=1e-6):
@@ -371,11 +400,11 @@ class Backtester:
         self.annual_turnover = 252 / len(self.daily_turnover) * self.daily_turnover.sum()
 
         # Compute return & std.
-        n_years = len(self.port_val)
+        n_years = len(self.port_val) / 252
         annual_ret = self.port_ret.prod()**(1/n_years) - 1
         annual_std = self.port_ret.std(ddof=1) * np.sqrt(252)
 
-        return self.weights, self.port_val, gamma
+        return annual_ret, annual_std, self.annual_turnover
 
     def short_costs(self, weights, rf_return):
         """

@@ -15,7 +15,7 @@ pd.set_option('display.max_columns', 10); pd.set_option('display.width', 320)
 
 if __name__ == "__main__":
     # Set path, model to test and in-sample vs. out-of-sample
-    model_str = 'jump'
+    model_str = 'mle'
     path = '../../analysis/portfolio_exercise/output_data/' + model_str + '/'
     out_of_sample = True
 

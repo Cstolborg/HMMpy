@@ -82,7 +82,7 @@ def plot_performance(df, port_val, weights, start=None, show=True, savefig=None)
 
 if __name__ == "__main__":
     # Set path, model to test and in-sample vs. out-of-sample
-    model_str = 'jump'
+    model_str = 'mle'
     path = '../../analysis/portfolio_exercise/output_data/' + model_str + '/'
     out_of_sample = False
     sample_type = 'oos' if out_of_sample is True else 'is'  # Used to specify suffix in file names
@@ -104,24 +104,12 @@ if __name__ == "__main__":
     preds = np.load(path + 'preds_'+ sample_type + '.npy')
     cov = np.load(path + 'cov_' + sample_type + '.npy')
 
-    # Use forecast distribution to test trading strategy
-    weights, port_val, gamma = backtester.backtest_mpc(data.rets, preds, cov, short_cons='long_only')
-    np.save(path + 'weights_' + sample_type + '.npy', weights)
-    np.save(path + 'port_val_' + sample_type + '.npy', port_val)
-    np.save(path + 'gamma_' + sample_type + '.npy', gamma)
+    grid = {'max_holding': [0.2, 0.3, 0.4, 0.5],
+            'trans_costs': [0.0005, 0.001, 0.004, 0.008, 0.012, 0.015],
+            'holding_costs': [0, 0.0005, 0.001, 0.002],
+            }
 
-    # Leave uncommented to use previously tested trading strategy from file
-    #port_val = np.load(path + 'port_val.npy')
-    #weights = np.load(path + 'mpc_weights.npy')
+    gridsearch_results = \
+                backtester.gridsearch_mpc(grid, data.rets, preds, cov, short_cons='long_only')
 
-    # Compare portfolio to prices with benchmarks
-    metrics = backtester.performance_metrics(data.prices, port_val, compare_assets=True)
-    print(metrics)
-
-
-    save = False
-    if save == True:
-        metrics.round(4).to_latex(path + 'asset_performance_' + sample_type +  '.tex')
-        plot_performance(data.prices, port_val, weights, savefig='/' + model_str + 'performance.png')
-    else:
-        plot_performance(data.prices, port_val, weights, savefig=None)
+    print(gridsearch_results)

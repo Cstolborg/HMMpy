@@ -143,7 +143,7 @@ class MPC:
         constr += [weights[0] == self.start_weights]  # first weights are fixed at known current portfolio
 
         prob = cp.Problem(cp.Maximize(objective), constr) # Construct maximization problem
-        prob.solve(verbose=verbose)
+        prob.solve(solver=cp.ECOS, verbose=verbose)
         opt_var = weights.value
 
         if verbose is True:
