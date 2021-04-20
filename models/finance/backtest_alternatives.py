@@ -76,11 +76,11 @@ class BacktestAlternatives(Backtester):
 
         # Annualized average trading ost
         self.trans_cost = np.array(trade_cost)
-        self.annual_trans_cost = 252 / len(self.trans_cost) * self.trans_cost.sum()
+        self.annual_trans_cost = 12 / len(self.trans_cost) * self.trans_cost.sum()
 
         # Compute average annualized portfolio turnover
-        self.daily_turnover = np.array(turnover)
-        self.annual_turnover = 252 / len(self.daily_turnover) * self.daily_turnover.sum()
+        self.monthly_turnover = np.array(turnover)
+        self.annual_turnover = 12 / len(self.monthly_turnover) * self.monthly_turnover.sum()
 
 
 if __name__ == "__main__":

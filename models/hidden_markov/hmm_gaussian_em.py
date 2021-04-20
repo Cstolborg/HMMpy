@@ -57,6 +57,8 @@ class EMHiddenMarkov(BaseHiddenMarkov):
                  epochs: int = 10, random_state: int = 42):
         super().__init__(n_states, init, max_iter, tol, epochs, random_state)
 
+        self.type = 'mle'
+
     def compute_log_posteriors(self, log_alphas, log_betas):
         """
         Expectation of being in state j at time t given observations, P(S_t = j | x^T).

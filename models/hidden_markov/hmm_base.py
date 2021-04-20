@@ -185,9 +185,13 @@ class BaseHiddenMarkov(BaseEstimator):
             if self.is_fitted == False and verbose == True:
                 print(f'NOT FITTED -- mu {self.mu} -- std {self.std} -- tpm {np.diag(self.tpm)}')
 
-        state_sequence = self.decode(X)  # 1D-array with most likely state sequence
+        if self.type == 'mle':
+            state_sequence = self.decode(X)  # 1D-array with most likely state sequence
+        elif self.type == 'jump':
+            state_sequence = self.state_seq
 
         # Posterior probability of being in state j at time t
+        self.emission_probs_, self.log_emission_probs_ = self.emission_probs(X)
         posteriors = self.predict_proba(n_preds)  # 2-D array of shape (n_preds, n_states)
 
         return state_sequence, posteriors
@@ -337,6 +341,8 @@ class BaseHiddenMarkov(BaseEstimator):
         n_obs, n_states = self.log_emission_probs_.shape
         log_alphas = np.zeros((n_obs, n_states))
 
+        self.check_params_not_zero()
+
         # Do the pass in cython
         with np.errstate(divide='ignore'):
             hmm_cython.forward_proba(n_obs, n_states,
@@ -374,33 +380,20 @@ class BaseHiddenMarkov(BaseEstimator):
                                             self.log_emission_probs_)
         return state_sequence.astype(np.int32)
 
-    def squared_acf(self, lag):  # TODO deprecate
-        # Unconditional expectation
-        unconditional_expectation = self.stationary_dist[0] * self.mu[0] + (1-self.stationary_dist[0]) * self.mu[1]
+    def check_params_not_zero(self):
+        if self.start_proba[0] == 0:
+            self.start_proba[0] = 0.0000001
+            self.start_proba[1] = 0.9999999
+        elif self.start_proba[1] == 0:
+            self.start_proba[1] = 0.0000001
+            self.start_proba[0] = 0.9999999
 
-        # Unconditional variance
-        unconditional_variance = self.stationary_dist[0]*self.std[0]**2+(1-self.stationary_dist[0])*self.std[1]**2 \
-            + self.stationary_dist[0]*(1-self.stationary_dist[0])*(self.mu[0]-self.mu[1])**2
-
-        # Unconditional variance 4th power
-        unconditional_variance_4p = np.power(unconditional_variance,4)
-
-        # Kurtosis
-        kurtosis = (self.stationary_dist[0]*(1-self.stationary_dist[0])) / unconditional_variance_4p \
-        *(3*np.square(self.std[0]**2 - self.std[1]**2)+np.power((self.mu[0]-self.mu[1]),4) * (1-6*self.stationary_dist[0]*(1-self.stationary_dist[0]))\
-        +6*(2*self.stationary_dist[0]-1)*(self.std[1]**2-self.std[0]**2)*np.square(self.mu[0]-self.mu[1]))+3
-
-        # Lambda
-        lambda_k = np.trace(self.tpm)-1
-
-        # Squared ACF
-        acf_1 = self.stationary_dist[0] * (1-self.stationary_dist[0]) * \
-                np.square(self.mu[0]**2-self.mu[1]**2+self.std[0]**2-self.std[1]**2)
-        acf_2 = kurtosis - np.square(unconditional_variance)
-
-        squared_acf = acf_1 / acf_2 * lambda_k**lag
-
-        return squared_acf
+        if self.tpm[0, 0] == 1.:
+            self.tpm[0, 0] = 0.999999
+            self.tpm[0, 1] = 0.000001
+        elif self.tpm[1, 1] == 1.:
+            self.tpm[1, 1] = 0.999999
+            self.tpm[1, 0] = 0.000001
 
     def fit(self, X, get_hmm_params=True, sort_state_seq=True, verbose=False, feature_set='feature_set_2'):
         """

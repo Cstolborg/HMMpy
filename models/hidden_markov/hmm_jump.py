@@ -31,6 +31,7 @@ class JumpHMM(BaseHiddenMarkov):
         super().__init__(n_states, init, max_iter, tol, epochs, random_state)
 
         # Init parameters initial distribution, transition matrix and state-dependent distributions
+        self.type = 'jump'
         self.jump_penalty = jump_penalty
         self.window_len = window_len
         self.theta = None

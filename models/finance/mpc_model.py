@@ -40,8 +40,9 @@ class MPC:
                  max_drawdown=0.4, gamma_0=5, kappa1=0.004, kappa2=0.,
                  rho1=0., rho2=0.0005, max_holding=0.4, max_leverage=2.0,
                  short_cons='LLO', eps=0.0000001):
-        if not short_cons in ['LLO', 'long_only', 'max_leverage']:
-            raise Exception('short_cons must be declared as a str. Options include "LLO", "long_only", "max_leverage".')
+        if not short_cons in ['LLO', 'leveraged_long_only', 'LO', 'long_only', 'max_leverage', None]:
+            raise Exception("""short_cons must be declared as a str.
+                            Options include 'LLO', 'leveraged_long_only', 'LO', 'long_only', 'max_leverage', None.""")
 
         self.max_drawdown = max_drawdown
         self.gamma_0 = gamma_0
@@ -108,11 +109,11 @@ class MPC:
 
         # Leverage constraint. Exclude risk-free asset from this computation
         constraints += [cp.sum(cp.abs(current_weights[:-1])) <= self.max_leverage]
-        if self.short_cons == 'LLO':  # Can only short risk-free asset
+        if self.short_cons in ['LLO', 'leveraged_long_only']:  # Can only short risk-free asset
             constraints += [current_weights[:-1] >= 0]
-        elif self.short_cons == 'long_only':
+        elif self.short_cons in ['LO', 'long_only']:
             constraints += [current_weights >= 0]
-        elif self.short_cons == 'max_leverage':
+        elif self.short_cons in ['max_leverage', None]:
             pass
 
         return constraints
@@ -170,7 +171,7 @@ class MPC:
         Assumes no cost in trading risk-free asset and thus discards last value in delta_weight.
         """
         delta_weight = current_weights - prev_weights
-        delta_weight = delta_weight[-1:]  # No costs associated with risk-free asset
+        delta_weight = delta_weight[:-1]  # No costs associated with risk-free asset
         trading_cost = self.kappa1 * cp.abs(delta_weight) + self.kappa2 * cp.square(delta_weight)  # Vector of trading costs per asset
 
         return cp.sum(trading_cost)

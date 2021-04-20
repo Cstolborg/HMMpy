@@ -79,6 +79,7 @@ class FinanceHMM:
             Conditional covariance matrix
         """
         self.n_assets = df.shape[1]
+        df = df.iloc[-len(state_sequence):]
         df['state_sequence'] = state_sequence
         groupby_state = df.groupby('state_sequence')
         log_mu, log_cov = groupby_state.mean(), groupby_state.cov()
@@ -308,6 +309,7 @@ class Backtester:
            Cash must be the last column in df_rets.
        """
         self.port_val = np.array([0, port_val])
+        self.port_ret = np.array([1, 1])
         self.n_assets = df_rets.shape[1]
         self.n_preds = n_preds
 
@@ -348,13 +350,16 @@ class Backtester:
             gross_ret = (self.weights[t + 1] @ (1 + df_rets.iloc[t]))
             shorting_cost = self.short_costs(self.weights[t + 1], rf_return=df_rets.iloc[t, -1])
             trans_cost = self.transaction_costs(delta_weights, trans_cost=0.001)
-            new_port_val = (gross_ret-shorting_cost) * (1-trans_cost) * self.port_val[-1]
+            port_ret = (gross_ret-shorting_cost) * (1-trans_cost)
+            new_port_val = port_ret * self.port_val[-1]
+            self.port_ret = np.append(self.port_ret, port_ret)
             self.port_val = np.append(self.port_val, new_port_val)
 
             trade_cost.append(trans_cost)
             turnover.append(np.linalg.norm(delta_weights, ord=1) / 2)  # Half L1 norm
 
         self.port_val = self.port_val[1:]  # Throw away first observation since it is artificially set to zero
+        self.port_ret = self.port_ret[2:]
         self.gamma = gamma
 
         # Annualized average trading ost
@@ -364,6 +369,11 @@ class Backtester:
         # Compute average annualized portfolio turnover
         self.daily_turnover = np.array(turnover)
         self.annual_turnover = 252 / len(self.daily_turnover) * self.daily_turnover.sum()
+
+        # Compute return & std.
+        n_years = len(self.port_val)
+        annual_ret = self.port_ret.prod()**(1/n_years) - 1
+        annual_std = self.port_ret.std(ddof=1) * np.sqrt(252)
 
         return self.weights, self.port_val, gamma
 
