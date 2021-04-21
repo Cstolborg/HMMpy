@@ -111,5 +111,6 @@ if __name__ == "__main__":
 
     gridsearch_results = \
                 backtester.gridsearch_mpc(grid, data.rets, preds, cov, short_cons='long_only')
-
+    gridsearch_results.to_csv(path + 'gridsearch.csv', index=False)
     print(gridsearch_results)
+

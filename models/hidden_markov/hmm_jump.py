@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-import pyximport;
+import pyximport
 import tqdm
 from numpy import ndarray
 from sklearn.cluster._kmeans import kmeans_plusplus
@@ -14,14 +14,6 @@ from models.hidden_markov import hmm_cython
 
 
 pyximport.install()  # TODO can only be active during development -- must be done through setup.py
-
-''' TODO:
-
-Consider reusing previous fitted hidden_markov in rolling windows to minimize no. of epochs.
-
-True states in jump_penalty crossval must be true states -> Currently the Viterbi State....
-'''
-
 
 class JumpHMM(BaseHiddenMarkov):
 

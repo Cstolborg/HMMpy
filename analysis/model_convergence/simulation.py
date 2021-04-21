@@ -1,7 +1,9 @@
+import warnings
 import copy
 
 import numpy as np
-import pandas as pd ; pd.set_option('display.max_columns', 10); pd.set_option('display.width', 320)
+import pandas as pd
+import seaborn as sns
 import tqdm
 import matplotlib.pyplot as plt
 
@@ -9,11 +11,11 @@ from utils.hmm_sampler import SampleHMM
 from models.hidden_markov.hmm_gaussian_em import EMHiddenMarkov
 from models.hidden_markov.hmm_jump import JumpHMM
 
-import warnings
+
 warnings.filterwarnings("ignore")
+pd.set_option('display.max_columns', 10); pd.set_option('display.width', 320)
 
-
-def test_model_convergence(jump, mle, sampler, X, sample_lengths=(250, 500, 1000, 2000)):
+def test_model_convergence(jump, mle, sampler, X, Y_true, sample_lengths=(250, 500, 1000, 2000)):
     """ Test model convergence on simulated data """
     df = pd.DataFrame()
 
@@ -21,7 +23,9 @@ def test_model_convergence(jump, mle, sampler, X, sample_lengths=(250, 500, 1000
     cols = {
         '$\mu_1$': [], '$\mu_2$': [],
         '$\sigma_1$': [], '$\sigma_2$': [],
-        '$q_{11}$': [], '$q_{22}$': []
+        '$q_{11}$': [], '$q_{22}$': [],
+        'BAC': [], 'is_fitted': [],
+        'two_states': []
     }
 
     # Compute models params for each sample length
@@ -34,8 +38,20 @@ def test_model_convergence(jump, mle, sampler, X, sample_lengths=(250, 500, 1000
 
         # Iterate through each sequence
         for seq in tqdm.tqdm(range(X.shape[1])):
-            jump.fit(X[:sample_length, seq], sort_state_seq=True, get_hmm_params=True, verbose=True)
-            mle.fit(X[:sample_length, seq], sort_state_seq=True, verbose=True)
+            # Slice generated data
+            x = X[:sample_length, seq]
+            y_true = Y_true[:sample_length, seq]
+
+            # Check if both states are present
+            if len(np.unique(y_true)) < 2:
+                data['mle']['two_states'] = False
+                data['jump']['two_states'] = False
+            else:
+                data['mle']['two_states'] = True
+                data['jump']['two_states'] = True
+
+            jump.fit(x, sort_state_seq=True, get_hmm_params=True, verbose=True)
+            mle.fit(x, sort_state_seq=True, verbose=True)
 
             data['jump']['$\mu_1$'].append(jump.mu[0])
             data['jump']['$\mu_2$'].append(jump.mu[1])
@@ -47,6 +63,9 @@ def test_model_convergence(jump, mle, sampler, X, sample_lengths=(250, 500, 1000
             else:
                 data['jump']['$q_{22}$'].append(0)
 
+            data['jump']['BAC'].append(jump.bac_score(x, y_true))
+            data['jump']['is_fitted'].append(jump.is_fitted)
+
             data['mle']['$\mu_1$'].append(mle.mu[0])
             data['mle']['$\mu_2$'].append(mle.mu[1])
             data['mle']['$\sigma_1$'].append(mle.std[0])
@@ -56,6 +75,9 @@ def test_model_convergence(jump, mle, sampler, X, sample_lengths=(250, 500, 1000
                 data['mle']['$q_{22}$'].append(mle.tpm[1, 1])
             else:
                 data['mle']['$q_{22}$'].append(0)
+
+            data['mle']['BAC'].append(mle.bac_score(x, y_true))
+            data['mle']['is_fitted'].append(mle.is_fitted)
 
         for model in data.keys():
             df_temp = pd.DataFrame(data[model])
@@ -81,7 +103,7 @@ def test_model_convergence(jump, mle, sampler, X, sample_lengths=(250, 500, 1000
 
 def plot_simulated_model_convergence(df, sampler, savefig=None):
     # Plotting
-    plt.rcParams.update({'font.size': 15})
+    plt.rcParams.update({'font.size': 25})
     fig, ax = plt.subplots(3, 2, figsize=(15, 12), sharex=True)
 
     # Set symbols on y-axis
@@ -110,7 +132,7 @@ def plot_simulated_model_convergence(df, sampler, savefig=None):
         ax[1, i].axhline(y=sampler.std[i], ls="--", color="black", label='True')
         ax[2, i].axhline(y=sampler.tpm[i, i], ls="--", color="black", label='True')
 
-    ax[0, 0].legend()
+    ax[0, 0].legend(fontsize=15)
 
     ax[-1, 0].set_xlabel('Simulation length')
     ax[-1, 1].set_xlabel('Simulation length')
@@ -120,6 +142,52 @@ def plot_simulated_model_convergence(df, sampler, savefig=None):
         plt.savefig('./images/' + savefig)
     plt.show()
 
+def plot_simulated_model_convergence_box(df, sampler, savefig=None):
+    # Plotting
+    plt.rcParams.update({'font.size': 24})
+    fig, axes = plt.subplots(3, 2, figsize=(15, 12), sharex=True)
+
+    # Set symbols on y-axis
+    symbol_list = [['$\mu_1$', '$\mu_2$'],
+                   ['$\sigma_1$', '$\sigma_2$'],
+                   ["$q_{11}$", "$q_{22}$"]]
+
+    models = ['jump', 'mle']
+    colors = ['black', 'lightgrey']  # ['#0051a2', '#97964a', '#ffd44f', '#f4777f', '#93003a']
+
+    to_plot = df[df['model'] != 'true']
+    k = 0  # columns indexer
+    for i in range(3):
+        for j in range(2):
+            sns.boxplot(data=to_plot, x='Simulation length', y=symbol_list[i][j],
+                                    hue='model', showfliers=False, ax=axes[i, j])
+            axes[i, j].set_ylabel(symbol_list[i][j])
+            k += 1
+
+    # Plot true values
+    for i in range(2):
+        axes[0, i].axhline(y=sampler.mu[i], ls="--", color="black", label='True')
+        axes[1, i].axhline(y=sampler.std[i], ls="--", color="black", label='True')
+        axes[2, i].axhline(y=sampler.tpm[i, i], ls="--", color="black", label='True')
+
+    # Remove seaborn legends and x-labels
+    for ax in axes.flatten():
+        ax.legend([], [], frameon=False)
+        ax.set_xlabel("")
+
+    axes[-1, 0].legend(loc='lower right', fontsize=15)
+
+    # Set ylims
+    axes[-1, 0].set_ylim(0.75, 1.01)
+    axes[-1, 1].set_ylim(top=1.01)
+
+    axes[-1, 0].set_xlabel('Simulation length')
+    axes[-1, 1].set_xlabel('Simulation length')
+    plt.tight_layout()
+
+    if not savefig == None:
+        plt.savefig('./images/' + savefig)
+    plt.show()
 
 if __name__ == '__main__':
     jump = JumpHMM(n_states=2, jump_penalty=16, window_len=(6, 14))
@@ -130,20 +198,24 @@ if __name__ == '__main__':
     X = np.load(path + 'sampled_returns.npy')
     true_states = np.load(path + 'sampled_true_states.npy')
 
+    jump.fit(X[0])
+    mle.fit(X[0])
+
     #df = pd.read_csv(path + 'simulation_normal.csv')
-    df = test_model_convergence(jump, mle, sampler, X, sample_lengths=(250, 500, 1000, 2000))
+    df = test_model_convergence(jump, mle, sampler, X, true_states, sample_lengths=(250, 500, 1000, 2000))
 
     # Summarize results
     data_table = df.groupby(['Simulation length', 'model']).mean().sort_index(ascending=[True, False])
     print(data_table)
+    
 
     save = True
     if save == True:
         plot_simulated_model_convergence(df, sampler, savefig='simulation_normal.png')
+        plot_simulated_model_convergence_box(df, sampler, savefig='simulation_normal_box.png')
         df.to_csv(path + 'simulation_normal.csv', index=False)
         data_table.round(4).to_latex(path + 'simulation_normal.tex', escape=False)
     else:
         plot_simulated_model_convergence(df, sampler, savefig=None)
-
-
+        plot_simulated_model_convergence_box(df, sampler, savefig=None)
 

@@ -6,7 +6,10 @@ from scipy import stats
 from scipy.special import logsumexp
 from sklearn.base import BaseEstimator
 
-import pyximport; pyximport.install()  # TODO can only be active during development -- must be done through setup.py
+import pyximport;
+from sklearn.metrics import confusion_matrix
+
+pyximport.install()  # TODO can only be active during development -- must be done through setup.py
 from models.hidden_markov import hmm_cython
 
 
@@ -418,6 +421,37 @@ class BaseHiddenMarkov(BaseEstimator):
         # Probability of being in state i in time T
         posterior = np.exp(log_alphas[-1] - llk)
         return posterior
+
+    def bac_score(self, X, y_true, verbose=False):
+        """ Computes balanced accuracy score when true state sequence is known """
+        if not self.is_fitted is True:
+            bac = 0.
+            return bac
+        if self.type == 'mle':
+            y_pred = self.decode(X)
+        elif self.type == 'jump':
+            y_pred = self.state_seq
+            y_true = y_true[(self.window_len[-1] - 1):]  # slice y_true to have same dim as y_pred
+
+        conf_matrix = confusion_matrix(y_true, y_pred)
+        keep_idx = conf_matrix.sum(axis=1) != 0  # Only keep non-zero rows
+        conf_matrix = conf_matrix[keep_idx]
+
+        tp = np.diag(conf_matrix)
+        fn = conf_matrix.sum(axis=1) - tp
+        tpr = tp / (tp + fn)
+        bac = np.mean(tpr)
+
+        if verbose is True:
+            logical_1 = bac < 0.5
+            logical_2 = conf_matrix.ndim > 1 and \
+                        np.any(conf_matrix.sum(axis=1)==0)
+
+            if logical_1 or logical_2:
+                print(f'bac {bac} -- tpr {tpr}')
+                print(conf_matrix)
+
+        return bac
 
 
 if __name__ == '__main__':
