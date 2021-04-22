@@ -1,6 +1,13 @@
 \newpage
-\section{Appendices}
+
 \appendix
+\section{Appendices}
+\begin{figure}[H] 
+    \centering
+    \includegraphics[width=1.0\textwidth]{analysis/stylized_facts/images/rolling_moments_outlier_corrected.png}
+    \caption{Development of first four moments of estimated models compared to $\log(r_t)$ using a rolling window of 1700 days and correcting for outliers that are further than four standard deviations away from the mean. Outliers are treated locally in each subsample of 1700 observations. Model estimates are calculated using Monte-Carlo simulations.}
+\end{figure}
+\label{fig:stylized_facts_rolling_moments_outliers_appendix}
 
 \section{Box-plot of jump penalties}
 \label{appendix:box_plot}
@@ -11,4 +18,5 @@
     \caption{Hyper-tuning.}
     %\label{fig:jump_penalties}
 \end{figure}
+
 
