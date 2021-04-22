@@ -1,17 +1,25 @@
 import copy
+import warnings
 
-import pandas as pd; pd.set_option('display.max_columns', 10); pd.set_option('display.width', 320)
+import pandas as pd
 from scipy import stats
 import numpy as np
 import matplotlib.pyplot as plt
 import tqdm
 from statsmodels.tsa.stattools import acf
-from utils.data_prep import DataPrep
+
+from analysis.stylized_facts.rolling_estimations import train_rolling_window
+from utils.data_prep import load_long_series_logret
 from models.hidden_markov.hmm_gaussian_em import EMHiddenMarkov
 from models.hidden_markov.hmm_jump import JumpHMM
-import warnings
-warnings.filterwarnings("ignore")
 
+from models.hidden_markov.hmm_jump import JumpHMM
+from utils.data_prep import DataPrep
+from analysis.stylized_facts.plot_rolling_estimations import plot_rolling_parameters
+
+
+warnings.filterwarnings("ignore")
+pd.set_option('display.max_columns', 10); pd.set_option('display.width', 320)
 
 def train_rolling_window(logret, mle, jump, window_lens=[1700], n_lags=100, n_sims=5000,
                          get_acf=True, absolute_moments=False, outlier_corrected=False):
@@ -25,8 +33,7 @@ def train_rolling_window(logret, mle, jump, window_lens=[1700], n_lags=100, n_si
         '$q_{11}$': [], '$q_{22}$': [], 'timestamp': [],
         '$\pi_1$': [], '$\pi_2$':[],
         'mean': [], 'variance': [],
-        'skewness': [], 'excess_kurtosis': [],
-        'is_fitted': []
+        'skewness': [], 'excess_kurtosis': []
         }
 
     if get_acf is True:
@@ -48,12 +55,11 @@ def train_rolling_window(logret, mle, jump, window_lens=[1700], n_lags=100, n_si
 
             # Remove all observations with std's above 4
             if outlier_corrected is True:
-                rolling = DataPrep.replace_outliers(rolling, threshold=4)
+                rolling = rolling[(np.abs(stats.zscore(rolling)) < 4)]
 
             # Fit models to rolling data
-            mle.fit(rolling, sort_state_seq=True, verbose=True)
-            jump.fit(rolling, sort_state_seq=True, get_hmm_params=True,
-                     feature_set='feature_set_3', verbose=True)
+            mle.fit(rolling, sort_state_seq=True, get_hmm_params=True, verbose=True, feature_set='feature_set_3')
+            jump.fit(rolling, sort_state_seq=True, get_hmm_params=True, verbose=True, feature_set='feature_set_2')
 
             # Save data
             data['jump']['$\mu_1$'].append(jump.mu[0])
@@ -71,8 +77,6 @@ def train_rolling_window(logret, mle, jump, window_lens=[1700], n_lags=100, n_si
             else:
                 data['jump']['$q_{22}$'].append(0)
 
-            data['jump']['is_fitted'].append(jump.is_fitted)
-
             data['mle']['$\mu_1$'].append(mle.mu[0])
             data['mle']['$\mu_2$'].append(mle.mu[1])
             data['mle']['$\sigma_1$'].append(mle.std[0])
@@ -86,8 +90,6 @@ def train_rolling_window(logret, mle, jump, window_lens=[1700], n_lags=100, n_si
                 data['mle']['$q_{22}$'].append(mle.tpm[1, 1])
             else:
                 data['mle']['$q_{22}$'].append(0)
-
-            data['mle']['is_fitted'].append(mle.is_fitted)
 
             # Add timestamps
             data['jump']['timestamp'].append(rolling.index[-1])
@@ -128,32 +130,27 @@ def train_rolling_window(logret, mle, jump, window_lens=[1700], n_lags=100, n_si
             df_temp['window_len'] = window_len
             df = df.append(df_temp)
 
+    df.set_index('timestamp', inplace=True)
+
     return df
 
 
 if __name__ == '__main__':
-    # Load SP500 logrets
     data = DataPrep()
-    logret = data.load_long_series_logret(outlier_corrected=False)
+    logrets = data.load_long_series_logret()
+    logrets = logrets.loc['1997-03-20':'2005-03-31']
 
-    # Instantiate HMM models
-    mle = EMHiddenMarkov(n_states=2, epochs=10, max_iter=100, random_state=42)
+    mle = JumpHMM(n_states=2, jump_penalty=16, window_len=(6, 14),
+                   epochs=20, max_iter=30, random_state=42)
     jump = JumpHMM(n_states=2, jump_penalty=16, window_len=(6, 14),
                    epochs=20, max_iter=30, random_state=42)
 
-    #logret = logret[13210:15000]  # Reduce sample size to speed up training
 
-    df = train_rolling_window(logret, mle, jump, window_lens=[1700], n_lags=100, get_acf=True,
-                              absolute_moments=False, outlier_corrected=False, n_sims=5000)
+    df = train_rolling_window(logrets, mle, jump, window_lens=[1700], n_lags=100, get_acf=True,
+                              absolute_moments=True, outlier_corrected=False, n_sims=5000)
 
-    # Group data first by window len and the by each mode. Returns mean value of each remaining parameter
-    data_table = df.groupby(['window_len', 'model']).mean().sort_index(ascending=[True, False])
-    print(data_table)
 
-    # Save results
-    save = True
-    if save == True:
-        path = '../../analysis/stylized_facts/output_data/'
-        df.to_csv(path + 'moments.csv', index=False)
 
+    plot_rolling_parameters(df, model='jump', savefig=None)
+    plot_rolling_parameters(df, model='mle', savefig=None)
 

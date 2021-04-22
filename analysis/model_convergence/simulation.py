@@ -112,9 +112,8 @@ def plot_simulated_model_convergence(df, sampler, savefig=None):
                    ["$q_{11}$", "$q_{22}$"]]
 
     models = ['jump', 'mle']
-    colors = ['black', 'lightgrey']  # ['#0051a2', '#97964a', '#ffd44f', '#f4777f', '#93003a']
 
-    for (model, color) in zip(models, colors):
+    for model in models:
         # Slice df to get desired column
         to_plot = df[df['model'] == model]
         to_plot = to_plot.groupby('Simulation length').mean()
@@ -122,7 +121,7 @@ def plot_simulated_model_convergence(df, sampler, savefig=None):
         for i in range(3):
             for j in range(2):
                 to_plot1 = to_plot.iloc[:, k]  # column to plot
-                ax[i, j].plot(to_plot1, label=str(model), color=color)
+                ax[i, j].plot(to_plot1, label=str(model))
                 ax[i, j].set_ylabel(symbol_list[i][j])
                 k += 1
 
@@ -134,8 +133,6 @@ def plot_simulated_model_convergence(df, sampler, savefig=None):
 
     ax[0, 0].legend(fontsize=15)
 
-    ax[-1, 0].set_xlabel('Simulation length')
-    ax[-1, 1].set_xlabel('Simulation length')
     plt.tight_layout()
 
     if not savefig == None:
@@ -151,9 +148,6 @@ def plot_simulated_model_convergence_box(df, sampler, savefig=None):
     symbol_list = [['$\mu_1$', '$\mu_2$'],
                    ['$\sigma_1$', '$\sigma_2$'],
                    ["$q_{11}$", "$q_{22}$"]]
-
-    models = ['jump', 'mle']
-    colors = ['black', 'lightgrey']  # ['#0051a2', '#97964a', '#ffd44f', '#f4777f', '#93003a']
 
     to_plot = df[df['model'] != 'true']
     k = 0  # columns indexer
@@ -181,8 +175,6 @@ def plot_simulated_model_convergence_box(df, sampler, savefig=None):
     axes[-1, 0].set_ylim(0.75, 1.01)
     axes[-1, 1].set_ylim(0.75, top=1.01)
 
-    axes[-1, 0].set_xlabel('Simulation length')
-    axes[-1, 1].set_xlabel('Simulation length')
     plt.tight_layout()
 
     if not savefig == None:
@@ -198,11 +190,8 @@ if __name__ == '__main__':
     X = np.load(path + 'sampled_returns.npy')
     true_states = np.load(path + 'sampled_true_states.npy')
 
-    jump.fit(X[0])
-    mle.fit(X[0])
-
-    #df = pd.read_csv(path + 'simulation_normal.csv')
-    df = test_model_convergence(jump, mle, sampler, X, true_states, sample_lengths=(250, 500, 1000, 2000))
+    df = pd.read_csv(path + 'simulation_normal.csv')
+    #df = test_model_convergence(jump, mle, sampler, X, true_states, sample_lengths=(250, 500, 1000, 2000))
 
     # Summarize results
     data_table = df.groupby(['Simulation length', 'model']).mean().sort_index(ascending=[True, False])
@@ -212,12 +201,15 @@ if __name__ == '__main__':
     # Show results after removing sequences with only 1 state
     df2 = df[df['two_states'] == True]
 
-    save = True
+    save = False
     if save == True:
         plot_simulated_model_convergence(df, sampler, savefig='simulation_normal.png')
         plot_simulated_model_convergence_box(df, sampler, savefig='simulation_normal_box.png')
         df.to_csv(path + 'simulation_normal.csv', index=False)
         data_table.round(4).to_latex(path + 'simulation_normal.tex', escape=False)
+
+        plot_simulated_model_convergence(df2, sampler, savefig='simulation_normal_2states.png')
+        plot_simulated_model_convergence_box(df2, sampler, savefig='simulation_normal_box_2states.png')
     else:
         plot_simulated_model_convergence(df, sampler, savefig=None)
         plot_simulated_model_convergence_box(df, sampler, savefig=None)

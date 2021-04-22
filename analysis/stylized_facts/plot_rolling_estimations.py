@@ -1,14 +1,16 @@
+import warnings
+
 import numpy as np
 import matplotlib.pyplot as plt
 import statsmodels.api as sm
-import pandas as pd;
+import pandas as pd
 import tqdm
 from scipy import stats
 
-pd.set_option('display.max_columns', 10); pd.set_option('display.width', 320)
-from utils.data_prep import load_long_series_logret, moving_average
-import warnings
+from utils.data_prep import load_long_series_logret, moving_average, DataPrep
+
 warnings.filterwarnings("ignore")
+pd.set_option('display.max_columns', 10); pd.set_option('display.width', 320)
 
 
 def get_rolling_logrets(df, logrets, slice=True, window_len=1700, moving_window=50, outlier_corrected=False):
@@ -44,7 +46,7 @@ def plot_acf_2D(data_table, df_returns, savefig=None):
     n_lags = len(data_table.loc[:, 'lag_0':].columns)
     lags = [i for i in range(n_lags)]
     acf_squared = sm.tsa.acf(df_returns**2, nlags=n_lags)[1:]
-    acf_squared_outlier = sm.tsa.acf(df_returns_outlier**2, nlags=n_lags)[1:]
+    acf_squared_outlier = sm.tsa.acf(logrets_outlier ** 2, nlags=n_lags)[1:]
     acf_square_conf = 1.96 / np.sqrt(len(df_returns))
 
     squared_acf_SP500_mle = data_table.loc[(1700, 'mle'), 'lag_0':]
@@ -108,7 +110,7 @@ def plot_acf_3D(df, logrets, model='mle', savefig=None):
     acf_model_rolling = np.array(acf_model_rolling)
 
     #acf_squared = sm.tsa.acf(logrets ** 2, nlags=n_lags)[1:]
-    acf_squared_outlier = sm.tsa.acf(df_returns_outlier**2, nlags=n_lags)[1:]
+    acf_squared_outlier = sm.tsa.acf(logrets_outlier ** 2, nlags=n_lags)[1:]
     acf_square_conf = 1.96 / np.sqrt(len(logrets))
 
     squared_acf_SP500_mle = data_table.loc[(1700, 'mle'), 'lag_0':]
@@ -133,7 +135,7 @@ def plot_acf_3D(df, logrets, model='mle', savefig=None):
 
     # Plot model as surface
     ax.plot_surface(xx, yy, acf_rolling, color='lightgrey', alpha=0.2)
-    ax.plot_surface(xx, yy, acf_model_rolling, color='black')
+    ax.plot_surface(xx, yy, acf_model_rolling)
 
     ax.set_xlabel('lag')
     ax.set_ylabel('Time step')
@@ -153,62 +155,30 @@ def plot_rolling_parameters(df, model ='mle', savefig=None):
     """ Function for plotting rolling parameters for different estimation procedures. """
     df = df[df['model'] == model]
 
-    mu_1 = df['$\mu_1$']
-    mu_2 = df['$\mu_2$']
-    sigma_1 = df['$\sigma_1$']
-    sigma_2 = df['$\sigma_2$']
-    q_11 = df['$q_{11}$']
-    q_22 = df['$q_{22}$']
-
-    plt.rcParams.update({'font.size': 15})
-    fig, ax = plt.subplots(2,2, figsize=(15,10), sharex=True)
-    plt.subplots_adjust(wspace=0.25, hspace=0.10)
-    ax1 = plt.subplot2grid((3,2),(0,0))
-    ax2 = plt.subplot2grid((3,2),(0,1))
-    ax3 = plt.subplot2grid((3,2), (1,0))
-    ax4 = plt.subplot2grid((3,2),(1,1))
-    ax5 = plt.subplot2grid((3,2),(2,0))
-    ax6 = plt.subplot2grid((3,2), (2,1))
-
     # Plotting
-    axes = [ax1, ax2, ax3, ax4, ax5, ax6]
-    variables = [mu_1, mu_2, sigma_1, sigma_2, q_11, q_22]
+    plt.rcParams.update({'font.size': 20})
+    fig, axes = plt.subplots(3,2, figsize=(15,12), sharex=True)
+
     symbol_list = ['$\mu_1$', '$\mu_2$',
                   '$\sigma_1$', '$\sigma_2$',
                   "$q_{11}$", "$q_{22}$"]
 
-    ## Vi kan indsætte static variables her også, hvis vi vil vise plot hvor 1 model trænes på hele batchen.
-
-    x_axis = df_returns.index[-len(mu_1):]  #Insert the number of trading days in the rolling window.
-
-    for (ax, var, symbol) in zip(axes, variables, symbol_list):
-        ax.plot(x_axis, var, color='black')
-        ax.set_ylabel(symbol, size=15)
+    for (ax, symbol) in zip(axes.flatten(), symbol_list):
+        ax.plot(df[symbol], color='black')
+        ax.set_ylabel(symbol)
         ax.tick_params('x', labelrotation=45)
-        ax.tick_params(
-            axis='x',  # changes apply to the x-axis
-            which='both',  # both major and minor ticks are affected
-            bottom=False,  # ticks along the bottom edge are off
-            top=False,  # ticks along the top edge are off
-            labelbottom=False)  # labels along the bottom edge are off
-
-        if ax == ax5 or ax == ax6:
-            ax.tick_params(
-                axis='x',  # changes apply to the x-axis
-                which='both',  # both major and minor ticks are affected
-                bottom=True,  # ticks along the bottom edge are on
-                top=False,  # ticks along the top edge are off
-                labelbottom=True)  # labels along the bottom edge are on
 
         if symbol == "$q_{11}$" or symbol == "$q_{22}$":
             ax.set_ylim(bottom=0.85, top=1.0)
 
+    plt.tight_layout()
     if not savefig == None:
         plt.savefig('./images/' + savefig)
 
     plt.show()
 
-def plot_rolling_moments(df, logrets, window_len=1700, moving_window=50,
+
+def plot_moments_regular(df, logrets, window_len=1700, moving_window=50,
                          outlier_corrected=False, savefig=None):
     """ Plot the first four moments of estimated models along with returns"""
 
@@ -224,22 +194,21 @@ def plot_rolling_moments(df, logrets, window_len=1700, moving_window=50,
     df = df.loc[:, ['mean', 'variance', 'skewness', 'excess_kurtosis', 'model']]
 
     # Plotting
-    plt.rcParams.update({'font.size': 15})
+    plt.rcParams.update({'font.size': 25})
     fig, axs = plt.subplots(nrows=4, ncols=1, figsize=(15, 12), sharex=True)
 
     models = ['mle', 'jump']
     labels = ['Mean', 'Variance', 'Skewness', 'Excess Kurtosis']
-    colors = ['black', 'lightgrey']
 
     # Loop through each subplot
     for i, (ax, moment, label) in enumerate(zip(axs, empirical_moments, labels)):
         # Plot empirical returns moment
-        ax.plot(logrets.index[(window_len+moving_window):], moment, label=r'$\log (r_t)$', color='grey', ls='--')
+        ax.plot(logrets.index[(window_len+moving_window):], moment, label=r'$(r_t)$', color='grey', ls='--')
         # Inner loop allows drawing of several models
-        for (model, color) in zip(models, colors):
+        for model in models:
             plot_data = df[df['model'] == model]
             ax.plot(plot_data.index[moving_window-1:], moving_average(plot_data.iloc[:, i], n=moving_window),
-                    label=model, color=color)
+                    label=model)
 
 
         ax.set_xlim(df.index[moving_window-1], df.index[-1])
@@ -248,8 +217,7 @@ def plot_rolling_moments(df, logrets, window_len=1700, moving_window=50,
     axs[-1].tick_params('x', labelrotation=45)
     #axs[1, 1].tick_params('x', labelrotation=45)
 
-    plt.legend()
-    plt.subplots_adjust(wspace=0.2, hspace=0.5)
+    plt.legend(fontsize=15)
     plt.tight_layout()
 
     if not savefig == None:
@@ -257,12 +225,11 @@ def plot_rolling_moments(df, logrets, window_len=1700, moving_window=50,
 
     plt.show()
 
-def plot_rolling_moments_abs(df, logrets, window_len=1700, moving_window=50,
-                         outlier_corrected=False, savefig=None):
+def plot_moments_bulla(df, logrets, window_len=1700, moving_window=50,
+                       outlier_corrected=False, savefig=None):
     """ Plot the first four moments of estimated models along with returns"""
 
     # Refit logreturns into rolling subsamples
-    logrets = np.abs(logrets)
     log_rets = get_rolling_logrets(df, logrets,
                                    window_len=1700, moving_window=moving_window, outlier_corrected=outlier_corrected)
 
@@ -275,32 +242,29 @@ def plot_rolling_moments_abs(df, logrets, window_len=1700, moving_window=50,
     df = df.loc[:, ['mean/std', 'skewness', 'excess_kurtosis', 'model']]
 
     # Plotting
-    plt.rcParams.update({'font.size': 15})
-    fig, axs = plt.subplots(nrows=3, ncols=1, figsize=(15, 12), sharex=True)
+    plt.rcParams.update({'font.size': 25})
+    fig, axes = plt.subplots(nrows=3, ncols=1, figsize=(15, 12), sharex=True)
 
     models = ['mle', 'jump']
-    labels = ['Mean to Std ratio', 'Skewness', 'Excess Kurtosis']
-    colors = ['black', 'lightgrey']
+    labels = ['Mean/Std', 'Skewness', 'Excess Kurtosis']
 
     # Loop through each subplot
-    for i, (ax, moment, label) in enumerate(zip(axs, empirical_moments, labels)):
+    for i, (ax, moment, label) in enumerate(zip(axes, empirical_moments, labels)):
         # Plot empirical returns moment
-        ax.plot(logrets.index[(window_len):], moment, label=r'$\log (r_t)$', color='grey', ls='--')
+        ax.plot(logrets.index[(window_len+moving_window):], moment, label=r'$(r_t)$', color='grey', ls='--')
         # Inner loop allows drawing of several models
-        for (model, color) in zip(models, colors):
+        for model in models:
             plot_data = df[df['model'] == model]
-            ax.plot(plot_data.index[moving_window-1:], moving_average(plot_data.iloc[:, i], n=moving_window),
-                    label=model, color=color)
+            ax.plot(plot_data.index[moving_window-1:], DataPrep.moving_average(plot_data.iloc[:, i], n=moving_window),
+                    label=model)
 
 
         ax.set_xlim(df.index[moving_window-1], df.index[-1])
         ax.set_ylabel(label)
 
-    axs[-1].tick_params('x', labelrotation=45)
-    #axs[1, 1].tick_params('x', labelrotation=45)
+    axes[-1].tick_params('x', labelrotation=45)
 
-    plt.legend()
-    plt.subplots_adjust(wspace=0.2, hspace=0.5)
+    plt.legend(fontsize=15)
     plt.tight_layout()
 
     if not savefig == None:
@@ -310,36 +274,49 @@ def plot_rolling_moments_abs(df, logrets, window_len=1700, moving_window=50,
 
 if __name__ == '__main__':
     # Load log returns from SP500
-    df_returns = load_long_series_logret()
-    df_returns_outlier = load_long_series_logret(outlier_corrected=True)
+    data = DataPrep()
+    logrets = data.load_long_series_logret(outlier_corrected=False)
+    logrets_outlier = data.load_long_series_logret(outlier_corrected=True)
 
     # Loading regular and outlier corrected data. Then get means parameters across time
     path = '../../analysis/stylized_facts/output_data/'
-    df_rolling = pd.read_csv(path + 'rolling_estimations_abs.csv', index_col='timestamp', parse_dates=True)
-    df_rolling_outlier = pd.read_csv(path + 'rolling_estimations_outlier_corrected_abs.csv',
-                                     index_col='timestamp', parse_dates=True)
-    data_table = df_rolling.groupby(['window_len', 'model']).mean().sort_index(ascending=[True, False])
-    data_table_outlier = df_rolling_outlier.groupby(['window_len', 'model']).mean().sort_index(ascending=[True, False])
+    df = pd.read_csv(path + 'moments_abs.csv', index_col='timestamp', parse_dates=True)
+    df_outlier = pd.read_csv(path + 'moments_abs_outlier.csv',
+                             index_col='timestamp', parse_dates=True)
+    data_table = df.groupby(['window_len', 'model']).mean().sort_index(ascending=[True, False])
+    data_table_outlier = df_outlier.groupby(['window_len', 'model']).mean().sort_index(ascending=[True, False])
 
     print(data_table)
-
 
     save = False
     moving_window = 50
     if save is True:
-        plot_rolling_moments_abs(df_rolling_outlier, df_returns_outlier,
-                                 moving_window=moving_window, outlier_corrected=False, savefig='rolling_moments_abs.png')
-        plot_rolling_moments(df_rolling, df_returns, moving_window=moving_window, savefig='rolling_moments.png')
-        #plot_rolling_moments(df_rolling_outlier, df_returns, moving_window=moving_window, outlier_corrected=True,
-        #                     savefig='rolling_moments_outlier_corrected.png')
-        plot_acf_2D(data_table, df_returns, savefig='acf_abs_models.png')
-        plot_rolling_parameters(df_rolling, model='jump', savefig='2-state JUMP HMM rolling params.png')
-        plot_rolling_parameters(df_rolling, model='mle', savefig='2-state MLE HMM rolling params.png')
+        #Regular data
+        plot_moments_bulla(df, np.abs(logrets),
+                           moving_window=moving_window, outlier_corrected=False,
+                           savefig='moments_bulla_abs.png')
+        plot_moments_regular(df, np.abs(logrets), moving_window=moving_window, savefig='moments_regular_abs.png')
+
+        plot_rolling_parameters(df, model='jump', savefig='2-state JUMP HMM rolling params.png')
+        plot_rolling_parameters(df, model='mle', savefig='2-state MLE HMM rolling params.png')
+
+        #Outlier corrected
+        plot_moments_bulla(df_outlier, np.abs(logrets_outlier),
+                           moving_window=moving_window, outlier_corrected=False,
+                           savefig='moments_bulla_abs_outlier.png')
     else:
-        plot_rolling_moments_abs(df_rolling_outlier, df_returns_outlier, moving_window=moving_window, outlier_corrected=False, savefig=None)
-        #plot_rolling_moments(df_rolling, df_returns, moving_window=moving_window, outlier_corrected=False, savefig=None)
-        #plot_rolling_moments(df_rolling_outlier, np.abs(df_returns), moving_window=moving_window, outlier_corrected=False, savefig=None)
-        #plot_acf_2D(data_table, df_returns, savefig=None)
-        #plot_acf_3D(df_rolling, df_returns, savefig=None)
-        #plot_rolling_parameters(df_rolling, model='jump', savefig=None)
-        #plot_rolling_parameters(df_rolling, model='mle', savefig=None)
+        # Regular data
+        plot_moments_bulla(df, np.abs(logrets), moving_window=moving_window, outlier_corrected=False, savefig=None)
+        plot_moments_bulla(df_outlier, np.abs(logrets_outlier), moving_window=moving_window, outlier_corrected=False, savefig=None)
+
+        plot_moments_regular(df, logrets, moving_window=moving_window, outlier_corrected=False, savefig=None)
+
+        plot_rolling_parameters(df, model='jump', savefig=None)
+        plot_rolling_parameters(df, model='mle', savefig=None)
+
+        # Outlier corrected
+        plot_moments_bulla(df_outlier, logrets_outlier, moving_window=moving_window, outlier_corrected=False, savefig=None)
+        plot_moments_regular(df_outlier, logrets_outlier, moving_window=moving_window, savefig=None)
+
+        # Not used plots
+        #plot_acf_3D(df, logrets, savefig=None)

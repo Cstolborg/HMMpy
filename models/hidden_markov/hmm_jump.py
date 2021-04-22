@@ -55,7 +55,7 @@ class JumpHMM(BaseHiddenMarkov):
 
             return state_seq, theta
 
-    def construct_features(self, X: ndarray, window_len: tuple, feature_set='feature_set_2'):
+    def construct_features(self, X: ndarray, window_len: tuple, feature_set='feature_set_3'):
         if not feature_set in ['feature_set_1', 'feature_set_2', 'feature_set_3']:
             raise Exception('Invalid feature set. Valid options are [feature_set_1, feature_set_2, feature_set_3]')
 
@@ -258,7 +258,7 @@ class JumpHMM(BaseHiddenMarkov):
                     old_state_seq = state_seq
                     old_objective_score = objective_score
 
-    def fit(self, X, get_hmm_params=True, sort_state_seq=True, verbose=False, feature_set='feature_set_2'):
+    def fit(self, X, get_hmm_params=True, sort_state_seq=True, verbose=False, feature_set='feature_set_3'):
         self.is_fitted = False
         Z = self.construct_features(X, window_len=self.window_len, feature_set=feature_set)
 

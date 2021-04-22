@@ -23,8 +23,8 @@ if __name__ == '__main__':
     X = np.load(path + 'sampled_t_returns.npy')
     true_states = np.load(path + 'sampled_t_true_states.npy')
 
-    #df = pd.read_csv(path + 'simulation_t.csv')
-    df = test_model_convergence(jump, mle, sampler, X, true_states, sample_lengths=(250, 500, 1000, 2000))
+    df = pd.read_csv(path + 'simulation_t.csv')
+    #df = test_model_convergence(jump, mle, sampler, X, true_states, sample_lengths=(250, 500, 1000, 2000))
 
     # Summarize results
     data_table = df.groupby(['Simulation length', 'model']).mean().sort_index(ascending=[True, False])
@@ -35,12 +35,15 @@ if __name__ == '__main__':
     df2 = df[df['two_states'] == True]
 
 
-    save = True
+    save = False
     if save == True:
         plot_simulated_model_convergence(df, sampler, savefig='simulation_t.png')
         plot_simulated_model_convergence_box(df, sampler, savefig='simulation_t_box.png')
         df.to_csv(path + 'simulation_t.csv', index=False)
         data_table.round(4).to_latex(path + 'simulation_t.tex', escape=False)
+
+        plot_simulated_model_convergence(df2, sampler, savefig='simulation_t_2states.png')
+        plot_simulated_model_convergence_box(df2, sampler, savefig='simulation_t_box_2states.png')
     else:
         plot_simulated_model_convergence(df, sampler, savefig=None)
         plot_simulated_model_convergence_box(df, sampler, savefig=None)

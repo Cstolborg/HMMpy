@@ -38,6 +38,7 @@ class DataPrep:
         self.prices = self.load_prices()
         self.rets = self.load_returns()
         self.logrets = self.load_logreturns()
+        self.long_logrets = self.load_long_series_logret(outlier_corrected=False)
 
     def load_prices(self):
         df_prices = pd.read_csv(self.path, index_col='Time', parse_dates=True)
@@ -66,17 +67,33 @@ class DataPrep:
 
         return df_ret
 
-    def load_long_series_logret(self, outlier_corrected=False):
+    def load_long_series_logret(self, outlier_corrected=False, threshold=4):
         df = pd.read_csv(self.path, index_col='Time', parse_dates=True)
         df = df['S&P 500 ']
         df_ret = np.log(df) - np.log(df.shift(1))
         df_ret.dropna(inplace=True)
 
+        # Remove trading days with movements above 10%.
+        # This includes black monday, two days during GFC, and one day during COVID
+        mean, std = df_ret.mean(), df_ret.std()
+        df_ret.loc[df_ret >= 0.1] = mean + 6*std
+        df_ret.loc[df_ret <= -0.1] = mean - 6*std
+
         # Remove all observations with std's above 4
         if outlier_corrected is True:
-            df_ret = df_ret[(np.abs(stats.zscore(df_ret)) < 4)]
+            df_ret = self.replace_outliers(df_ret, threshold=threshold)
 
         return df_ret
+
+    @staticmethod
+    def replace_outliers(data, threshold=4):
+        """ Replaces outliers further than x STDs away from mean by the threshold value """
+        zscores = stats.zscore(data)
+        mean, std = data.mean(), data.std()
+        data.loc[zscores >= threshold] = mean + std * threshold
+        data.loc[zscores <= -threshold] = mean - std * threshold
+
+        return data
 
     @staticmethod
     def moving_average(a, n=10):

@@ -1,4 +1,5 @@
 import copy
+import datetime
 
 import pandas as pd; pd.set_option('display.max_columns', 10); pd.set_option('display.width', 320)
 from scipy import stats
@@ -7,7 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import tqdm
 from statsmodels.tsa.stattools import acf
-from utils.data_prep import load_long_series_logret
+from utils.data_prep import load_long_series_logret, DataPrep
 from models.hidden_markov.hmm_gaussian_em import EMHiddenMarkov
 from models.hidden_markov.hmm_jump import JumpHMM
 import warnings
@@ -36,7 +37,7 @@ def compute_rolling_simulations(logret, mle, jump, frequency=100, window_len=170
 
         # Remove all observations with std's above 4
         if outlier_corrected is True:
-            rolling = rolling[(np.abs(stats.zscore(rolling)) < 4)]
+            rolling = DataPrep.replace_outliers(rolling, threshold=4)
 
         # Fit models to rolling data
         mle.fit(rolling, sort_state_seq=True, verbose=True)
@@ -76,35 +77,42 @@ def compute_rolling_simulations(logret, mle, jump, frequency=100, window_len=170
 
     if compute_acf == True:
         print('Computing ACF on simulated data...')
-        simulations['mle_acf'] = acf(np.abs(simulations['mle'][:, :2000].ravel()), nlags=n_lags)[1:]
-        simulations['jump_acf'] = acf(np.abs(simulations['jump'][:, :2000].ravel()), nlags=n_lags)[1:]
+        simulations['mle_acf_abs'] = acf(np.abs(simulations['mle'][:, :2000].ravel()), nlags=n_lags)[1:]
+        simulations['jump_acf_abs'] = acf(np.abs(simulations['jump'][:, :2000].ravel()), nlags=n_lags)[1:]
+
+        simulations['mle_acf'] = acf(simulations['mle'][:, :2000].ravel(), nlags=n_lags)[1:]
+        simulations['jump_acf'] = acf(simulations['jump'][:, :2000].ravel(), nlags=n_lags)[1:]
+
+        simulations['mle_acf_sign'] = acf(np.sign(simulations['mle'][:, :2000].ravel()), nlags=n_lags)[1:]
+        simulations['jump_acf_sign'] = acf(np.sign(simulations['jump'][:, :2000].ravel()), nlags=n_lags)[1:]
         print('Finished computing ACF')
 
     return simulations
 
-def plot_simulated_acf(simulations, logret,n_lags=500, savefig=None):
+def plot_acf(simulations, logret, n_lags=500, savefig=None):
     """ Compute absolute or squared acf in the long-run """
     # Compute absolute ACF
     acf_logret = acf(np.abs(logret), nlags=n_lags)[1:]
     acf_significance = 1.96 / np.sqrt(len(logret))
 
-    lags = np.arange(simulations['mle_acf'].size)
+    lags = np.arange(simulations['mle_acf_abs'].size)
 
     # Plotting
-    plt.rcParams.update({'font.size': 15})
+    plt.rcParams.update({'font.size': 25})
     fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(15, 7), sharex=True)
 
     # ACF of data and models
     ax.bar(lags, acf_logret, color='black', alpha=0.4)
-    ax.plot(lags, simulations['mle_acf'].ravel(), label="mle", color='lightgrey')
-    ax.plot(lags, simulations['jump_acf'].ravel(), label="jump", color='black')
+    ax.plot(lags, simulations['mle_acf_abs'], label="mle")
+    ax.plot(lags, simulations['jump_acf_abs'], label="jump")
 
     ax.axhline(acf_significance, linestyle='dashed', color='black')
-    ax.set_ylabel(r"ACF($\log |r_t|$)")
+    ax.set_xlabel('Lag')
+    ax.set_ylabel(r"ACF($ |r_t|$)")
     ax.set_xlim(left=0, right=max(lags)+1)
     ax.set_ylim(top=0.4, bottom=0)
 
-    plt.legend()
+    plt.legend(fontsize=15)
     plt.subplots_adjust(wspace=0.2, hspace=0.5)
     plt.tight_layout()
 
@@ -112,39 +120,60 @@ def plot_simulated_acf(simulations, logret,n_lags=500, savefig=None):
         plt.savefig('./images/' + savefig)
     plt.show()
 
-def plot_simulated_acf_outliers(simulations, simulations_outliers, logret, logret_outliers,
-                                n_lags=500, savefig=None):
+def plot_acf_outliers(simulations, simulations_outliers, logret, logret_outliers,
+                      n_lags=500, savefig=None):
     """ Compute absolute or squared acf in the long-run """
     # Compute absolute ACF
     acf_logret = acf(np.abs(logret), nlags=n_lags)[1:]
     acf_logret_outliers = acf(np.abs(logret_outliers), nlags=n_lags)[1:]
     acf_significance = 1.96 / np.sqrt(len(logret))
-    lags = np.arange(simulations['mle_acf'].size)
+    lags = np.arange(simulations['mle_acf_abs'].size)
 
     # Plotting
-    plt.rcParams.update({'font.size': 15})
+    plt.rcParams.update({'font.size': 25})
     fig, ax = plt.subplots(nrows=2, ncols=1, figsize=(15, 7), sharex=True)
 
     # Full data
     ax[0].set_title('Full sample')
     ax[0].bar(lags, acf_logret, color='black', alpha=0.4)
-    ax[0].plot(lags, simulations['mle_acf'].ravel(), label="mle", color='lightgrey')
-    ax[0].plot(lags, simulations['jump_acf'].ravel(), label="jump", color='black')
+    ax[0].plot(lags, simulations['mle_acf_abs'].ravel(), label="mle")
+    ax[0].plot(lags, simulations['jump_acf_abs'].ravel(), label="jump")
 
     # Outlier-corrected
     ax[1].set_title(r'Outliers limited to $\bar r_t \pm 4\sigma$')
     ax[1].bar(lags, acf_logret_outliers, color='black', alpha=0.4)
-    ax[1].plot(lags, simulations_outliers['mle_acf'].ravel(), label="mle", color='lightgrey')
-    ax[1].plot(lags, simulations_outliers['jump_acf'].ravel(), label="jump", color='black')
+    ax[1].plot(lags, simulations_outliers['mle_acf_abs'].ravel(), label="mle")
+    ax[1].plot(lags, simulations_outliers['jump_acf_abs'].ravel(), label="jump")
     ax[1].set_xlabel('Lag')
 
     for i in range(len(ax)):
         ax[i].axhline(acf_significance, linestyle='dashed', color='black')
-        ax[i].set_ylabel(r"ACF($\log |r_t|$)")
+        ax[i].set_ylabel(r"ACF($ |r_t|$)")
         ax[i].set_xlim(left=0, right=max(lags)+1)
         ax[i].set_ylim(top=0.4, bottom=0)
 
-    plt.legend()
+    plt.legend(fontsize=15)
+    plt.tight_layout()
+
+    if not savefig == None:
+        plt.savefig('./images/' + savefig)
+    plt.show()
+
+def plot_taylor_effect(simulations, logret, frequency=100, window_len=1700, savefig=None):
+    index = logret.index[window_len::frequency]
+
+    plt.rcParams.update({'font.size': 25})
+    fig, ax = plt.subplots(1,1, figsize=(15, 7))
+
+    ax.plot(index, simulations['logrets_taylor'], label=r'$|r_t|$', color='black', ls='--')
+    ax.plot(index, simulations['mle_taylor'], label=r'mle')
+    ax.plot(index, simulations['jump_taylor'], label='jump')
+
+    ax.set_ylabel(r"$argmax_{\theta}corr(|r_t|^{\theta}, |r_{t-k}|^{\theta})$")
+    ax.set_xlim(left=index[0], right=index[-1] )#+ datetime.timedelta(days=700))
+    #ax.set_ylim(top=0.4, bottom=0)
+
+    plt.legend(fontsize=15)
     plt.subplots_adjust(wspace=0.2, hspace=0.5)
     plt.tight_layout()
 
@@ -153,44 +182,128 @@ def plot_simulated_acf_outliers(simulations, simulations_outliers, logret, logre
     plt.show()
 
 
+def plot_acf_data(simulations, logret,
+                                n_lags=500, savefig=None):
+    """ Compute absolute or squared acf in the long-run """
+    # Compute absolute ACF
+    acf_logret = acf(np.abs(logret), nlags=n_lags)[1:]
+    acf_logret_subs = np.mean(simulations['logrets_acf_sub'], axis=0)
+    acf_significance = 1.96 / np.sqrt(len(logret))
+    lags = np.arange(n_lags)
 
+    # Plotting
+    plt.rcParams.update({'font.size': 25})
+    fig, ax = plt.subplots(nrows=2, ncols=1, figsize=(15, 7), sharex=True)
+
+    # Full data
+    ax[0].set_title('Full sample')
+    ax[0].bar(lags, acf_logret, color='black', alpha=0.4)
+
+    # Outlier-corrected
+    ax[1].set_title(r'Subsamples of 1700 observations')
+    ax[1].bar(lags, acf_logret_subs, color='black', alpha=0.4)
+    ax[1].set_xlabel('Lag')
+
+    for i in range(len(ax)):
+        ax[i].axhline(acf_significance, linestyle='dashed', color='black')
+        ax[i].set_ylabel(r"ACF($ |r_t|$)")
+        ax[i].set_xlim(left=0, right=max(lags)+1)
+        ax[i].set_ylim(top=0.4, bottom=0)
+
+    plt.tight_layout()
+
+    if not savefig == None:
+        plt.savefig('./images/' + savefig)
+    plt.show()
+
+def plot_acf_sign(simulations, logret,
+                                n_lags=500, savefig=None):
+    """ Compute absolute or squared acf in the long-run """
+    # Compute absolute ACF
+    acf_logret = acf(logret, nlags=n_lags)[1:]
+    acf_sign_logret = acf(np.sign(logret), nlags=n_lags)[1:]
+    acf_significance_pos = 1.96 / np.sqrt(len(logret))
+    acf_significance_neg = -1.96 / np.sqrt(len(logret))
+    lags = np.arange(n_lags)
+
+    # Plotting
+    plt.rcParams.update({'font.size': 25})
+    fig, ax = plt.subplots(nrows=2, ncols=1, figsize=(15, 7), sharex=True)
+
+    # ACF r
+    ax[0].bar(lags, acf_logret, color='black', alpha=0.4)
+    ax[0].plot(lags, simulations['mle_acf'][:n_lags], label="mle")
+    ax[0].plot(lags, simulations['jump_acf'][:n_lags], label="jump")
+    ax[0].set_ylabel(r'ACF($r_t$)')
+
+
+    # ACF sign(r)
+    ax[1].bar(lags, acf_sign_logret, color='black', alpha=0.4)
+    ax[1].plot(lags, simulations['mle_acf_sign'][:n_lags], label="mle")
+    ax[1].plot(lags, simulations['jump_acf_sign'][:n_lags], label="jump")
+    ax[1].set_ylabel(r'ACF($sign(r_t)$)')
+    ax[1].set_xlabel('Lag')
+
+    for i in range(len(ax)):
+        ax[i].axhline(acf_significance_pos, linestyle='dashed', color='black')
+        ax[i].axhline(acf_significance_neg, linestyle='dashed', color='black')
+        ax[i].set_xlim(left=0, right=max(lags)+1)
+
+    plt.tight_layout()
+
+    if not savefig == None:
+        plt.savefig('./images/' + savefig)
+    plt.show()
 
 if __name__ == '__main__':
     # Load SP500 logrets
-    logret = load_long_series_logret()
-    logret_outliers = load_long_series_logret(outlier_corrected=True)
+    data = DataPrep()
+    logrets = data.load_long_series_logret(outlier_corrected=False)
+    logrets_outlier = data.load_long_series_logret(outlier_corrected=True)
 
     # Instantiate HMM models
     mle = EMHiddenMarkov(n_states=2, epochs=10, max_iter=100, random_state=42)
     jump = JumpHMM(n_states=2, jump_penalty=16, window_len=(6, 14),
                    epochs=20, max_iter=30, random_state=42)
 
-    #logret = logret[13000:15000]  # Reduce sample size to speed up training
+    #logrets = logret[13000:15000]  # Reduce sample size to speed up training
 
     # Compute dict with long lists of simulations for mle and jump models
     # Also contains acf for both models
     frequency = 100
-    simulations = compute_rolling_simulations(logret, mle, jump, frequency=frequency, window_len=1700,
+    simulations = compute_rolling_simulations(logrets, mle, jump, frequency=frequency, window_len=1700,
                                               outlier_corrected=False, n_sims=10000,
-                                              compute_acf=True, compute_taylor_effect=True)
+                                              compute_acf=True, compute_taylor_effect=True,
+                                              compute_acf_subperiods=True)
 
 
     # Repeat procedure with outlier corrected data
-    #simulations_outliers = compute_rolling_simulations(logret, mle, jump, frequency=100, window_len=1700,
-    #                                          outlier_corrected=False, n_sims=1700)
-
-
-
-
+    simulations_outliers = compute_rolling_simulations(logrets_outlier, mle, jump, frequency=100, window_len=1700,
+                                              outlier_corrected=False, n_sims=1700,
+                                                       compute_acf=True, compute_taylor_effect=True,
+                                                       compute_acf_subperiods=True
+                                                       )
 
     # Save results
     save = False
     if save == True:
-        plot_simulated_acf(simulations, logret, n_lags=500, savefig='simulated_abs_acf.png')
-        #plot_simulated_acf_outliers(simulations, simulations_outliers, logret, logret_outliers,
-        #                            n_lags=500, savefig='simulated_abs_acf_outliers.png')
+        plot_acf(simulations, logrets, n_lags=500, savefig='acf_abs.png')
+        plot_acf_outliers(simulations, simulations_outliers, logrets, logrets_outlier,
+                          n_lags=500, savefig='acf_abs_outlier.png')
+
+        plot_taylor_effect(simulations, logrets, frequency=frequency,
+                           window_len=1700, savefig='taylor_effect.png')
+        plot_acf_sign(simulations, logrets,
+                      n_lags=500, savefig='acf_sign.png')
+        plot_acf_data(simulations, logrets, n_lags=500, savefig='acf_data.png')
     else:
-        plot_simulated_acf(simulations, logret, n_lags=500, savefig=None)
-        #plot_simulated_acf_outliers(simulations, simulations_outliers, logret, logret_outliers,
-        #                            n_lags=500, savefig=None)
+        plot_acf(simulations, logrets, n_lags=500, savefig=None)
+        plot_acf_outliers(simulations, simulations_outliers, logrets, logrets_outlier,
+                          n_lags=500, savefig=None)
+
+        plot_taylor_effect(simulations, logrets, frequency=frequency, window_len=1700, savefig=None)
+        plot_acf_data(simulations, logrets, n_lags=500, savefig=None)
+
+        plot_acf_sign(simulations, logrets,
+                      n_lags=500, savefig=None)
 
