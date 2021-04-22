@@ -136,7 +136,9 @@ class SampleHMM(BaseHiddenMarkov):
                 # Each new state is chosen using the transition probs corresponding to the previous state sojourn.
                 sample_states[t, seq] = np.random.choice(a=state_index, size=1, p=tpm[sample_states[t - 1, seq], :])
 
-            samples[:, seq] = stats.t.rvs(loc=mu[sample_states[:, seq]], scale=std[sample_states[:, seq]], size=n_samples, df=dof)
+            samples[:, seq] = stats.t.rvs(loc=mu[sample_states[:, seq]],
+                                          scale=std[sample_states[:, seq]]/np.sqrt(dof/(dof-2)),
+                                          size=n_samples, df=dof)
 
         if n_sequences == 1:
             sample_states = sample_states[:, 0]

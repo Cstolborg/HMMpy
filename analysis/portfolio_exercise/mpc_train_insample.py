@@ -82,7 +82,7 @@ def plot_performance(df, port_val, weights, start=None, show=True, savefig=None)
 
 if __name__ == "__main__":
     # Set path, model to test and in-sample vs. out-of-sample
-    model_str = 'mle'
+    model_str = 'jump'
     path = '../../analysis/portfolio_exercise/output_data/' + model_str + '/'
     out_of_sample = False
     sample_type = 'oos' if out_of_sample is True else 'is'  # Used to specify suffix in file names
@@ -114,3 +114,10 @@ if __name__ == "__main__":
     gridsearch_results.to_csv(path + 'gridsearch.csv', index=False)
     print(gridsearch_results)
 
+    """
+    df_mle = pd.read_csv('./output_data/mle/gridsearch.csv')
+    df_jump = pd.read_csv('./output_data/jump/gridsearch.csv')
+
+    df_mle['sharpe'] = df_mle['return'] / df_mle['std']
+    df_jump['sharpe'] = df_jump['return'] / df_jump['std']
+    """

@@ -29,6 +29,10 @@ if __name__ == '__main__':
     # Summarize results
     data_table = df.groupby(['Simulation length', 'model']).mean().sort_index(ascending=[True, False])
     print(data_table)
+    print('N times not fitted \n', df[df['is_fitted'] == False].groupby('model')['is_fitted'].count() )
+
+    # Show results after removing sequences with only 1 state
+    df2 = df[df['two_states'] == True]
 
 
     save = True
@@ -40,3 +44,6 @@ if __name__ == '__main__':
     else:
         plot_simulated_model_convergence(df, sampler, savefig=None)
         plot_simulated_model_convergence_box(df, sampler, savefig=None)
+
+        plot_simulated_model_convergence(df2, sampler, savefig=None)
+        plot_simulated_model_convergence_box(df2, sampler, savefig=None)

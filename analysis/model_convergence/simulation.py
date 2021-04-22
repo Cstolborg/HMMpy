@@ -44,11 +44,11 @@ def test_model_convergence(jump, mle, sampler, X, Y_true, sample_lengths=(250, 5
 
             # Check if both states are present
             if len(np.unique(y_true)) < 2:
-                data['mle']['two_states'] = False
-                data['jump']['two_states'] = False
+                data['mle']['two_states'].append(False)
+                data['jump']['two_states'].append(False)
             else:
-                data['mle']['two_states'] = True
-                data['jump']['two_states'] = True
+                data['mle']['two_states'].append(True)
+                data['jump']['two_states'].append(True)
 
             jump.fit(x, sort_state_seq=True, get_hmm_params=True, verbose=True)
             mle.fit(x, sort_state_seq=True, verbose=True)
@@ -109,7 +109,7 @@ def plot_simulated_model_convergence(df, sampler, savefig=None):
     # Set symbols on y-axis
     symbol_list = [['$\mu_1$', '$\mu_2$'],
                    ['$\sigma_1$', '$\sigma_2$'],
-                   ["$p_{11}$", "$p_{22}$"]]
+                   ["$q_{11}$", "$q_{22}$"]]
 
     models = ['jump', 'mle']
     colors = ['black', 'lightgrey']  # ['#0051a2', '#97964a', '#ffd44f', '#f4777f', '#93003a']
@@ -179,7 +179,7 @@ def plot_simulated_model_convergence_box(df, sampler, savefig=None):
 
     # Set ylims
     axes[-1, 0].set_ylim(0.75, 1.01)
-    axes[-1, 1].set_ylim(top=1.01)
+    axes[-1, 1].set_ylim(0.75, top=1.01)
 
     axes[-1, 0].set_xlabel('Simulation length')
     axes[-1, 1].set_xlabel('Simulation length')
@@ -207,7 +207,10 @@ if __name__ == '__main__':
     # Summarize results
     data_table = df.groupby(['Simulation length', 'model']).mean().sort_index(ascending=[True, False])
     print(data_table)
-    
+    print('N times not fitted \n', df[df['is_fitted'] == False].groupby('model')['is_fitted'].count() )
+
+    # Show results after removing sequences with only 1 state
+    df2 = df[df['two_states'] == True]
 
     save = True
     if save == True:
@@ -218,4 +221,7 @@ if __name__ == '__main__':
     else:
         plot_simulated_model_convergence(df, sampler, savefig=None)
         plot_simulated_model_convergence_box(df, sampler, savefig=None)
+
+        plot_simulated_model_convergence(df2, sampler, savefig=None)
+        plot_simulated_model_convergence_box(df2, sampler, savefig=None)
 

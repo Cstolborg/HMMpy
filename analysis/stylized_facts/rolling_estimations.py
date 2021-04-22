@@ -145,7 +145,7 @@ if __name__ == '__main__':
     print(data_table)
 
     # Save results
-    save = True
+    save = False
     if save == True:
         path = '../../analysis/stylized_facts/output_data/'
         df.to_csv(path + 'rolling_estimations_abs.csv', index=False)

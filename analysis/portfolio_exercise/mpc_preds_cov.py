@@ -17,7 +17,7 @@ if __name__ == "__main__":
     # Set path, model to test and in-sample vs. out-of-sample
     model_str = 'mle'
     path = '../../analysis/portfolio_exercise/output_data/' + model_str + '/'
-    out_of_sample = True
+    out_of_sample = False
 
     sample_type = 'oos' if out_of_sample is True else 'is'  # Used to specify suffix in file names
 
@@ -37,6 +37,6 @@ if __name__ == "__main__":
 
     # Uncomment this section to perform new backtest - generating forecast distributions
     # Leave commented to used existing preds and covariances from file
-    preds, cov = backtester.rolling_preds_cov_from_hmm(X, data.logrets, model, window_len=1000, shrinkage_factor=(0.3, 0.3), verbose=True)
+    preds, cov = backtester.rolling_preds_cov_from_hmm(X, data.logrets, model, window_len=1500, shrinkage_factor=(0.3, 0.3), verbose=True)
     np.save(path + 'preds_' + sample_type + '.npy', preds)
     np.save(path + 'cov_' + sample_type + '.npy', cov)

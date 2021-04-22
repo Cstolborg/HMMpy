@@ -15,7 +15,8 @@ from models.hidden_markov.hmm_jump import JumpHMM
 
 
 def fit_t_dist():
-    X = stats.t.rvs(loc=sampler.mu[0], scale=sampler.std[0], size=int(2e6), df=5).reshape(2000, -1)
+    X = stats.t.rvs(loc=sampler.mu[0], scale=sampler.std[0]/np.sqrt(5/3), size=int(2e6), df=5).reshape(2000, -1)
+    #X = stats.t.rvs(size=int(2e6), df=5).reshape(2000, -1)
 
     df = pd.DataFrame()
     sample_lengths = (250, 500, 1000, 2000)
@@ -24,10 +25,11 @@ def fit_t_dist():
                 'Fitted normal': {'mean': [], 'std': []}}
         for seq in tqdm.tqdm(X.T):
             seq = seq[:sample_length]
-            t_stats = stats.t.fit(seq)  # Returns df, loc, scale
+            t_df, t_mean, t_std = stats.t.fit(seq)  # Returns df, loc, scale
+            t_std = t_std * np.sqrt(5/3) # scale variance
             norm_stats = stats.norm.fit(seq)  # Returns loc, scale
-            data['Fitted t']['mean'].append(t_stats[1])
-            data['Fitted t']['std'].append(t_stats[2])
+            data['Fitted t']['mean'].append(t_mean)
+            data['Fitted t']['std'].append(t_std)
             data['Fitted normal']['mean'].append(norm_stats[0])
             data['Fitted normal']['std'].append(norm_stats[1])
 
@@ -99,8 +101,5 @@ if __name__ == '__main__':
     sampler = SampleHMM()
 
     df = fit_t_dist()
+    #plot_simulated_dist_convergence_box(df, sampler, savefig='theoretical_fit_t_dist_standardized.png')
     plot_simulated_dist_convergence_box(df, sampler, savefig='theoretical_fit_t_dist.png')
-
-
-
-
