@@ -1,74 +1,74 @@
 \newpage
 
 \section{Simulation study}
-In this section, HMMs are trained based on the estimation procedure described in \ref{section: estimation}. The primary purpose of the section is to compare how well different estimation methods converge toward the true parameter values, when data is simulated from an HMM. The advantage of using simulated data is that it entails us knowing the true parameter values. Thus, it becomes possible to directly analyze whether a model has learned the estimates close to the true parameter values, as opposed to relying on general measures of fit, such as AIC and BIC scores, which is necessarily the case when one works with real data. More importantly, simulated data allows us to compare the true state sequences with the estimated. This can be highly informative as it allows the measurement of accuracy in state classification. Simulation will be carried out under various alterations designed to test models' convergence when some of their key assumptions about the data are (partially) unfulfilled\footnote
-{Such as the maximum likelihood estimator, which assumes conditional normality. Since it has been shown that e.g. conditional students t-distributions are often a better fit (Bulla, 2011) the assumption is in practice often not fulfilled.
+In this section HMMs are trained based on the estimation procedures described throughout \ref{section: estimation}. The primary purpose of the section is to compare how well different estimation methods converge toward the true parameter values when data is simulated from an HMM. The advantage of using simulated data is that it entails knowing the true parameter values. Therefore, it becomes possible to directly analyze whether a model suggests parameter estimates close to the true values, as opposed to relying on general measures of fit such as AIC and BIC scores, which is necessarily the case when one works with real data. More importantly, simulated data allows for comparing the true state sequences with the estimated ones. This can be highly informative as it allows for measuring of the accuracy in state classification. Simulation will be carried out under various alterations designed to test the models' convergence when some of their key assumptions about the data are (partially) unfulfilled\footnote
+{Such as the maximum likelihood estimator, which assumes conditional normality. Since it has been shown that e.g. conditional students t-distributions are often a better fit the assumption is in practice often not fulfilled (Bulla et al. 2011).
 }.
 
-In the following, accuracy of state predictions is defined using recall/sensitivity $\frac{tp}{tp+fn}$, where $tp$ is the number of true positives, and $fn$ is the number of false negative. It measures how large a fraction of all positives that the model is able to detect. When the true state is one, then the positive class will also be one, and the negative class will be all other predictions, when the true state is two the positive class will be two$,\ldots,$ and so on. However, one of the issues with recall is its inability to account for imbalanced data sets. To account for this, Nystrup et al. (2020) suggested using the balanced accuracy score (BAC), which is the average of accuracy in each observed state
+In the following paragraphs, the accuracy of state predictions is defined using recall/sensitivity $\frac{tp}{tp+fn}$, where $tp$ is the number of true positives, and $fn$ is the number of false negative. It measures the percentage of actual positives that the model is able to detect correctly. When the true state is one, then the positive class will also be one, and the negative class will be all other predictions. When the true state is two the positive class will be two$,\ldots,$ and so on. However, one of the issues with recall is its inability to account for imbalanced data sets. To account for this, Nystrup et al. (2020) proposed using a balanced accuracy score (BAC), which is the average of accuracy in each observed state,
 \begin{equation}
     BAC = \frac{1}{K} \sum_{k=1}^K \frac{tp_k}{tp_k + fn_k}
     \label{eq: BAC definition}
 \end{equation}
-where $tp_k$ is the number of true positives and $fn_k$ is the number of false negatives in state $k$. As a result, when a classifier performs equally well on all states, then BAC reduces to regular accuracy, but if a classifier only performs well by always predicting the dominating class then BAC appropriately drops to the reciprocal of the number of states. So, given data with two classes, then if 99\% of data belongs to the positive class and this is correctly detected, but the remaining 1\% belong to the negative and is incorrectly classified, then that classifier obtains a BAC of 0.50, whereas regular accuracy would be 0.99. Considering the previously mentioned gain/loss asymmetry in financial returns, where losses occur less frequently yet their movements are on average larger than the corresponding movements in gains, BAC behaves exactly as desired.
+where $tp_k$ is the number of true positives and $fn_k$ is the number of false negatives in state $k$. As a result, when a classifier performs equally well on all states, the BAC reduces to a regular accuracy, but if a classifier only performs well by always predicting the dominating class then BAC appropriately drops to the reciprocal of the number of states. Therefore, given data with two classes, if 99\% of the data belongs to the positive class and this is correctly detected, but the remaining 1\%, which belongs to the negative, is incorrectly classified, then the overall classifier obtains a BAC of 0.50, whereas regular accuracy would be 0.99. Considering the previously mentioned gain/loss asymmetry in financial returns where losses occur less frequently, yet their movements are larger than the corresponding movements in gains on average, BAC behaves exactly as desired.
 
-An inherent problem with comparing several HMMs is the fact that, given the unsupervised nature of the model, it outputs label-less states (predictions). This is, not only the case in this simulation study where thousands of models will be compared, but also the case when backtesting e.g. an HMM based on rolling windows on financial data. For example, consider training two HMMs by MLE on the same data with hidden states a and b. Then differences among their final parameter values and state sequences are entirely attributable to the initialized parameter values (as explained in section \ref{section: estimation}, which are random quantities. If the models are initialized in a way where the first model labels state a as 1 and state b as 2, whereas the second model might have the order reversed, thus making comparisons of the two (perhaps equally good) models difficult. There are several ways to circumvent this issue, such as choosing the labels that maximize the accuracy score, however, since this is impossible to do on real data another method is used here. Since a fundamental assumption in this paper is that the primary difference between conditional Gaussian states, is the conditional variance, parameters and state labels are sorted according to variance. Another option could have been sorting according their means, however, when thinking about a "good" and "bad" state it is certainly a possibility to observe a state with a high mean and high variance, which we would still interpret as the "bad" state, therefore making such sorting a poor choice.
+An inherent problem with comparing several HMMs is the fact that they output label-less states (predictions), which is due to their nature being unsupervised machine learning models. This is not only the case in this simulation study, in which thousands of models are compared, but also when back-testing an HMM based on rolling windows on financial data. For example, consider training two HMMs by MLE on the same data with hidden states $a$ and $b$. The differences among the models' final parameter values and state sequences are then entirely attributable to the initialized parameter values (as explained in section \ref{section: estimation}, which are random quantities. If the models are initialized in a way where the first model labels state $a$ as 1 and state $b$ as 2 and the second model have the order reversed, it will make make a direct comparisons of the two, perhaps equally good, models difficult. There are several ways to circumvent this issue, such as choosing the labels that maximize the accuracy score, however, since this is impossible to do on real data another method is used here. Since this thesis relies on the fundamental assumption that the primary difference between conditional Gaussian states is the conditional variance, parameters and state labels are sorted according to variance. Another option could have been sorting the states according to their means, however, when thinking about a "good" and "bad" state it is certainly a possibility to observe a state with a high mean and variance, which would still be interpreted as the "bad" state, thereby making such sorting a poor choice.
 
-The rest of the section is structured as follows: First, the simulation procedure is described. Then we describe how to tune the jump penalty $\lambda$ in the jump model. Once the penalty has been tuned, the models can be trained on simulated data and compared. Initially models are trained on correctly specified conditional distributions, after which we show their performance when conditional distributions are purposely misspecified - a feature that is likely when estimating HMMs on real data.
+The rest of the section is structured as follows. Firstly, the simulation procedure is described. Secondly, a detailed analysis is conducted in order to uncover how to tune the jump penalty $\lambda$ in the jump model. Thirdly, once the penalty has been tuned, the models are trained on simulated data and compared. Initially, the models are trained on correctly specified conditional distributions. This is followed by an analysis that shows the models' performance when conditional distributions are purposely misspecified, since this is a realistic scenario when estimating HMMs on real data.
 
 \subsection{Simulation procedure}
 
-Throughout the section, data is simulated from a 2-state HMM. To make results comparable to those of Nystrup et al. (2020), the same parameters are chosen, thus yielding the Gaussian HMM
+As just described, data is simulated from a 2-state HMM throughout this section, yet in order to make the results comparable to those of Nystrup et al. (2020), the same parameters are chosen, thus yielding the Gaussian HMM.
 \begin{equation*}
-    O_t|S_t \sim N(\mu_{st}, \sigma_{st}^2)
+    O|\S \sim N(\mu_{st}, \sigma_{st}^2)
 \end{equation*}
 with parameters
 $$
-    \mu_{S_t}=
+    \mu_{s_t}=
     \begin{cases}
         \mu_1= 0.0123 \\
         \mu_2= -0.0157
     \end{cases}, \quad
-    \sigma_{S_t} =
+    \sigma_{s_t} =
     \begin{cases}
         \sigma_1 = 0.0347 \\
         \sigma_2 = 0.0778
     \end{cases}, \quad
-    \mathbf{A} = 
+    \mathbf{Q} = 
     \begin{bmatrix}
         0.9629 & 0.0371 \\
         0.2101 & 0.7899
     \end{bmatrix}
 $$
-The model is estimated by Hardy's (2001) using monthly returns, which has been shown to capture many stylized facts of financial times series such as volatility clustering and leptokurtosis. There is a significant overlap between the two states, making it challenging to correctly infer the unobserved state sequence. By assuming instantaneous log-returns follow a Lêvy process, the parameters are transformed from one time scale $t_1$ to another $t_2$ using
+The model is estimated by Hardy's (2001) using monthly returns, which has been shown to capture prominent stylized facts of financial times series such as volatility clustering and leptokurtosis well. There is a significant overlap between the two states, making it challenging to correctly infer the unobserved state sequence. By assuming instantaneous log returns follow a Lêvy process, the parameters are transformed from one time scale $t_1$ to another $t_2$ using
 \begin{align*}
     \mu_s(t_1) / t_1 &= \mu_s(t_2) / t_2 \\
     \sigma_s(t_1) / \sqrt{\sigma_s(t_1)} &= \sigma_s(t_2) / \sqrt{\sigma_s(t_2)} \\
-    \mathbf{A}(t_1)^{1/t_1} &= \mathbf{A}(t_2)^{1/t_2}
+    \mathbf{Q}(t_1)^{1/t_1} &= \mathbf{Q}(t_2)^{1/t_2}
 \end{align*}
 
-where $\mu(t), \sigma(t)$ and $\mathbf{A}(t)$ are parameters associated with time scale t. Assuming there is twenty trading days in a month, i.e. $t_{monthly}=20$ and $t_{daily}=1$, monthly parameters are transformed into daily
+where $\mu(t), \sigma(t)$ and $\mathbf{Q}(t)$ are parameters associated with time scale $t$. Assuming there is twenty trading days in a month, i.e. $t_{monthly}=20$ and $t_{daily}=1$, monthly parameters are transformed into daily
 $$
-    \mu_{S_t}=
+    \mu_{s_t}=
     \begin{cases}
         \mu_1= 0.0615 \times 10^{-2} \\
         \mu_2= -0.0785 \times 10^{-2}
     \end{cases}, \quad
-    \sigma_{S_t} =
+    \sigma_{s_t} =
     \begin{cases}
         \sigma_1 = 0.7759 \times 10^{-2} \\
         \sigma_2 = 1.7400 \times 10^{-2}
     \end{cases}, \quad
-    \mathbf{A} = 
+    \mathbf{Q} = 
     \begin{bmatrix}
         0.9979 & 0.0021 \\
         0.0120 & 0.9880
     \end{bmatrix}
 $$
 
-Each series simulated from this model is generated as follows: The first element $s_0$ is drawn from the stationary distribution $\pi$, and each subsequent element is drawn from $q_{t-1}$, i.e. the row of $Q$ corresponding to the last state sojourn. Based on the value of each $s_t$, observations $o_t$ are generated from the conditional distributions. By repeating this procedure, 1000 different series are simulated with sample lengths $H = 250, 500, 1000, 2000$
+Each series simulated from this model is generated as follows. Firstly, the element $s_0$ is drawn from the stationary distribution $\pi$, and each subsequent element is drawn from $q_{t-1}$, i.e. the row of $Q$ corresponding to the last state sojourn. Based on the value of each $s_t$, observations $o_t$ are generated from the conditional distributions. By repeating this procedure, 1000 different series are simulated with sample lengths $H = 250, 500, 1000, 2000$
 
-\subsection{How to choose the jump penalizer}
+\subsection{Hyperparameter tuning in Jump model}
 \label{subsection: jump_penalizer}
 Since the MLE model does not contain any hyperparameters, it can be applied to the simulated data right away. However, this is not the case for the jump model which requires a given value for $\lambda$. As previously mentioned, the objective is to test the models' ability to correctly identify state sequences, hence the best model is the one to maximize BAC with respect to $\lambda$. Since BAC is a random quantity\footnote
 {It is a function of the data and the initial state sequence $s_0$, which in the jump estimator is generated by K-means++. Both quantities are random.},
@@ -78,10 +78,10 @@ it is appropriate to define the estimator $\Omega(\lambda)= \mathbb{E}[BAC|\lamb
 \end{equation}
 where $N$ is the amount of simulated series, and $BAC_{i, \lambda}^H$ refer to the BAC of the $i$th sequence of sample size $H$ computed using a jump model with penalty $\lambda$.
 
-Having defined these properties the analysis proceed by computing $BAC_{i, \lambda}^H$ on samples lengths 250, 500, 1000 and 2000. Further, penalties are considered on a grid defined on the logarithmic scale with base 2. Initially the grid was defined on a logarithmic scale with base 10, but evidently this was too course to yield meaningful results. Grid points are equidistantly placed on the closed interval $[2^{-2}, 2^{7}]$. An overview of the plots of the BAC against different levels of the jump penalizer $\lambda$ across all sample lengths for the a variety of feature sets will be provided in section \ref{subsubsection: optimal jump penalizer}.  
+Having defined these properties the analysis proceed by computing $BAC_{i, \lambda}^H$ on samples lengths 250, 500, 1000 and 2000. Further, penalties are considered on a grid defined on the logarithmic scale with base 2. Initially the grid was defined on a logarithmic scale with base 10, but evidently this was too course to yield meaningful results. Grid points are equidistantly placed on the closed interval log-scale $[2^{-2}, 2^{7}]$. An overview of the plots of the BAC against different levels of the jump penalizer $\lambda$ across all sample lengths for the a variety of feature sets will be provided in section \ref{subsubsection: optimal jump penalizer}.  
 
 
-\subsubsection{Selecting the optimal jump penalizer}
+\subsubsection{Selecting the optimal jump penalizer and feature set}
 \label{subsubsection: optimal jump penalizer}
 One of the main challenges when it comes to selecting the jump penalizer is to determine which features to show the model during estimation. As such, an endless amount of features can be constructed from the daily log returns of the S\&P 500 index, however, the challenge is centered around deciding whether to include all the features, or perhaps drop some of them. This type of analysis is desirable to conduct since it makes it possible to compare performance when including and excluding different features. For instance, if a feature's impact on BAC is minimal, it might prevent the model of obtaining any significant results, since the features will be clustered with noise and randomness. As such, selecting the features for estimation of the jump penalizer is somewhat comparable to the classical bias-variance trade-off in machine learning. 
 
@@ -183,6 +183,8 @@ In addition, it can be concluded from the analysis of the 3 feature sets, that i
 
 \cref{tab:jump_gaussian} and \cref{fig:jump_normal} summarizes the performance of the MLE and Jump estimator for various sample sizes when compared to the true values. As mentioned in the previous section, data is generated from a conditional gaussian HMM, which is also the case for the models trained here. Apart from the HMM parameters, the accuracy in each state as well as BAC is reported. Accuracy for for the true parameters are obtained by running the Viterbi algorithm using an HMM with the true model parameters. This can be seen as the best obtainable performance in state detection and is used to get a sense of where the 'upper bound' on BAC lies when comparing the other models.
 
+\textbf{Vis om estimatoren er konsistent.}
+
 \begin{figure}[H] 
     \centering
     \includegraphics[width=1\textwidth]{analysis/model_convergence/images/simulation_normal.png}
@@ -209,6 +211,8 @@ In conclusion, the different estimators generally converge towards the true para
 
 
 \subsection{Simulation study with misspecified distributions}
+
+\textbf{Vis om man kan fitte de simulerede t-fordelinger mde normalfordelinger, under den antagelse at man kender de rigtige stater på forhånd.}
 
 In this section, the simulation procedure from before is repeated, except for that fact that observations are sampled from conditional student's t distribution instead of gaussian, though means, variances and transition probabilities remain unchanged. The simulated t-distribution has five degrees of freedom. Student's t distribution generally have fatter tails, and have been shown to better resemble financial returns compared to normal distributions (Cont, 2001). As such, the goal of this section is to create a more realistic simulation experiment, in which models are still specified to be conditional gaussian, even though the simulated data is not. When implementing these types of models in a portfolio, it is important to know how it performs in such an environment. The results in this section will thus provide insights into how well each estimator performs in such a scenario, and where they fail.
 
