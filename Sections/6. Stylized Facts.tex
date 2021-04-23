@@ -7,18 +7,18 @@
 \textbf{Section structure:}
 \begin{itemize}
     \item Consider moving data section to here
-    \item Discuss why rolling estimation might be better than Bulla 2011 and Ryden 1998 - go over some the results where they did not get accuracte results - such as PED 1-3.
+    \item Discuss why rolling estimation might be better than Bulla 2011 and Ryden 1998 - go over some the results where they did not get accuracte results - such as PED 1-3. Explain how we expand on a lot of things Nystrup (2017) never considered.
     \item Show estimated models
     \begin{itemize}
         \item Plot estimated models. Discuss certain smoothing procedures to improve models.
-        \item \textbf{Draw this}. Plot first four moments to further see "fit"
+        \item Plot first four moments to further see "fit"
         \item If possible here would be a nice place to put the 3d plot of distribution as a function of time
     \end{itemize} 
     \item Review stylized facts of GD
     \item Distributional properties
     \begin{itemize}
         \item DP2+DP3: Plot mean/std, skewness + kurtosis of absolute returns
-        \item \textbf{Draw this} Show plot again for outlier corrected data. Note whether this is necessary.
+        \item Show plot again for outlier corrected data. Note whether this is necessary.
     \end{itemize}
     \item Temporal properties
     \begin{itemize}
@@ -100,7 +100,7 @@ substantially altered if the value was changed slightly. Nevertheless, the long 
 
 \begin{figure}[H] 
     \centering
-    \includegraphics[width=1.0\textwidth]{analysis/stylized_facts/images/acf_abs_models.png}
+    \includegraphics[width=1.0\textwidth]{analysis/stylized_facts/images/acf_abs.png}
     \caption{ACF of models as well as log returns.}
     \label{fig:stylized_facts_acf_plots} 
 \end{figure}
@@ -111,7 +111,7 @@ The remaining stylized fact is TP3, which is often referred to as the Taylor eff
 
 \begin{figure}[H] 
     \centering
-    \includegraphics[width=1.0\textwidth]{analysis/stylized_facts/images/acf_taylor_effect.png}
+    \includegraphics[width=1.0\textwidth]{analysis/stylized_facts/images/taylor_effect.png}
     \caption{Taylor effect. Comparison of the $\theta$ maximizing first order autocorrelations of the data as well as for the models. It is computed by Monte-Carlo simulations and subsequent use of numerical maximization.}
     \label{fig:stylized_facts_taylor_effect} 
 \end{figure}
@@ -126,7 +126,7 @@ The previous section performed an in-depth analysis of the temporal properties, 
 
 \begin{figure}[H] 
     \centering
-    \includegraphics[width=1.0\textwidth]{analysis/stylized_facts/images/rolling_moments.png}
+    \includegraphics[width=1.0\textwidth]{analysis/stylized_facts/images/moments.png}
     \caption{Development of first four moments of estimated models compared to $\log(r_t)$ using a rolling window of 1700 days. Model estimates are calculated using Monte-Carlo simulations.}
     \label{fig:stylized_facts_rolling_moments} 
 \end{figure}
@@ -138,7 +138,7 @@ Furthermore, the time-varying nature of the four moments in figure \ref{fig:styl
 
 \begin{figure}[H] 
     \centering
-    \includegraphics[width=1.0\textwidth]{analysis/stylized_facts/images/rolling_moments_abs.png}
+    \includegraphics[width=1.0\textwidth]{analysis/stylized_facts/images/moments_bulla_abs_outlier.png}
     \caption{Mean to std ratio as well as skewness and kurtosis of $\log(|r_t|)$ and estimated models after outlier correction.}
     \label{fig:stylized_facts_rolling_moments_outliers} 
 \end{figure}
