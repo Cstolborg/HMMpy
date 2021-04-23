@@ -181,7 +181,7 @@ def plot_rolling_parameters(df, model ='mle', savefig=None):
 def plot_moments_regular(df, logrets, window_len=1700, moving_window=50,
                          outlier_corrected=False, savefig=None):
     """ Plot the first four moments of estimated models along with returns"""
-
+    logrets = logrets.iloc[-len(df):]
     # Refit logreturns into rolling subsamples
     log_rets = get_rolling_logrets(df, logrets,
                                    window_len=1700, moving_window=moving_window, outlier_corrected=outlier_corrected)
@@ -203,7 +203,7 @@ def plot_moments_regular(df, logrets, window_len=1700, moving_window=50,
     # Loop through each subplot
     for i, (ax, moment, label) in enumerate(zip(axs, empirical_moments, labels)):
         # Plot empirical returns moment
-        ax.plot(logrets.index[(window_len+moving_window):], moment, label=r'$(r_t)$', color='grey', ls='--')
+        ax.plot(logrets.index[(window_len+moving_window):], moment, label=r'$r_t$', color='grey', ls='--')
         # Inner loop allows drawing of several models
         for model in models:
             plot_data = df[df['model'] == model]
@@ -251,7 +251,7 @@ def plot_moments_bulla(df, logrets, window_len=1700, moving_window=50,
     # Loop through each subplot
     for i, (ax, moment, label) in enumerate(zip(axes, empirical_moments, labels)):
         # Plot empirical returns moment
-        ax.plot(logrets.index[(window_len+moving_window):], moment, label=r'$(r_t)$', color='grey', ls='--')
+        ax.plot(logrets.index[(window_len+moving_window):], moment, label=r'$|r_t|$', color='grey', ls='--')
         # Inner loop allows drawing of several models
         for model in models:
             plot_data = df[df['model'] == model]
@@ -279,44 +279,50 @@ if __name__ == '__main__':
     logrets_outlier = data.load_long_series_logret(outlier_corrected=True)
 
     # Loading regular and outlier corrected data. Then get means parameters across time
-    path = '../../analysis/stylized_facts/output_data/'
-    df = pd.read_csv(path + 'moments_abs.csv', index_col='timestamp', parse_dates=True)
-    df_outlier = pd.read_csv(path + 'moments_abs_outlier.csv',
-                             index_col='timestamp', parse_dates=True)
-    data_table = df.groupby(['window_len', 'model']).mean().sort_index(ascending=[True, False])
-    data_table_outlier = df_outlier.groupby(['window_len', 'model']).mean().sort_index(ascending=[True, False])
+    path = './output_data/'
+    df = pd.read_csv(path + 'moments.csv', index_col='timestamp', parse_dates=True)
+
+    # Remove extreme values in in mle TPM
+    df_mle = df[df['$q_{11}$'] > 0.90]
+
+    df_abs = pd.read_csv(path + 'moments_abs.csv', index_col='timestamp', parse_dates=True)
+    df_abs_outlier = pd.read_csv(path + 'moments_abs_outlier.csv',
+                                 index_col='timestamp', parse_dates=True)
+    data_table = df_abs.groupby(['window_len', 'model']).mean().sort_index(ascending=[True, False])
+    data_table_outlier = df_abs_outlier.groupby(['window_len', 'model']).mean().sort_index(ascending=[True, False])
 
     print(data_table)
 
-    save = False
+    save = True
     moving_window = 50
     if save is True:
         #Regular data
-        plot_moments_bulla(df, np.abs(logrets),
+        dir = ''
+        plot_moments_bulla(df_abs, np.abs(logrets),
                            moving_window=moving_window, outlier_corrected=False,
-                           savefig='moments_bulla_abs.png')
-        plot_moments_regular(df, np.abs(logrets), moving_window=moving_window, savefig='moments_regular_abs.png')
+                           savefig=dir+'moments_bulla_abs.png')
+        plot_moments_regular(df, logrets, moving_window=moving_window, savefig=dir+'moments_regular.png')
 
-        plot_rolling_parameters(df, model='jump', savefig='2-state JUMP HMM rolling params.png')
-        plot_rolling_parameters(df, model='mle', savefig='2-state MLE HMM rolling params.png')
+        plot_rolling_parameters(df, model='jump', savefig=dir+'2-state JUMP HMM rolling params.png')
+        plot_rolling_parameters(df_mle, model='mle', savefig=dir+'2-state MLE HMM rolling params.png')
 
         #Outlier corrected
-        plot_moments_bulla(df_outlier, np.abs(logrets_outlier),
+        plot_moments_bulla(df_abs_outlier, np.abs(logrets_outlier),
                            moving_window=moving_window, outlier_corrected=False,
-                           savefig='moments_bulla_abs_outlier.png')
+                           savefig=dir+'moments_bulla_abs_outlier.png')
     else:
         # Regular data
-        plot_moments_bulla(df, np.abs(logrets), moving_window=moving_window, outlier_corrected=False, savefig=None)
-        plot_moments_bulla(df_outlier, np.abs(logrets_outlier), moving_window=moving_window, outlier_corrected=False, savefig=None)
-
+        plot_moments_bulla(df_abs, np.abs(logrets), moving_window=moving_window, outlier_corrected=False, savefig=None)
         plot_moments_regular(df, logrets, moving_window=moving_window, outlier_corrected=False, savefig=None)
 
         plot_rolling_parameters(df, model='jump', savefig=None)
-        plot_rolling_parameters(df, model='mle', savefig=None)
+        plot_rolling_parameters(df_mle, model='mle', savefig=None)
 
         # Outlier corrected
-        plot_moments_bulla(df_outlier, logrets_outlier, moving_window=moving_window, outlier_corrected=False, savefig=None)
-        plot_moments_regular(df_outlier, logrets_outlier, moving_window=moving_window, savefig=None)
+        plot_moments_bulla(df_abs_outlier, np.abs(logrets_outlier), moving_window=moving_window, outlier_corrected=False, savefig=None)
+
+
+        #plot_moments_regular(df_outlier, logrets_outlier, moving_window=moving_window, savefig=None)
 
         # Not used plots
         #plot_acf_3D(df, logrets, savefig=None)

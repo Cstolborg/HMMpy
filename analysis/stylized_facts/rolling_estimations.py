@@ -1,6 +1,9 @@
 import copy
 
-import pandas as pd; pd.set_option('display.max_columns', 10); pd.set_option('display.width', 320)
+import pandas as pd;
+from sklearn.preprocessing import StandardScaler
+
+pd.set_option('display.max_columns', 10); pd.set_option('display.width', 320)
 from scipy import stats
 import numpy as np
 import matplotlib.pyplot as plt
@@ -143,8 +146,12 @@ if __name__ == '__main__':
 
     #logret = logret[13210:15000]  # Reduce sample size to speed up training
 
-    df = train_rolling_window(logret, mle, jump, window_lens=[1700], n_lags=100, get_acf=True,
-                              absolute_moments=False, outlier_corrected=False, n_sims=5000)
+    scaler = StandardScaler()
+    logret_scaled = scaler.fit_transform(np.array(logret).reshape(-1,1)).reshape(1,-1)[0]
+    logret_scaled = pd.Series(logret_scaled)
+
+    df = train_rolling_window(logret_scaled, mle, jump, window_lens=[1700], n_lags=100, get_acf=True,
+                              absolute_moments=True, outlier_corrected=False, n_sims=5000)
 
     # Group data first by window len and the by each mode. Returns mean value of each remaining parameter
     data_table = df.groupby(['window_len', 'model']).mean().sort_index(ascending=[True, False])
@@ -154,6 +161,6 @@ if __name__ == '__main__':
     save = True
     if save == True:
         path = '../../analysis/stylized_facts/output_data/'
-        df.to_csv(path + 'moments.csv', index=False)
+        df.to_csv(path + 'moments_scaled_abs.csv', index=False)
 
 

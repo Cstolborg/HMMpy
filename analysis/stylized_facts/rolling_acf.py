@@ -102,13 +102,13 @@ def plot_acf(simulations, logret, n_lags=500, savefig=None):
     fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(15, 7), sharex=True)
 
     # ACF of data and models
-    ax.bar(lags, acf_logret, color='black', alpha=0.4)
+    ax.bar(lags, acf_logret, color='black', alpha=0.4, label='$|r_t|$')
     ax.plot(lags, simulations['mle_acf_abs'], label="mle")
     ax.plot(lags, simulations['jump_acf_abs'], label="jump")
 
     ax.axhline(acf_significance, linestyle='dashed', color='black')
     ax.set_xlabel('Lag')
-    ax.set_ylabel(r"ACF($ |r_t|$)")
+    ax.set_ylabel(r"ACF")
     ax.set_xlim(left=0, right=max(lags)+1)
     ax.set_ylim(top=0.4, bottom=0)
 
@@ -135,20 +135,20 @@ def plot_acf_outliers(simulations, simulations_outliers, logret, logret_outliers
 
     # Full data
     ax[0].set_title('Full sample')
-    ax[0].bar(lags, acf_logret, color='black', alpha=0.4)
+    ax[0].bar(lags, acf_logret, color='black', alpha=0.4, label='$|r_t|$')
     ax[0].plot(lags, simulations['mle_acf_abs'].ravel(), label="mle")
     ax[0].plot(lags, simulations['jump_acf_abs'].ravel(), label="jump")
 
     # Outlier-corrected
     ax[1].set_title(r'Outliers limited to $\bar r_t \pm 4\sigma$')
-    ax[1].bar(lags, acf_logret_outliers, color='black', alpha=0.4)
+    ax[1].bar(lags, acf_logret_outliers, color='black', alpha=0.4, label='$|r_t|$')
     ax[1].plot(lags, simulations_outliers['mle_acf_abs'].ravel(), label="mle")
     ax[1].plot(lags, simulations_outliers['jump_acf_abs'].ravel(), label="jump")
     ax[1].set_xlabel('Lag')
 
     for i in range(len(ax)):
         ax[i].axhline(acf_significance, linestyle='dashed', color='black')
-        ax[i].set_ylabel(r"ACF($ |r_t|$)")
+        ax[i].set_ylabel(r"ACF")
         ax[i].set_xlim(left=0, right=max(lags)+1)
         ax[i].set_ylim(top=0.4, bottom=0)
 
@@ -201,12 +201,13 @@ def plot_acf_data(simulations, logret,
 
     # Outlier-corrected
     ax[1].set_title(r'Subsamples of 1700 observations')
-    ax[1].bar(lags, acf_logret_subs, color='black', alpha=0.4)
+    ax[1].bar(lags, acf_logret_subs, color='black', alpha=0.4, label='$|r_t|$')
     ax[1].set_xlabel('Lag')
+    ax[1].legend(fontsize=15)
 
     for i in range(len(ax)):
         ax[i].axhline(acf_significance, linestyle='dashed', color='black')
-        ax[i].set_ylabel(r"ACF($ |r_t|$)")
+        ax[i].set_ylabel(r"ACF")
         ax[i].set_xlim(left=0, right=max(lags)+1)
         ax[i].set_ylim(top=0.4, bottom=0)
 
@@ -231,18 +232,20 @@ def plot_acf_sign(simulations, logret,
     fig, ax = plt.subplots(nrows=2, ncols=1, figsize=(15, 7), sharex=True)
 
     # ACF r
-    ax[0].bar(lags, acf_logret, color='black', alpha=0.4)
+    ax[0].bar(lags, acf_logret, color='black', alpha=0.4, label='$r_t$')
     ax[0].plot(lags, simulations['mle_acf'][:n_lags], label="mle")
     ax[0].plot(lags, simulations['jump_acf'][:n_lags], label="jump")
-    ax[0].set_ylabel(r'ACF($r_t$)')
+    ax[0].set_ylabel(r'ACF')
+    ax[0].legend(fontsize=15, loc='lower right')
 
 
     # ACF sign(r)
-    ax[1].bar(lags, acf_sign_logret, color='black', alpha=0.4)
+    ax[1].bar(lags, acf_sign_logret, color='black', alpha=0.4, label='$sign(r_t)$')
     ax[1].plot(lags, simulations['mle_acf_sign'][:n_lags], label="mle")
     ax[1].plot(lags, simulations['jump_acf_sign'][:n_lags], label="jump")
-    ax[1].set_ylabel(r'ACF($sign(r_t)$)')
+    ax[1].set_ylabel(r'ACF')
     ax[1].set_xlabel('Lag')
+    ax[1].legend(fontsize=15, loc='upper right')
 
     for i in range(len(ax)):
         ax[i].axhline(acf_significance_pos, linestyle='dashed', color='black')
