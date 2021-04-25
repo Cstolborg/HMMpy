@@ -1,5 +1,8 @@
 \section{Stylized facts of financial returns}
 \label{section: Data}
+
+\textbf{Generelt skal den her sektion genovervejes kraftigt - 1. om den overhovedet skal med og 2. hvis den skal, så skal den cuttes kraftigt ned i sideantal og cleanes meget op - bl.a. ala nogle af de kommentarer der er sat med fed ved nogle af outputsne. Derudover, hvis den skal med skal den enten modiferes så den passer bedre ind der hvor den er nu eller flyttes længere ned i opgaven.}
+
 In this chapter, the data used to uncover the economic regimes are introduced. The primary index that will be used to estimate the parameters of the HMM is the S\&P 500 as this is one of the most renowned and liquid stock indices containing some of the largest blue chip companies in the US, and its data dates back long enough to be sufficient for training unsupervised machine learning models. Initially, the choices and associated consequences related to time horizon and optimal observation frequencies are discussed. Secondly, once the data of the S\&P 500 index has been introduced and reviewed its distributional and temporal properties are explored in section \ref{subsection: distributional properties} and \ref{subsection: temporal properties}. The objective of the chapter is thus to provide an overview of the data that serves as potential usage for regime detection along with its statistical properties. The reader should note that an extensive analysis of the stylized facts associated with the empirical data as well as the estimated models will be conducted in section \ref{Section: Stylized facts}.  
 
 \subsection*{Time horizon and frequency of data}
@@ -18,7 +21,7 @@ The S\&P 500 is a stock index comprising 500 companies from the U.S. was founded
 \begin{figure}[H] 
     \centering
     \includegraphics[width=1\textwidth]{analysis/data_description/images/SP500_index.png}
-    \caption{Development S\&P 500 in which the y-axis has been log scaled.}
+    \caption [Development of the S\&P 500] {Development of the S\&P 500 in which the y-axis has been log scaled in which the y-axis has been log scaled.}
     \label{fig: SP500_index}
 \end{figure}
 
@@ -30,11 +33,11 @@ Furthermore, the choice of relying on the S\&P 500 index for estimation purposes
 \small
 \caption{Summary statistics for the daily S\&P 500 log-returns.}
 \centering
-\begin{tabular}{c c c c c c c c c} 
+\begin{tabular}{c c c c c c c c c c} 
 \hline\hline
-Observations & Mean & STD & Skewness & Excess Kurtosis & Min & Max & Annual Sharpe \\
+Observations\footnote{Time period going from 04/01/1960 to 12/02/2021} & Mean & STD & Skewness & Excess Kurtosis & Min & Max & Annual Sharpe & JB-stat \\
 \hline
-15,385 & 0.0003 & 0.0103 & -1.0353 & 23.8338 & -0.2290 & 0.1096 & 0.4350 \\
+15,385 & 0.0003 & 0.0103 & -1.0353 & 23.8338 & -0.2290 & 0.1096 & 0.4350 & 27,926 \\
 \hline
 \end{tabular}
 \label{tab:summary_stats_S&P500}
@@ -42,7 +45,9 @@ Observations & Mean & STD & Skewness & Excess Kurtosis & Min & Max & Annual Shar
  
 It is evident by table \ref{tab:summary_stats_S&P500} that the daily log returns of the S\&P 500 encompass average daily returns of 0.0003 combined with a daily standard deviation of 0.0103. Furthermore, the S\&P 500 index can be characterised as left-skewed, highly leptokurtic while containing a large range since the difference between the maximum and minimum observation is 0.3386. The surprisingly large range can primarily be attributed to the Black Monday event of 1987 in which the S\&P 500 was hit particularly hard with a daily return of -22.90\%. These conclusions leads to a Sharpe Ratio of 0.4350, which is somewhat low when compared to optimized portfolio and more diversified indices like the MSCI World (see appendix).
 
-\subsection{Distributional properties} An overview of the development for the S\&P 500 index have been plotted in figure \ref{fig: all_indices_index}, however, the timeline have been adjusted in order to include the 25 years of most recent development. Particularly, the development following the electronification of financial markets is of interest, since many actors, including private investors, gained access to the financial markets due to the advancement of technology in the late 90s and early 00s. As such, the first observation of figure \ref{fig: all_indices_index} is from 04-01-1999 and the last observation is 12-02-2021. 
+\subsection{Distributional properties} An overview of the development for the S\&P 500 index have been plotted in figure \ref{fig: all_indices_index}, however, the timeline have been adjusted in order to include the 25 years of most recent development. Particularly, the development following the electronification of financial markets is of interest, since many actors, including private investors, gained access to the financial markets due to the advancement of technology in the late 90s and early 00s. As such, the first observation of figure \ref{fig: all_indices_index} is from 04-01-1999 and the last observation is 12-02-2021.
+
+\textbf{1. Det her er ikke en distributional property. 2. Samme graf er plottet længere oppe. Slet.}
 \begin{figure}[H] 
     \centering
     \includegraphics[width=1.0\textwidth]{analysis/data_description/images/adjusted SP500.png}
@@ -53,16 +58,18 @@ It is evident by table \ref{tab:summary_stats_S&P500} that the daily log returns
 From an overall return perspective it is evident that the S\&P 500 index has been subject to a variety of turbulent market periods including the dot-com bubble and most recently the GFC and COVID-19 recession. Interestingly, the S\&P 500 index only recovered from the dot-com bubble a few months prior to the financial crisis of 2008. In the period following the financial crisis the S\&P 500 has been performing increasingly well resulting in an upward trajectory until the recent COVID-19 correction, after which the index reached the present all time high. 
 
 \subsubsection{Log Returns}
+\textbf{Det her bude komme nærmest med det samme i det her kapitel. Der er endda en tabel flere sider længere oppe der baserer sig på det her nu lige nu.}
 As evident by figure \ref{fig: all_indices_index} the series is not stationary since the mean is changing over time, and when zooming in on specific periods, the development of the index appears to be characterised by strong trends. As such, a transformation is needed to obtain stationary time series. Since the S\&P 500 is characterised by growing means as well as trends, a logarithmic transformation will narrow the gap between the different levels of the index at different periods in time while taking the first difference will eliminate the growing mean values. This results in the log returns being derived as $r_t = log(P_t) - log(P_{t-1})$, where $P_t$ is the adjusted closing price of the index on day $t$ and $\log$ is the natural logarithm. For daily returns less than 10\%, log returns are a good approximation to the discrete return, as it is the first order Taylor approximation (Nystrup, 2014).
 
 Furthermore, in addition to showcasing the daily summary statistics for the log returns of the S\&P 500 index, table \ref{tab:summary_stats_S&P500} showcases the annual Sharpe ratio and the Jarque-Bera (JB) test statistic. As already noted the distribution is left skewed and strongly leptokurtic, however, this is not a surprising finding given the studies conducted by Granger \& Ding (1995b) as well as Cont (2001), in which several stylized facts of financial returns uncovered and explored substantially. The critical value for the Jarque–Bera test statistic at a 99.9\% significance level is 14.13, hence table \ref{tab:summary_stats_S&P500} clearly highlights that the Jarque–Bera test strongly rejects the hypothesis that the log returns of the S\&P 500 follow a Gaussian distribution.  
 
 In addition, it is evident from the plot of the kernel density function in figure \ref{fig: Kernel_distributions} that the log return series is characterised by excess kurtosis relative to a Gaussian distribution. As such, there is too much mass centered around the mean and in the tails compared to the Gaussian distribution. In particular, the fat left tail implies that using a Gaussian distribution to model returns will underestimate the frequency and magnitude of downside events (Cont, 2001). 
 
+\textbf{Bør komme som det første i distributional properties. Grafen skal laves om så den baserer sig på standardiserede log returns og farvekoderne skal følges dem fra sektion 5 og fremad.}
 \begin{figure}[H] 
     \centering
     \includegraphics[width=1\textwidth]{analysis/data_description/images/SP500_distribution.png}
-    \caption{Density plot of the S\&P 500 log returns. The gray bars highlights the empirical distribution, the green curve is the fitted Gaussian distribution and the blue curve is the fitted T-distribution with XXX degrees of freedom.}
+    \caption[Density plot of the S\&P 500 log returns] {Density plot of the S\&P 500 log returns. The gray bars highlights the empirical distribution, the green curve is the fitted Gaussian distribution and the blue curve is the fitted T-distribution with XXX degrees of freedom.}
     \label{fig: Kernel_distributions}
 \end{figure}
 
@@ -71,10 +78,11 @@ Following the properties that are evident from figure \ref{fig: Kernel_distribut
 Lastly, it is important to note the subtle distinction between outliers and extreme observations since extreme observations deviate considerably beyond 3 standard deviation from the mean, yet they may still hold meaningful information hence they should not be disregarded without further analysis.
 Since extreme events happen in live markets the observation that they create should, in some cases, be included in the model estimation in order for the model be as realistic as possible. The other side of the argument is that depending on the extremeness of the observations, they could potentially have severe impact on parameter estimation for the model, thereby serving as an argument for disregarding the extreme observations (Nystrup, 2014). To get a better overview of potential market events that could have caused extreme observations, a plot of the log returns for the S\&P 500 index have been constructed in figure \ref{fig: log_returns_all_indices}. The figure graphically illustrates some of the extreme observations, for instance the Black Monday event of October 1987 which saw the S\%P 500 index drop by 22.9\% in a single day. This observation lies more than 30 standard deviations away from the mean.
 
+\textbf{Slet den her graf og gør den til en del af samme graf hvori pris-indekset vises.}
 \begin{figure}[H] 
     \centering
     \includegraphics[width=1\textwidth]{analysis/data_description/images/SP500_log_returns.png}
-    \caption{Timeline of the log returns for the S\&P500 index}
+    \caption [Plot of the log returns for the S\&P500 index across time] {Plot of the log returns for the S\&P500 index across time.}
     \label{fig: log_returns_all_indices}
 \end{figure}
 
@@ -90,7 +98,7 @@ It is particularly evident from figure \ref{fig: log_returns_all_indices} that t
 \begin{figure}[H] 
     \centering
     \includegraphics[width=1\textwidth]{analysis/data_description/images/SP500_ACF.png}
-    \caption{ACF and absolute ACF for the S\&P500. The dashed black lines represent the 95\% significance level.}
+    \caption[ACF and absolute ACF for the S\&P500]{ACF and absolute ACF for the S\&P500. The dashed black lines represent the 95\% significance level.}
     \label{fig: ACF_all_log_returns}
 \end{figure}
 
