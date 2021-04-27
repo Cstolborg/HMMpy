@@ -72,7 +72,7 @@ The primary difference between the forward and backward probabilities is that in
 It is evident from equation \ref{eq: base backward} and \ref{eq: Inductive backward} that the backward probabilities are derived by summing over all of the states that the model might end up at, while taking into account the transition and emission probabilities as well as $\beta_{t+1}$. Conclusively, it should be noted that it is necessary to scale the probabilities to avoid numerical underflow, as described in MacDonald \& Zucchini (2009) when implementing the forward-backward algorithm. This will be covered in section \ref{subsection: log scalling underflow}. 
 
 \subsubsection{The Baum-Welch Algorithm}
-There are two popular methodologies to maximizing the likelihood which involves the direct numerical maximization and the Baum-Welch algorithm, which is a unique case of the more general expectation-maximization (EM) algorithm developed by Baum et al. (1970). Of the two, the -Welch algorithm is often preferred due to its larger robustness to initial starting values (Nystrup, 2014). The initial qualified estimate of the starting values underlying the model $\Theta(Q,B,\delta)$ are crucial since, despite the fact that the likelihood is guaranteed to increase or remain the same, for each iteration of the EM algorithm, the convergence towards the global maximum might be slow, or worse, it might get stuck at a local maximum. In order to circumvent this, the paper relies on several runs of the algorithm with different starting values, thereby making it possible to uncover any significant deviations in the maximum likelihood. 
+There are two popular methodologies to maximizing the likelihood which involves the direct numerical maximization and the Baum-Welch algorithm. The Baum-Welch algorithm is a unique case of the more general expectation-maximization (EM) algorithm developed by Baum et al. (1970). Of the two, the Baum-Welch algorithm is often preferred due to its larger robustness to initial starting values (Nystrup, 2014). The initial qualified estimate of the starting values underlying the model $\Theta(Q,B,\delta)$ are crucial since, despite the fact that the likelihood is guaranteed to increase or remain the same, for each iteration of the EM algorithm, the convergence towards the global maximum might be slow, or worse, it might get stuck at a local maximum. In order to circumvent this, the paper relies on several runs of the algorithm with different starting values, thereby making it possible to uncover any significant deviations in the maximum likelihood. 
 
 The EM algorithm maximizes the logarithm of the complete-data likelihood (CDLL), which includes the log likelihood of the observations $O$ and the hidden states $\S$. This can be written as
 
@@ -104,7 +104,7 @@ The idea underlying the methodology of the EM algorithm is to replace the quanti
 \end{equation}
 and
 \begin{align}
-    \hat{\xi_{ij}(t)} = P(s_{t-1}=i, s_t=j|o^{(T)}) &= \label{eq: xi} \\ 
+    \hat{\xi_{ij}(t)} = P(s_{t-1}=i, s_t=j|O) &= \label{eq: xi} \\ 
     \frac{\alpha_{t-1}(i) \cdot q_{ij} \cdot b_j(o_{t+1})\beta_{t+1}(j)}
             {\sum_{i=1}^K\sum_{j=1}^K\alpha_{t-1}(i) \cdot q_{ij} \cdot b_j(o_{t+1}\beta_{t+1}(j)}
     &= \frac{\alpha_{t-1}(i) \cdot q_{ij} \cdot b_j(o_{t+1})\beta_{t+1}(j)}{P(O|\Theta)}  \notag
