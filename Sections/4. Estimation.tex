@@ -2,6 +2,12 @@
 \label{section: estimation}
 
 \subsection{Maximum likelihood estimation}
+\textbf{Der er mange formler her der kan forsimples meget ned hvis de skrives som vektorer og matricer - eksempelvis likelihood funktionen \cref{eq: motive fb}} 
+
+\textbf{Der er en del formler der bygger på at udlede algoritmer og metoder og forklarer hvorfor algoritmerne er som de er. De skal slettes, da det ikke er relevant for vores studie, i.e. vi undersøger ikke hvordan man optimerer estimeringen af HMM med MLE metoden. Målet er at definere for læseren den metode vi bruger til at regne modellerne og ikke mere. Efterfølgende kan man evt. snakke om fordele og ulemper ved de valgte metoder. Lige nu er afsnittet uproportinelt langt iforhold til jump delen.}
+
+\textbf{Alle * som bruges til at gange elementer sammen med skal slettes. Enten skal der bruges $\cdot$ og ellers skal to elementer bare stå sammen, i.e $a\cdot b$ eller $ab$ er lige gode.}
+
 The traditional way of estimating the parameters making up the HMM is through a methodology referred to as maximum likelihood estimation. The method can be split three key problems that needs to be solved:
 
     \quad 1. Determine the likelihood of which the model generated a sequence of  observations $O$. 
@@ -161,6 +167,11 @@ Furthermore, the EM algorithm is circular since it initializes with a qualified 
  
 \subsubsection{Decoding: The Viterbi Algorithm}
 \label{subsection: Decoding}
+
+\textbf{Meget langt afsnit syntes jeg. Se eksmepelvis ved Jump modellen hvor en nærmest identisk algoritme defineres på ca. 1/3 af en side. Der er igen en del udledning af hvorfor Viterbi algoritmen er efficient i forhold til brute-force maximering, men igen syntes jeg ikke det er relevant at have med da det ikke er noget vi reelt set undersøger eller bruger i resten af opgaven. Derudover er der fejl i matematikken - se nedenstående kommentarer}
+
+\textbf{Hvorfor skal vi bruge så mangle variable btw? Brugen af både $\psi$ og $s_t$ virker ligegyldig da man reelt kunne skrive $\psi$ som sin statssekvens og dermed fjerne $\psi$ helt.}
+
 Inferring the most likely sequence of states, which is the third problem of mle procedure, is referred to as decoding. This is a crucial aspect as a particular observation sequence can produce a variety of different state sequences since several conditional distribution can produce the same observations. Furthermore, decoding becomes important since the parameters must be optimized not just for the most probable sequence of states but the sequence of states must also be viable. For instance if the model suggests a jump from state $i$ to state $j$ at time $t$ to $t+1$, but due to constraints, such as a transition probability matrix of 0\%, the suggested transition may not viable in reality, hence the model must select the second most probable state transition accordingly. 
 
 In addition, decoding is essentially the information that makes it possible to construct a trading / investment strategy based on a HMM, since an investor needs to know the states of the economy to allocate capital in an efficient manner. This means that a HMM, without a decoding procedure, becomes rather useless from an investment perspective. Decoding can be done either locally, by determining the most likely state at each time $t$ or globally by determining the most likely sequence of states (Zucchini \& MacDonald, 2009). The issue with local decoding is that it deduces the state sequence at each time instead of doing so across the entire time horizon. This can lead to suggested state sequences that are not viable, hence global decoding is preferred. As such, the following property can be defined.
@@ -175,6 +186,7 @@ the most likely sequence of states in an efficient manner.
 
 The best way to comprehend the Viterbi algorithm is to realize that at $t+1$ the algorithm has to figure out the state at time $t$ that maximizes the probability of making a transition to a given state $i$ while observing a specific observation at time $t+1$. Once this is done, the state from time $t$ is stored. Now the algorithm moves on to time $t+2$ and find the state that maximizes a move from time $t+1$ to $t+2$ while observing a specific observation at time $t+2$. Then the state at $t+1$ that maximizes this is stored and so forth. Once the algorithm terminates at $T$ it will contain a map of valid states that can be followed and interpreted as a sequence. In order to implement the outlined reasoning some additional variables are introduced.
 
+\textbf{Hvad er $\psi$? Definer hvad det er lig med.}
 \begin{equation}
     \upsilon_t(i) =  \max_{\S}Pr(\S|O, \Theta)
 \end{equation}
@@ -184,6 +196,8 @@ $$
 $$
 
 As such, $\upsilon_t(i)$ finds the path with the highest probability that accounts for the first $t$ observations and ends up at state $i$ at time $t$ and $\psi_t(i)$ serves as a storing variable that keeps track of optimal state at each time step $t$. Similar to the previously described algorithms, the Viterbi algorithm can be separated into a base, inductive and termination step.
+
+\textbf{Der er fejl i de her formler. $\psi_1(i)$ er ikke defineret som 0, og det er heller ike sådan vi regner det.}
 \begin{equation}
     \upsilon_1(i) = \delta_i*b_i(o_1)
     \label{eq: viterbi start 1}
@@ -207,6 +221,8 @@ Naturally, the best initial state is the one that maximizes the probability of o
 The first term in equation \ref{eq: inductive viterbi} is the state that maximized $\upsilon$ at the previous time step. In this case the state is set to $i$ but the algorithm scans over all the potential states that the model could have come from. After doing so the algorithm considers all the ways of getting from state  $i$ to $j$ which is the transition probability, which is then multiplied with the probability of observing $o_{t+1}$. Therefore, the max function of equation \ref{eq: inductive viterbi} is going to find the state from the previous time period that maximizes the probability of moving to the current state.  
 
 The termination step of the algorithm is presented in equation \ref{eq: viterbi termination 1} and \ref{eq: viterbi termination 2}
+
+\textbf{Jeg forstår ikke det her. Så den endelige stat er lig med indekspositionen af start-sandsynlighederne? Det er ikke sådan vi regner det her. Skal rettes.}
 \begin{equation}
     \upsilon^* = \max_{i}\Big[\delta_T(i)\Big],
     \quad i \in\K
@@ -231,6 +247,8 @@ algorithm. The only difference is the substitution of the sum with a maximizatio
 The theory above have outlined the mathematics comprising HMMs, however, as briefly mentioned, a crucial aspect regarding their implementation is dealing with the underflow and/or overflow produced by the algorithms. The issues regarding underflow arises when $T$ gets large since the algorithms will begin multiplying together smaller and smaller numbers. Overflow is the inverse to underflow and it occurs when continuously larger numbers are multiplied together. As such, underflow and overflow proposes a challenge to the implementation of HMMs as Python or other libraries will generate an error or simply interrupt the execution of the code. The challenges associated with underflow and overflow is an area that is widely overlooked in the literature, despite the fact that it is of crucial importance in terms of utilizing HMMs on a full-scale operational level. As such, this section aims at proposing a solution towards the challenges associated with underflow and overflow.
 
 \subsubsection{Scaling the likelihood computation}
+\textbf{Skriv om således den nødvendige matematik per. algoritme kommer lige før dennes pseudo-kode.}
+
 For discrete state-dependent distributions, the element of the forward probabilities $\alpha_t(i)$, as seen in equation \ref{eq: inductive step forward prob}, becomes progressively smaller as $t$ increases because the forward probabilities are made up of products of probabilities, hence they will converge exponentially towards zero. The remedy needed to circumvent this issue is the same for overflow and underflow, hence the authors confine their attention to underflow.
 
 A circumvention of the challenges related to underflow can be implemented by computing the logarithm of $L_T$ in equation \ref{eq: motive fb} which involves using a strategy of scaling the vector of forward and backward probabilities $\alpha_t(i)$ and $\beta_t(j)$. As such, a scaling of the vector of forward and backward probabilities can be conducted by log transforming the traditional formulas presented in section \ref{Section: Forward backward}. This methodology does not change the workings of the algorithms, however, it reduces the problems associated with underflow since the forward and backward probabilities no longer becomes excessively small when $t$ increases. Since the log-transformation will be rooted in the formulas presented in \ref{Section: Forward backward}, one can separate the transformations into a base, inductive and termination step.  
@@ -302,6 +320,8 @@ As such, it should be evident that by relying on the methodology introduced abov
 \subsubsection{Pseudo-code showcasing the implementation of log-scaling}
 In order to provide the reader with an intuitive overview and approach to repeat the procedures associated with scaling the likelihood computation and the associated parameters, this section will focus on providing pseudo-code. As such, the section will be initialized with a walk-through of the pseudo-code underlying the transformation of $\alpha_t(i)$, after which the transformations of the remaining parameters will follow. The reader should note that the provided pseudo-code is wrapped with Cython, which speeds up the computations with a factor 15-20x.
 
+\textbf{Der skal ikke stå $for all i \in \K$. Hvis man looper over stater hedder det "for $i=1,\ldots,K$".}
+
 \begin{algorithm}[H]
 
 \For{t = 1 all $i \in \K$}
@@ -334,6 +354,7 @@ The workings and mechanics of the log forward probabilities, derived from algori
 
 In addition to the log scaled forward and backward probabilities, a crucial element is the log scaled posterior probabilities. A pseudo-code overview of the implementation is provided in algorithm \ref{algo: log_scaled_posterior}.
 
+
 \begin{algorithm}[H]
 \For{all $i \in \K$}
 {$\log \upsilon_1(i) = \log \delta_i + \log b_i(o_1)$}\;
@@ -350,6 +371,8 @@ In addition to the log scaled forward and backward probabilities, a crucial elem
 
 Lastly, in order to fully implement and capitalize on the log scaling, it is necessary to adjust the re-estimation procedure presented in the EM algorithm through equation \ref{eq: gamma} and \ref{eq: xi}. As such, algorithm \ref{algo: log_scaled_gamma} and \ref{algo: log_scaled_xi} will provide an overview of the log scaling for $\gamma_i(t)$ and $\xi_{ij}(t)$, since these are instrumental for the workings of the Baum-Welch algorithm underlying the mle procedure.
 
+\textbf{Vi skal ikke bruge funktioner i det her, udelukkende loops. Hvis man endelig skulle bruge en funktion så skal det være den LaTex tilbyder med dertilhørende formattering - dette er for python-agtigt.}
+
 \begin{algorithm}[H]
 def\_compute $\gamma_i(t)$(self, $\log\alpha_t(i), \log\beta_t(i)$): \;
 \Indp 
@@ -363,6 +386,9 @@ return $\log\gamma_i(t)$
 \end{algorithm}
 
 \newpage
+
+\textbf{Den her skal jeg nok tage når jeg lige får tid.}
+
 \begin{algorithm}[H]
 def\_compute $\xi$(self, $\log\alpha_t(i)$, $\log\beta_t(i)$): \;
 \Indp 
@@ -446,7 +472,7 @@ Item 2.b in \cref{algo:jump_fit} is minimized recursively in a similar way to th
 \end{align}
 Then, the least costly state sequence is found by
 \begin{align}
-    s_1 &= \argmin_j \upsilon_t(j) \\
+    s_1 &= \argmin_j \upsilon_1(j) \\
     s_t &= \argmin_j[\upsilon_t(j) + \lambda\mathbf{1}_{\{ s_{t-1 \ne j} \}}], \quad t=2,\ldots,T
     \label{eq:jump_state_seq_path}
 \end{align}

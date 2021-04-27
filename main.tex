@@ -6,7 +6,8 @@
 \usepackage{alltt}
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
-
+\graphicspath{ {figures/} }
+\usepackage{array}
 % Math
 \usepackage{amsmath}
 \usepackage{amssymb}
@@ -14,6 +15,12 @@
 \DeclareMathOperator{\argmax}{argmax}
 \renewcommand{\S}{\mathcal{S}}
 \DeclareMathOperator{\K}{\mathcal{K}}
+
+\newcommand{\jump}{$\mathcal{M}^{jump}$ }
+\newcommand{\mle}{$\mathcal{M}^{mle}$ }
+
+%\DeclareMathOperator{\jump}{\mathcal{M}^{jump}}
+%\DeclareMathOperator{\mle}{\mathcal{M}^{mle}}
 
 % Algorithms
 \usepackage[ruled]{algorithm2e}
@@ -113,6 +120,14 @@
 % If multiple images are to be added, a folder (path) with all the images can be added here 
 \graphicspath{ {Images/} }
 
+% List of Abbreviation
+\usepackage{enumitem}
+\newlist{abbrv}{itemize}{1}
+\setlist[abbrv,1]{label=,labelwidth=1in,align=parleft,itemsep=0.1\baselineskip,leftmargin=!}
+
+\usepackage[acronym]{glossaries}
+\usepackage{acro}
+
 \overfullrule=0.1cm   %LateX shows where the overfull hbox problem is
 
 %SIDEHOVED, SIDEFOD
@@ -126,7 +141,7 @@
 
 
 
-
+\usepackage[nottoc,numbib]{tocbibind}
 \begin{document}
 
 % Title page
@@ -134,11 +149,18 @@
 \thispagestyle{empty}
 \newpage
 
+
 % Table of contents
 \renewcommand{\contentsname}{Table of contents}
 \tableofcontents
 \thispagestyle{empty}
-
+\newpage
+\pagenumbering{roman}  % Roman page numbers for ToC, list of figures etc.
+\listoffigures
+\listoftables
+\cleardoublepage
+\addcontentsline{toc}{section}{List of Abbreviations} %Denne kommando tilføjer LoA til ToC (Der er en stjerne sat i "Acronym List.tex" som gør at den ikke nummereres og derfor ikke tages med ToC oprindeligt)
+\input{Sections/Acronym List} % Loader LoA
 \newpage
 \pagenumbering{arabic}% Arabic page numbers (and reset to 1)
 
