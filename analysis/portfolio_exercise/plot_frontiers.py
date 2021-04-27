@@ -68,7 +68,6 @@ def plot_sharpe_frontier(df_metrics, ew_metrics, savefig=None):
 
     plt.show()
 
-
 def plot_sharpe_calmar(df_metrics, ew_metrics, savefig=None):
     # Plotting
     plt.rcParams.update({'font.size': 25})
@@ -83,6 +82,27 @@ def plot_sharpe_calmar(df_metrics, ew_metrics, savefig=None):
 
     ax.set_ylabel('Sharpe ratio')
     ax.set_xlabel('Calmar ratio')
+    plt.legend(fontsize=15)
+    plt.tight_layout()
+
+    if not savefig == None:
+        plt.savefig('./images/' + savefig)
+    plt.show()
+
+def plot_sharpe_mdd(df_metrics, ew_metrics, savefig=None):
+    # Plotting
+    plt.rcParams.update({'font.size': 25})
+    fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(15, 12))
+
+    # Plot ew portfolio
+    ax.scatter(ew_metrics['max_drawdown'] ,ew_metrics['sharpe'], label='1/n', color='black', ls='--')
+
+    for type, df_groupby in df_metrics.groupby(['short_cons', 'D_max']):
+        label = f'${type[0]}_{{D_{{max}}={type[1]}}}$' if type[1] < 1. else f'${type[0]}$'
+        ax.plot(df_groupby['max_drawdown'], df_groupby['sharpe'], label=label)
+
+    ax.set_ylabel('Sharpe ratio')
+    ax.set_xlabel('Maximum drawdown')
     plt.legend(fontsize=15)
     plt.tight_layout()
 
@@ -132,7 +152,7 @@ if __name__ == "__main__":
 
     mpc = Backtester()
 
-    df_frontiers = pd.read_csv(path + 'frontiers_llo.csv')
+    df_frontiers = pd.read_csv(path + 'frontiers_lo.csv')
     df_frontiers['timestamp'] = pd.to_datetime(df_frontiers['timestamp'])
     metrics = mpc.mulitple_port_metrics(df_port_val=df_frontiers)
     print(metrics)
@@ -140,7 +160,7 @@ if __name__ == "__main__":
     # Compute equal-weighted metrics
     equal_weigthed = Backtester()
     equal_weigthed.backtest_equal_weighted(data.rets, rebal_freq='M')
-    n_obs = len(df_frontiers[(df_frontiers['short_cons']== 'LLO') & (df_frontiers['D_max'] == 0.1)])
+    n_obs = len(df_frontiers[(df_frontiers['short_cons']== 'LO') & (df_frontiers['D_max'] == 0.1)])
     ew_port_val = equal_weigthed.port_val[-n_obs:]
     ew_port_val = ew_port_val / ew_port_val[0] * 1000
     ew_metrics = equal_weigthed.single_port_metric(data.prices,
@@ -149,15 +169,17 @@ if __name__ == "__main__":
     save = True
     if save == True:
         path = f'{model_str}/'
-        suffix = '_llo.png'
+        suffix = '_lo.png'
         plot_frontier(metrics, ew_metrics, savefig=path+'frontier'+suffix)
         plot_sharpe_frontier(metrics, ew_metrics, savefig=path+'sharpe_frontier'+suffix)
         plot_sharpe_calmar(metrics, ew_metrics, savefig=path+'sharpe_calmar'+suffix)
+        plot_sharpe_mdd(metrics, ew_metrics, savefig=path+'sharpe_mdd'+suffix)
         plot_port_val(df_frontiers, ew_port_val, savefig=path+'port_vals'+suffix)
     else:
         plot_frontier(metrics, ew_metrics, savefig=None)
         plot_sharpe_frontier(metrics, ew_metrics, savefig=None)
         plot_sharpe_calmar(metrics, ew_metrics, savefig=None)
+        plot_sharpe_mdd(metrics, ew_metrics, savefig=None)
         plot_port_val(df_frontiers, ew_port_val, savefig=None)
 
     #equal_weigthed.backtest_equal_weighted(data.rets, rebal_freq='M')
