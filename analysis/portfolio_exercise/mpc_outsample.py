@@ -14,35 +14,30 @@ warnings.filterwarnings('ignore')
 pd.set_option('display.max_columns', 10); pd.set_option('display.width', 320)
 
 figsize = (15 ,7)
-def plot_port_weights(df, weights, start=None, constraints=None, show=True, savefig=None):
-    # Prepare data
-    df.dropna(inplace=True)
-    df = df.iloc[-len(weights):]
-    if not start == None:
-        df = df.loc[start:]
-        #weights = weights[-len(df):]
-
-    df = df / df.iloc[0] * 100
+def plot_port_weights(weights, constraints=None, savefig=None):
+    # Divide weights into positive and negative values
+    weights_neg, weights_pos = weights.clip(upper=0.), weights.clip(lower=0.)
 
     # Plotting
     plt.rcParams.update({'font.size': 25})
     fig, ax = plt.subplots(nrows = 1, ncols=1, figsize=figsize)
 
-    ax.stackplot(df.index, weights.T, labels=df.columns)
+    ax.stackplot(weights_pos.index, weights_pos.T, labels=weights.columns)
+    ax.stackplot(weights_neg.index, weights_neg.T)
 
     if constraints in ['long_only', 'LO']:
         ax.set_ylim(top=1.)
 
-    ax.set_xlim(df.index[0], df.index[-1])
+    ax.set_xlim(weights.index[0], weights.index[-1])
     ax.legend(loc='lower center', bbox_to_anchor=(0.5, -0.3), ncol=weights.shape[1]//2, fontsize=12)
     ax.set_ylabel('Asset weight')
+    ax.tick_params('x', labelrotation=15)
     plt.tight_layout()
 
     fig.subplots_adjust(bottom=0.25)
     if not savefig == None:
         plt.savefig('./images/' + savefig)
     plt.show()
-plot_port_weights(data.prices, mpc.weights, start=None, constraints='LLO')
 
 def plot_performance(df, port_val, weights, start=None, show=True, savefig=None):
     # Prepare data
@@ -109,7 +104,10 @@ if __name__ == "__main__":
                                rho2=holding_costs, gamma_0=5,
                                max_drawdown=0.1)
 
+    weights = pd.DataFrame(mpc.weights, columns=data.prices.columns, index=data.prices.index[-len(mpc.weights):])
+
     equal_weigthed.backtest_equal_weighted(data.rets, rebal_freq='M')
+
 
     metrics = mpc.single_port_metric(data.prices, mpc.port_val, compare_assets=True)
     print(metrics)
@@ -120,8 +118,11 @@ if __name__ == "__main__":
     save = True
     if save is True:
         path = f'{model_str}/'
-        suffix = '_ls.png'
-        plot_port_weights(data.prices, mpc.weights, start=None, constraints='LLO',
+        suffix = '_lo.png'
+        weights = pd.DataFrame(mpc.weights, columns=data.prices.columns, index=data.prices.index[-len(mpc.weights):])
+        plot_port_weights(weights, constraints='LO',
                           savefig=path+'weights'+suffix)
     else:
         plot_port_weights(data.prices, mpc.weights, start=None, constraints='LO')
+
+
