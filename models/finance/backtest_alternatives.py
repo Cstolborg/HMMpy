@@ -9,6 +9,7 @@ from models.finance.mpc_model import MPC
 from models.finance.backtest import FinanceHMM, Backtester
 from utils.data_prep import load_returns, load_logreturns, load_prices, DataPrep
 
+
 warnings.filterwarnings('ignore')
 pd.set_option('display.max_columns', 10); pd.set_option('display.width', 320)
 np.seterr(divide='ignore')
@@ -85,10 +86,12 @@ class BacktestAlternatives(Backtester):
 
 if __name__ == "__main__":
     data = DataPrep(out_of_sample=True)
-    X = data.logrets["S&P 500 "]
+    data.rets = data.rets.loc['2007-09-20':]
 
-    backtest_equal_weighted = BacktestAlternatives()
+    backtest = BacktestAlternatives()
 
-    backtest_equal_weighted.backtest_equal_weighted(data.rets, rebal_freq='M')
-    metrics = backtest_equal_weighted.performance_metrics(data.prices, backtest_equal_weighted.port_val, compare_assets=True)
+    backtest.backtest_equal_weighted(data.rets, rebal_freq='M')
+    metrics = backtest.single_port_metric(data.prices, backtest.port_val, compare_assets=True)
     print(metrics)
+
+    backtest.plot_port_val(data.prices, backtest.port_val, start=None, savefig=None)

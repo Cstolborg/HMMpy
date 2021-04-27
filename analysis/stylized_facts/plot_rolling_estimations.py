@@ -293,7 +293,7 @@ if __name__ == '__main__':
 
     print(data_table)
 
-    save = True
+    save = False
     moving_window = 50
     if save is True:
         #Regular data
@@ -326,3 +326,6 @@ if __name__ == '__main__':
 
         # Not used plots
         #plot_acf_3D(df, logrets, savefig=None)
+
+        plot_rolling_parameters(df_abs_outlier, model='jump', savefig=None)
+        plot_rolling_parameters(df_abs_outlier, model='mle', savefig=None)

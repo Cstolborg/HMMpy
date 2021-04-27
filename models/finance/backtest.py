@@ -18,6 +18,7 @@ import warnings
 import numpy as np
 import pandas as pd
 import tqdm
+from matplotlib import pyplot as plt
 
 from models.hidden_markov.hmm_gaussian_em import EMHiddenMarkov
 from models.finance.mpc_model import MPC
@@ -287,37 +288,9 @@ class Backtester:
 
         return self.preds, self.cov
 
-    def gridsearch_mpc(self, grid, df_rets, preds, covariances, n_preds=15, port_val=1000,
-                     start_weights=None, max_drawdown=0.4, max_leverage=2.0, gamma_0=5, kappa1=0.008,
-                     rho2=0.0005, max_holding=0.4, short_cons="LO", eps=1e-6):
-        results = pd.DataFrame()
-        for max_holding in grid['max_holding']:
-            for trans_costs in grid['trans_costs']:
-                for holding_costs in grid['holding_costs']:
-                    print(f"""Computing grid -- max_holding {max_holding} -- trans_costs {trans_costs} holding_costs {holding_costs}""")
-                    try:
-                        annual_ret, annual_std, annual_turnover = \
-                            self.backtest_mpc(df_rets, preds, covariances, n_preds=n_preds, port_val=port_val,
-                         start_weights=start_weights, max_drawdown=max_drawdown, max_leverage=max_leverage,
-                        gamma_0=gamma_0, kappa1=trans_costs, rho2=holding_costs, max_holding=max_holding,
-                                          short_cons=short_cons, eps=eps)
-
-                        results_dict = {'max_holding': max_holding,
-                                        'trans_costs': trans_costs,
-                                        'holding_costs': holding_costs,
-                                        'return': annual_ret,
-                                        'std': annual_std,
-                                        'turnover': annual_turnover}
-                        print(results_dict)
-                        results = results.append(results_dict, ignore_index=True)
-                    except:
-                        print('No convergence')
-                        continue
-        self.gridsearch_df = results
-        return results
-
     def backtest_mpc(self, df_rets, preds, covariances, n_preds=15, port_val=1000,
-                     start_weights=None, max_drawdown=0.4, max_leverage=2.0, gamma_0=5, kappa1=0.008,
+                     start_weights=None, max_drawdown=0.4, max_holding_rf=1.,
+                     max_leverage=2.0, gamma_0=5, kappa1=0.008,
                      rho2=0.0005, max_holding=0.4, short_cons="LLO", eps=1e-6):
         """
        Wrapper for backtesting MPC models on given data and predictions.
@@ -359,8 +332,8 @@ class Backtester:
         # Instantiate MPC object
         mpc_solver = MPC(rets=preds[0], covariances=covariances[0], prev_port_vals=self.port_val,
                          start_weights=self.weights[0], max_drawdown=max_drawdown, gamma_0=gamma_0,
-                         kappa1=kappa1, rho2=rho2, max_holding=max_holding, max_leverage=max_leverage,
-                         short_cons=short_cons, eps=eps)
+                         kappa1=kappa1, rho2=rho2, max_holding=max_holding, max_holding_rf=max_holding_rf
+                         ,max_leverage=max_leverage, short_cons=short_cons, eps=eps)
 
         for t in tqdm.trange(preds.shape[0]):
             # Update MPC object
@@ -405,6 +378,133 @@ class Backtester:
         annual_std = self.port_ret.std(ddof=1) * np.sqrt(252)
 
         return annual_ret, annual_std, self.annual_turnover
+
+    def gridsearch_mpc(self, grid, df_rets, preds, covariances, n_preds=15, port_val=1000,
+                     start_weights=None, max_drawdown=0.4, max_leverage=2.0, gamma_0=5, kappa1=0.008,
+                     rho2=0.0005, max_holding=0.4, short_cons="LO", eps=1e-6):
+        results = pd.DataFrame()
+        for max_holding in grid['max_holding']:
+            for trans_costs in grid['trans_costs']:
+                for holding_costs in grid['holding_costs']:
+                    print(f"""Computing grid -- max_holding {max_holding} -- trans_costs {trans_costs} holding_costs {holding_costs}""")
+                    try:
+                        annual_ret, annual_std, annual_turnover = \
+                            self.backtest_mpc(df_rets, preds, covariances, n_preds=n_preds, port_val=port_val,
+                         start_weights=start_weights, max_drawdown=max_drawdown, max_leverage=max_leverage,
+                        gamma_0=gamma_0, kappa1=trans_costs, rho2=holding_costs, max_holding=max_holding,
+                                          short_cons=short_cons, eps=eps)
+
+                        results_dict = {'max_holding': max_holding,
+                                        'trans_costs': trans_costs,
+                                        'holding_costs': holding_costs,
+                                        'return': annual_ret,
+                                        'std': annual_std,
+                                        'turnover': annual_turnover}
+                        print(results_dict)
+                        results = results.append(results_dict, ignore_index=True)
+                    except:
+                        print('No convergence')
+                        continue
+        self.gridsearch_df = results
+        return results
+
+    def mpc_gammas_shortcons(self, gammas, constraints,
+                             data, preds, covariances, n_preds=15, port_val=1000,
+                             start_weights=None, max_holding_rf=1.,
+                             max_leverage=2.0, trans_costs=0.001,
+                             holding_costs=0.0000, max_holding=0.2, eps=1e-6):
+
+        df = pd.DataFrame()
+
+
+        for constr in constraints:
+            print(f'Backtesting for params {constr}')
+            results = {f'gamma_{i}': [] for i in gammas}
+            short_con = constr[0]
+            max_drawdown = constr[1]
+            for gamma in gammas:
+                self.backtest_mpc(data.rets, preds, covariances, n_preds=n_preds, port_val=port_val,
+                                  start_weights=start_weights, max_drawdown=max_drawdown, max_leverage=max_leverage,
+                                  gamma_0=gamma, kappa1=trans_costs, rho2=holding_costs, max_holding=max_holding,
+                                  short_cons=short_con, eps=eps)
+
+                results[f'gamma_{gamma}'] = self.port_val
+
+            df_temp = pd.DataFrame(results)
+            df_temp['short_cons'] = short_con
+            df_temp['D_max'] = max_drawdown
+            df_temp['timestamp'] = data.rets.index[-len(df_temp):]
+            df_temp['T-bills rf'] = data.prices['T-bills rf'].iloc[-len(df_temp):].values
+            df = df.append(df_temp)
+
+        # self.annual_turnover, self.annual_trans_cost, self.port_val
+        self.port_val_df = df
+        return df
+
+
+    def backtest_equal_weighted(self, df_rets, rebal_freq='M', port_val=1000, start_weights=None):
+        """
+       Backtest an equally weighted portfolio, with specified rebalancing frequency.
+
+       Parameters
+       ----------
+       df_rets : DataFrame of shape (n_samples, n_assets)
+           Historical returns for each asset i. Cash must be at the last column position.
+       rebal_freq : int, default=20
+            Rebalance frequency. Default is 20, i.e monthly.
+       port_val : float, default=1000
+           Starting portfolio value.
+       start_weights : ndarray of shape (n_assets,)
+           Current (known) portfolio weights at the start of backtest. Default is 100% allocation to cash.
+           Cash must be the last column in df_rets.
+       """
+        self.port_val = np.array([0, port_val])
+        self.n_assets = df_rets.shape[1]
+        equal_weights = np.array([1 / self.n_assets] * self.n_assets)  # Vector of shape (n_assets,)
+
+        if start_weights == None:  # Standard init with 100% allocated to cash
+            start_weights = np.zeros(self.n_assets)
+            start_weights[-1] = 1.
+        else:
+            start_weights = start_weights
+
+        weights = start_weights
+        trade_cost, turnover = [], []
+
+        # Group data into months - average sample size is 20
+        # Then for each month loop over the daily returns and update weights
+        # The problem is recursive and thus requires looping done this way
+        for month_dt, df_group in tqdm.tqdm(df_rets.groupby(pd.Grouper(freq=rebal_freq))):
+            # Compute transaction costs for each month. Subtracted from gross ret the first of the month
+            delta_weights = equal_weights - weights
+            trans_cost = self.transaction_costs(delta_weights)
+            weights = equal_weights  # Reset weights
+            for day in range(len(df_group)):
+                # Calculate gross returns for portfolio and append it
+                if day == 0:
+                    gross_ret = (1 + df_group.iloc[day]) * (1-trans_cost)
+                else:
+                    gross_ret = 1 + df_group.iloc[day]
+
+                new_port_val = weights @ gross_ret * self.port_val[-1]
+                self.port_val = np.append(self.port_val, new_port_val)
+
+                new_w = gross_ret * weights
+                new_w /= new_w.sum()  # Weights sum to 1
+                weights = new_w  # Update weights each iteration
+
+            trade_cost.append(trans_cost)
+            turnover.append(np.linalg.norm(delta_weights, ord=1) / 2)  # Half L1 norm
+
+        self.port_val = self.port_val[1:]  # Throw away first observation since it is artificially set to zero
+
+        # Annualized average trading ost
+        self.trans_cost = np.array(trade_cost)
+        self.annual_trans_cost = 12 / len(self.trans_cost) * self.trans_cost.sum()
+
+        # Compute average annualized portfolio turnover
+        self.monthly_turnover = np.array(turnover)
+        self.annual_turnover = 12 / len(self.monthly_turnover) * self.monthly_turnover.sum()
 
     def short_costs(self, weights, rf_return):
         """
@@ -458,7 +558,7 @@ class Backtester:
 
         return metrics
 
-    def performance_metrics(self, df_prices, port_val, compare_assets=False):
+    def single_port_metric(self, df_prices, port_val, compare_assets=False):
         """Compute performance metrics for a given portfolio/asset"""
         # Merge port_val with data
         df_prices = df_prices.iloc[-len(port_val):]
@@ -483,12 +583,38 @@ class Backtester:
         drawdown_dur = max_drawdown_end - max_drawdown_beg  # TODO not showing correct values
         calmar = excess_cagr / max_drawdown
 
-        if compare_assets == True:
-            ret = df_ret.drop('T-bills rf', axis=1)
+        metrics = {'excess_return': excess_cagr,
+                   'excess_std': excess_std,
+                   'sharpe': sharpe,
+                   'max_drawdown': max_drawdown,
+                   'max_drawdown_dur': drawdown_dur,
+                   'calmar_ratio': calmar}
+
+        return metrics
+
+    def mulitple_port_metrics(self, df_port_val):
+        """Compute performance metrics for a given portfolio/asset"""
+        # Merge port_val with data
+        """
+        df_prices = df_prices.iloc[-len(port_val):]
+        df_prices = df_prices[['T-bills rf']]  # Remove other assets
+        df_prices['port_val'] = port_val
+        df_prices.dropna(inplace=True)
+        df_ret = df_prices.pct_change().dropna()
+        """
+        df = pd.DataFrame()
+        for type, df_groupby in df_port_val.groupby(['short_cons', 'D_max']):
+            df_groupby['T-bills rf']
+            df_prices = df_groupby.drop(columns=['short_cons', 'D_max', 'timestamp'])
+            df_rets = df_prices.pct_change().dropna()
+
+            # Annual returns, std
+            n_years = len(df_rets) / 252
+            ret = df_rets.drop('T-bills rf', axis=1)
             cagr = ((1 + ret).prod(axis=0)) ** (1 / n_years) - 1
             std = ret.std(axis=0, ddof=1) * np.sqrt(252)
 
-            excess_ret = df_ret.subtract(df_ret['T-bills rf'], axis=0).drop('T-bills rf', axis=1)
+            excess_ret = df_rets.subtract(df_rets['T-bills rf'], axis=0).drop('T-bills rf', axis=1)
             excess_cagr = ((1 + excess_ret).prod(axis=0)) ** (1 / n_years) - 1
             excess_std = excess_ret.std(axis=0 ,ddof=1) * np.sqrt(252)
             sharpe = excess_cagr / excess_std
@@ -497,6 +623,11 @@ class Backtester:
             peaks = df_prices.cummax(axis=0)
             drawdown = -(df_prices - peaks) / peaks
             max_drawdown = drawdown.max(axis=0)
+            """
+            max_drawdown_end = np.argmax(drawdown, axis=0)
+            max_drawdown_beg = np.argmax(drawdown[:max_drawdown_end], axis=0)
+            drawdown_dur = max_drawdown_end - max_drawdown_beg  # TODO not showing correct values
+            """
             calmar = excess_cagr / max_drawdown
 
             metrics = {'return': cagr,
@@ -507,20 +638,44 @@ class Backtester:
                        'max_drawdown': max_drawdown,
                        'calmar_ratio': calmar}
 
-            metrics = pd.DataFrame(metrics)
-        else:
-            metrics = {'excess_return': excess_cagr,
-                       'std': excess_std,
-                       'sharpe': sharpe,
-                       'max_drawdown': max_drawdown,
-                       'max_drawdown_dur': drawdown_dur,
-                       'calmar_ratio': calmar}
+            df_temp = pd.DataFrame(metrics)
+            df_temp['short_cons'] = type[0]
+            df_temp['D_max'] = type[1]
+            df = df.append(df_temp)
 
-        return metrics
+        return df
+
+    def plot_port_val(self, data, mpc_val, equal_w_val, start=None, savefig=None):
+        # Prepare data
+        equal_w_val = equal_w_val[-len(mpc_val):]
+        data.dropna(inplace=True)
+        data = data.iloc[-len(mpc_val):]
+        data['MPC'] = mpc_val
+        data['1/n'] = equal_w_val
+        data = data[['MPC', '1/n']]  # Drop all other cols
+
+        if not start == None:
+            data = data.loc[start:]
+
+        data = data / data.iloc[0] * 100
+
+        # Plotting
+        plt.rcParams.update({'font.size': 15})
+        fig, ax = plt.subplots(nrows=1, ncols=1, sharex=True, figsize=(15,10))
+
+        ax.plot(data.index, data)
+        # ax[0].set_yscale('log')
+        ax.set_ylabel('$P_t$')
+
+        plt.tight_layout()
+
+        if not savefig == None:
+            plt.savefig('./images/' + savefig)
+        plt.show()
 
 if __name__ == "__main__":
     data = DataPrep(out_of_sample=True)
-    df_prices = data.prices
+    df_port_val = data.prices
     df_ret = data.rets
     df_logret = data.logrets
     X = df_logret["S&P 500 "]

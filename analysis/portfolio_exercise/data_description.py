@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from datetime import datetime
 
-from utils.data_prep import load_prices
+from utils.data_prep import load_prices, DataPrep
 
 import warnings
 warnings.filterwarnings('ignore')
@@ -70,7 +70,7 @@ def plot_asset_vals(df, start=None, show=True, savefig=False):
     ax.legend(lineObjects, custom_labels, loc='upper left')#,bbox_to_anchor=(1.05, 1))#, loc='upper left')
 
     #ax.set_yscale('log')
-    ax.set_ylabel(r'$\log(P_t)$')
+    ax.set_ylabel(r'$P_t$')
     ax.set_xlim(df.index[0], df.index[-1])
     plt.tight_layout()
 
@@ -83,21 +83,21 @@ def plot_asset_vals(df, start=None, show=True, savefig=False):
 
 
 if __name__ == '__main__':
-    prices_oos_df = load_prices(out_of_sample=True)
-    prices_insample_df = load_prices(out_of_sample=False)
+    data_oos = DataPrep(out_of_sample=True)
+    data_is = DataPrep(out_of_sample=False)
     start = None
 
-    metrics_oos = compute_asset_metrics(prices_oos_df, start=start).round(4)
-    metrics_insample = compute_asset_metrics(prices_insample_df, start=start).round(4)
+    metrics_oos = compute_asset_metrics(data_oos.prices, start=start).round(4)
+    metrics_insample = compute_asset_metrics(data_is.prices, start=start).round(4)
     print(metrics_oos)
     print(metrics_insample)
 
     save = True
     if save:
         metrics_oos.to_latex('../../analysis/portfolio_exercise/output_data/asset_performance.tex')
-        plot_asset_vals(prices_oos_df, start=start, savefig='asset_vals_oos.png')
-        plot_asset_vals(prices_insample_df, start=start, savefig='asset_vals_insample')
+        plot_asset_vals(data_oos.prices.iloc[1000:], start=start, savefig='asset_vals_oos.png')
+        plot_asset_vals(data_is.prices, start=start, savefig='asset_vals_insample')
     else:
-        plot_asset_vals(prices_oos_df, start=start, savefig=None)
-        plot_asset_vals(prices_insample_df, start=start, savefig=None)
+        plot_asset_vals(data_oos.prices, start=start, savefig=None)
+        plot_asset_vals(data_is.prices, start=start, savefig=None)
 
