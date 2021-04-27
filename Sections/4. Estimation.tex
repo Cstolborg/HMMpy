@@ -112,7 +112,7 @@ and
 
 As such, it is evident that $\gamma_i(t)$ encompass the probability of being in state $i$ at time $t$ knowing all the observations that has come before and all the observations that is to come, regardless of all the possible ways the model could have arrived at $t$ as well as all the possible ways the model can continue after $t$. Given this analogy one can think of $\gamma_i(t)$ as a bowtie that ties the forward and backward probabilities together for a given state $i$ at a given time $t$. 
 
-Furthermore, $\xi_{ij}(t)$ captures the probability of being in state $i$ at time $t$ and then transitioning to state $j$ at time $t+1$, given all the past observations and all the observations to come. Therefore, the similarity to $\gamma_i(t)$ is evident, however, $\xi_{ij}(t)$ takes into account two time steps. As such, given the properties of equation \ref{eq: gamma} and \ref{eq: xi} it is clear that $\sum_{j=1}^K \xi_{ij}(t) = \gamma_i(t)$. 
+Furthermore, $\xi_{ij}(t)$ captures the probability of being in state $i$ at time $t$ and then transitioning to state $j$ at time $t+1$, given all the past observations and all the observations to come. Therefore, the similarity to $\gamma_i(t)$ is evident, although $\xi_{ij}(t)$ takes two time steps into account. 
 
 Having replaced $\gamma_i(t)$ and $\xi_{ij}(t)$ by their conditional expectations $\hat{\gamma_i(t)}$ and $\hat{\xi_{ij}(t)}$ the CDLL from equation \ref{eq: CDLL} is maximized with respect to three sets of parameters which includes the initial distribution $\delta$, the transition probability matrix $Q$ as well as the parameters of the state dependent distributions captured by $B$. This process is referred to as the maximization step (M-step). 
 
