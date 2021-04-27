@@ -48,6 +48,8 @@ class SampleHMM(BaseHiddenMarkov):
                                            [0.2101, 0.7899]])
                           }
 
+        self.type = 'sampler'
+        self.is_fitted = True
         self.n_states = n_states
         self.mu = hmm_params['mu']
         self.std = hmm_params['std']
@@ -165,6 +167,8 @@ if __name__ == "__main__":
     print(model.std)
     print(model.tpm)
     print(model.stationary_dist)
+
+
 
     n_samples = 1000
     n_sequences = 1000

@@ -427,7 +427,7 @@ class BaseHiddenMarkov(BaseEstimator):
         if not self.is_fitted is True:
             bac = 0.
             return bac
-        if self.type == 'mle':
+        if self.type == 'mle' or self.type == 'sampler':
             y_pred = self.decode(X)
         elif self.type == 'jump':
             y_pred = self.state_seq

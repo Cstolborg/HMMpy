@@ -152,7 +152,7 @@ if __name__ == "__main__":
 
     mpc = Backtester()
 
-    df_frontiers = pd.read_csv(path + 'frontiers_lo.csv')
+    df_frontiers = pd.read_csv(path + 'frontiers_ls.csv')
     df_frontiers['timestamp'] = pd.to_datetime(df_frontiers['timestamp'])
     metrics = mpc.mulitple_port_metrics(df_port_val=df_frontiers)
     print(metrics)
@@ -160,7 +160,7 @@ if __name__ == "__main__":
     # Compute equal-weighted metrics
     equal_weigthed = Backtester()
     equal_weigthed.backtest_equal_weighted(data.rets, rebal_freq='M')
-    n_obs = len(df_frontiers[(df_frontiers['short_cons']== 'LO') & (df_frontiers['D_max'] == 0.1)])
+    n_obs = len(df_frontiers[(df_frontiers['short_cons']== 'LS') & (df_frontiers['D_max'] == 0.1)])
     ew_port_val = equal_weigthed.port_val[-n_obs:]
     ew_port_val = ew_port_val / ew_port_val[0] * 1000
     ew_metrics = equal_weigthed.single_port_metric(data.prices,
@@ -169,7 +169,7 @@ if __name__ == "__main__":
     save = True
     if save == True:
         path = f'{model_str}/'
-        suffix = '_lo.png'
+        suffix = '_ls.png'
         plot_frontier(metrics, ew_metrics, savefig=path+'frontier'+suffix)
         plot_sharpe_frontier(metrics, ew_metrics, savefig=path+'sharpe_frontier'+suffix)
         plot_sharpe_calmar(metrics, ew_metrics, savefig=path+'sharpe_calmar'+suffix)
