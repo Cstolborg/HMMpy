@@ -201,9 +201,11 @@ Finally, it was evident by figure \ref{fig: BAC plot feature set 1} that the dif
 
 Evidently, several interesting aspects occur when using all the defined features from algorithm \ref{algo:jump_features_set_3} to determine the jump penalizer. Firstly, the plots of the BAC against the jump penalizers becomes stable for a larger domain of definition, since the plots are horizontal for jump penalizers in the range of $2^{-2}$ to $2^5$, which is longer compared to that of figure \ref{fig: BAC plot feature set 2}. Secondly, the BAC is shifted slightly upwards in figure \ref{fig: BAC plot feature set 3} compared to figure \ref{fig: BAC plot feature set 2}. This means that using all the features result in a slightly better BAC compared to solely relying on the features defined in algorithm \ref{algo:jump_features_set_2}. Furthermore, a particular interesting finding is the apparent shift of the optimal jump penalizer. As such, it is evident from figure \ref{fig: BAC plot feature set 3} that the BAC maximizes when $\lambda$ is $2^5$, for all sample lengths. This is contrary to the findings from figure \ref{fig: BAC plot feature set 1} and \ref{fig: BAC plot feature set 2} both pointing towards an optimal jump penalizer of $2^4$ though it is unsurprising since the optimal jump penalty is increasing in number of dimensions of the feature set. Despite this inconsistency, all 3 feature sets point towards a jump penalizer in the range of $2^4$ to $2^5$, which contribute to a high confidence when selecting the $\lambda$.
 
+\textbf{Comment on this plot or move to appendix}
+
 \begin{figure}[H] 
     \centering
-    \includegraphics[width=1\textwidth]{analysis/model_convergence/images/jump_penalties_feature_set_3_all.png}
+    \includegraphics[width=1\textwidth]{analysis/model_convergence/images/jump_penalties_feature_set_3_box.png}
     \caption [Boxplot of BAC for \jump using feature set 3]{Balanced accuracy of \jump estimator as a function of the penalty $\lambda$ using different simulation lengths and the features defined in algorithm \ref{algo:jump_features_set_3}. All points are based on the estimate $\hat{\Omega} (\lambda)$ based on 1000 simulated series.}
     \label{fig: BAC plot feature set 3 box}
 \end{figure}
@@ -225,10 +227,9 @@ Thus, as the sample size increases one generally wants to see that the estimates
 
 \cref{tab:jump_gaussian} and \cref{fig:jump_normal_box} summarizes the performance of the \mle and \jump estimator for various sample sizes when compared to the true values. As mentioned, data is generated from a two-state gaussian HMM. Apart from the model parameters, estimated BAC is reported for each model. Accuracy for for the true parameters are obtained by running the Viterbi algorithm using an HMM with the true model parameters. This can be seen as a measure of best obtainable performance in state detection and is used to get a sense of where the 'upper bound' on BAC lies when comparing the other models.
 
-\textbf{Add Viterbi results for true BAC}
 \begin{table}[H]
 \centering
-\caption[Estimates from conditional Gaussian distributions of the \mle and \jump parameters and their convergence towards the true values]{Estimates of the \mle and \jump parameters and their convergence towards the true values as a function of simulation length. Results are based on 1000 simulations from conditional Gaussian distributions.}
+\caption[Estimates from conditional Gaussian distributions of the \mle and \jump parameters and their convergence towards the true values]{Estimates of the \mle and \jump parameters and their convergence towards the true values as a function of simulation length. Results are based on 1000 simulations from conditional Gaussian distributions. BAC of the true parameters are obtained by using the Viterbi algorithm with an HMM with true parameters.}
 \input{analysis/model_convergence/output_data/simulation_normal}
 \label{tab:jump_gaussian}
 \end{table}
@@ -239,8 +240,6 @@ Thus, as the sample size increases one generally wants to see that the estimates
     \caption[Boxplot of \mle and \jump parameter estimates from correctly specified conditional Gaussian distributions]{Boxplot of the \mle and \jump parameter estimates from correctly specified Gaussian distributions. The estimates show the models' convergence towards the true parameter values as a function of simulation length. Results are based on 1000 simulations.}
     \label{fig:jump_normal_box}
 \end{figure}
-
-\textbf{Add boxplot of BAC for both estimators separately about here.}
 
 It is clear that both models converge towards the true values as a function of simulation length. Both estimators appear to fulfill the consistency property outlined in \cref{eq:sim_consistency} for all model parameters since their distributions becomes more narrow around the true values when sample size increases. Curiously, the \jump estimator is able to detect the low-variance state quite accurately, even at the shortest simulation lengths as evident by its narrow distribution in $q_{11}$.
 
@@ -295,7 +294,7 @@ This is in contrast to the \mle model, which assumes a given conditional distrib
     
     
     
-    \caption[Boxplot of the \mle and \jump parameter estimates from miss-specified t-distributions with five degrees of freedom. Sorted version]{Boxplot of the \mle and \jump parameter estimates from miss-specified t-distributions with five degrees of freedom. The estimates show the models' convergence towards the true parameter values as a function of simulation length. Results are based on 1000 simulations which are sorted to only include those where both states are present}. \textbf{Consider moving to appendix.}
+    \caption[Boxplot of the \mle and \jump parameter estimates from miss-specified t-distributions with five degrees of freedom. Sorted version]{Boxplot of the \mle and \jump parameter estimates from miss-specified t-distributions with five degrees of freedom. The estimates show the models' convergence towards the true parameter values as a function of simulation length. Results are based on 1000 simulations which are sorted to only include those where both states are present. \textbf{Consider moving to appendix.}} 
     \label{fig:jump_t_box_2states}
 \end{figure}
 
