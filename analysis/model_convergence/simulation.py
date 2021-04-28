@@ -89,7 +89,7 @@ def test_model_convergence(jump, mle, sampler, X, Y_true, sample_lengths=(250, 5
             df = df.append(df_temp)
 
     # Add true values to data
-    viterbi_bac = np.array(viterbi_bac).reshape(-1, len(sample_lengths))
+    viterbi_bac = np.array(viterbi_bac).reshape(len(sample_lengths), -1)
     for i, sample_length in enumerate(sample_lengths):
         true_data = \
             {'model': 'true',
@@ -166,10 +166,10 @@ def plot_simulated_model_convergence_box(df, sampler, savefig=None):
             k += 1
 
 
-    sns.boxplot(data=to_plot, x='Simulation length', y=symbol_list[i][j],
+    sns.boxplot(data=to_plot, x='Simulation length', y='BAC',
                 hue='model', showfliers=False, ax=ax4)
-    ax4_data = df[df['model']=='true']
-    sns.lineplot(x='Simulation length', y='BAC', data=ax4_data, ax=ax4)
+    #ax4_data = df[df['model']=='true']
+    #sns.lineplot(x='Simulation length', y='BAC', data=ax4_data, ax=ax4)
 
     # Plot true values
     for i in range(2):
@@ -197,7 +197,6 @@ def plot_simulated_model_convergence_box(df, sampler, savefig=None):
     if not savefig == None:
         plt.savefig('./images/' + savefig)
     plt.show()
-#plot_simulated_model_convergence_box(df, sampler, savefig=None)
 
 
 def plot_simulated_bac_box(df, sampler, savefig=None):

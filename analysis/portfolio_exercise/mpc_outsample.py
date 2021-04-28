@@ -115,7 +115,7 @@ if __name__ == "__main__":
     #mpc.plot_port_val(data.prices, mpc.port_val, equal_weigthed.port_val, start=None, savefig=None)
     #plot_performance(data.prices, mpc.port_val, mpc.weights)
 
-    save = True
+    save = False
     if save is True:
         path = f'{model_str}/'
         suffix = '_lo.png'
@@ -123,6 +123,6 @@ if __name__ == "__main__":
         plot_port_weights(weights, constraints='LO',
                           savefig=path+'weights'+suffix)
     else:
-        plot_port_weights(data.prices, mpc.weights, start=None, constraints='LO')
+        plot_port_weights(data.prices, mpc.weights, start=None, constraints='LS')
 
 
