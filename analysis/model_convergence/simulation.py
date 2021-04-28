@@ -147,7 +147,7 @@ def plot_simulated_model_convergence(df, sampler, savefig=None):
 def plot_simulated_model_convergence_box(df, sampler, savefig=None):
     # Plotting
     plt.rcParams.update({'font.size': 24})
-    fig, axes = plt.subplots(4, 2, figsize=(15, 12), sharex=True)
+    fig, axes = plt.subplots(4, 2, figsize=(15, 12))
 
     ax4 = plt.subplot2grid((4, 2), (3, 0), rowspan=1, colspan=2)
 
@@ -178,13 +178,14 @@ def plot_simulated_model_convergence_box(df, sampler, savefig=None):
         axes[2, i].axhline(y=sampler.tpm[i, i], ls="--", color="black", label='True')
 
     # Remove seaborn legends and x-labels
-    for ax in axes.flatten():
+    for i, ax in enumerate(axes.flatten()):
         ax.legend([], [], frameon=False)
         ax.set_xlabel("")
+        ax.tick_params(axis='x', labelsize=15)
 
     ax4.legend([], [], frameon=False)
+    ax4.tick_params(axis='x', labelsize=15)
     ax4.set_xlabel("")
-
 
     axes[2, 0].legend(loc='lower right', fontsize=15)
 
@@ -197,7 +198,6 @@ def plot_simulated_model_convergence_box(df, sampler, savefig=None):
     if not savefig == None:
         plt.savefig('./images/' + savefig)
     plt.show()
-
 
 def plot_simulated_bac_box(df, sampler, savefig=None):
     # Plotting
