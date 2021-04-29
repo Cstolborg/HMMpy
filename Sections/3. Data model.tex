@@ -76,7 +76,7 @@ $$
 $$
 in which $\Theta$ captures the estimated model parameters defined in section \ref{subsection: HMM}. The nature of the workings of an HMM is quite intuitive. For every period $t$, the model observes a realization $o_t$ from the current conditional distribution. As such, one can think of this as drawing an observation form an underlying distribution, however, it is unknown whether $s_t = 1$ or $2$. Further, the properties underlying the transition probabilities in $Q$ are also unknown. As such, the objective of the HMM is to estimate the most likely sequence of states $\S$, as well as the most likely parameters, $Q$, $B$ \& $\delta$. Furthermore, as previously mentioned, the sojourn times are implicitly assumed to be geometrically distributed as per equation \ref{eq: sojourn time}
 \begin{equation}
-    P('\text{staying $t$ time steps in state $i$'}) = q^{t-1}_{ii} *(1-q_{ii})
+    P('\text{staying $t$ time steps in state $i$'}) = q^{t-1}_{ii} \cdot(1-q_{ii})
     \label{eq: sojourn time}
 \end{equation}
 As such, the expected duration of state \textit{i} can be depicted as 

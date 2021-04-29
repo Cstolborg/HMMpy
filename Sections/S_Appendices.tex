@@ -1,6 +1,27 @@
 
 \newpage
 
+
+\subsection{Computing portfolio returns}
+
+\textbf{TO be deleted}
+
+\textbf{Add formulas for shorting costs and transaction costs here.}
+
+Using the weights estimated at time t, the portfolio returns are calculated each day as the product of all assets' gross return and their respective weights.
+\begin{equation}
+    r_{t,portfolio} = \sum_{i=1}^N \left(w_{t,i}\times(1+r_{t,i})\right)  - 1
+\end{equation}
+Where, $r_{t,portfolio}$ is the portfolio return for day $t$ and $r_{t,i}$ \& $\pi_{t,i}$ denotes the return and weight of asset $i$ at day $t$. The weights are updated accordingly by the end of each day to reflect returns. The result is a series of portfolio returns with length equal to the amount of days in the sample. Total return over the period is then the product of all daily portfolio returns over the period
+\begin{equation}
+    r_{total} = \prod_{t=1}^T (1+r_{t, portfolio} ) - 1
+    \label{eq:total_ret}
+\end{equation}
+\begin{equation}
+    r_{annual}=(1+r_{total})^{1/T}-1
+    \label{eq:annual_ret}
+\end{equation}
+
 \subsection{The MSCI}
 \label{subsection: MSCI Index}
 The MSCI World Index captures large and mid cap representation across 23 Developmed Markets (DM) countries. As such, the difference compared to the well-known MSCI ACWI Index is the exclusive weight on assets from developed economies. With 1,600 constituents, the index covers approximately 85\% of the free-float-adjusted market captilization in each country. The weights across country and sectors are shown in figure XXXXY as of November 2020. The historical development of the index is depicted in figure \ref{fig:MSCI_index}. 
