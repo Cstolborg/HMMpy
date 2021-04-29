@@ -41,8 +41,8 @@ def compute_asset_metrics(df,start=None):
 
     metrics = {#'Return': cagr,
                #'Std': std,
-               'Return': excess_cagr,
-               'Std': excess_std,
+               'Excess Return': excess_cagr,
+               'Excess Std': excess_std,
                'Sharpe': sharpe,
                'Max drawdown': max_drawdown,
                'Calmar ratio': calmar}
@@ -51,7 +51,7 @@ def compute_asset_metrics(df,start=None):
 
     return metrics
 
-def plot_asset_vals(df, start=None, show=True, savefig=False):
+def plot_asset_vals(df, eval_vline=False, start=None, savefig=False):
     # Prepare data
     df.dropna(inplace=True)
     if not start == None:
@@ -69,6 +69,10 @@ def plot_asset_vals(df, start=None, show=True, savefig=False):
     # Labels have to be assigned this way if one wants to avoid a loop
     ax.legend(lineObjects, custom_labels, loc='upper left')#,bbox_to_anchor=(1.05, 1))#, loc='upper left')
 
+    if eval_vline:
+        ax.axvline(x=df.index[1000], ymin=0, ymax=df.max().max(),
+                   color='black', ls='--')
+
     #ax.set_yscale('log')
     ax.set_ylabel(r'$P_t$')
     ax.set_xlim(df.index[0], df.index[-1])
@@ -76,10 +80,7 @@ def plot_asset_vals(df, start=None, show=True, savefig=False):
 
     if not savefig == None:
         plt.savefig('./images/' + savefig)
-    if show:
-        plt.show()
-
-    return fig, ax
+    plt.show()
 
 
 if __name__ == '__main__':
@@ -87,7 +88,7 @@ if __name__ == '__main__':
     data_is = DataPrep(out_of_sample=False)
     start = None
 
-    metrics_oos = compute_asset_metrics(data_oos.prices, start=start).round(4)
+    metrics_oos = compute_asset_metrics(data_oos.prices.iloc[1000:], start=start).round(4)
     metrics_insample = compute_asset_metrics(data_is.prices, start=start).round(4)
     print(metrics_oos)
     print(metrics_insample)
@@ -95,7 +96,7 @@ if __name__ == '__main__':
     save = True
     if save:
         metrics_oos.to_latex('../../analysis/portfolio_exercise/output_data/asset_performance.tex')
-        plot_asset_vals(data_oos.prices.iloc[1000:], start=start, savefig='asset_vals_oos.png')
+        plot_asset_vals(data_oos.prices, eval_vline=True,start=start, savefig='asset_vals_oos.png')
         plot_asset_vals(data_is.prices, start=start, savefig='asset_vals_insample')
     else:
         plot_asset_vals(data_oos.prices, start=start, savefig=None)
