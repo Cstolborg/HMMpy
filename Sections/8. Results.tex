@@ -1,35 +1,41 @@
 \section{Results}
 
-\textbf{In this section we will apply the model described in the previous section to a times series from 1997-2020. It includes major indices all representing distinct asset classes. Since calculations for this section is still underway it is omitted from this version.}
-
+In the previous section we defined a regime based trading strategy that uses an HMM as a times series forecasting model, which feeds into a model predictive control (MPC) framework to determine trading decisions. In this section results of the MPC strategy is evaluated and compared to a number of alternative portfolios. The analysis is divided between in-sample training and out-of-sample testing. The purpose of the in-sample training is to compute optimal values for hyperparameters of the forecast horizon and other hyperparameters in the MPC problem in \cref{eq: maximizing objective MPC}, while in the out-of-sample section, the MPC approach is evaluated using optimal parameters and compared to benchmarks. In the remainder of the section, we first present the data in- and out-of-sample, before describing the in-sample training after which out-of-sample results are presented.
 
 \subsection{Data}
 
-Sktiser index data på log scala + evt. tabel over aktivers perfomance over periode - thats it.
+The full dataset covers the period form February 1994 to February 2021. Though some indices go further back, the choice of time period is a trade-off between historical availability and the size of the asset universe, with the latter significantly shrinking before 1994. The in-sample data, shown in \cref{fig:MPC_data_is}, runs from February 1994 to November 2003, resulting in 2539 daily observations. It covers the S\&P 500, MSCI Emerging Markets, Barclays US Treasury, CSI Barc Index, Gold and Oil\footnote{
+The 6 indices are \textbf{Insert formal name of all indices as indice 1, indice 2 etc.}.
+}.
+Three month treasury bills are used as a benchmark for the risk-free asset. In the initial months where only monthly data is available for the risk-free asset, daily prices are linearly interpolated with some gaussian noise. We note that the first 1700 observations are used for initialization after which training commences. As this is a rather large slice of the in-sample data implications of this is discussed in greater detail in the coming sections. Finally, we note that the assets considered in-sample is only a subset of the assets considered out-of-sample due to data limitations. \textbf{Consider implications of this on the optimal MPC hyperparameters.}
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=1\textwidth]{analysis/portfolio_exercise/images/asset_vals_insample.png}
     \caption[Historical asset prices during the in-sample period]{Historical asset prices during the in-sample period.}
-    \label{fig:MPC_data}
+    \label{fig:MPC_data_is}
 \end{figure}
 
+The out-of-sample period runs from November 2003 to February 2021 resulting in 4495 daily observations. It is shown in \cref{fig:MPC_data_oos} It covers S\&P 500, MSCI Emerging Markets, Hedge Funds Global, Private Equity, European Public Real Estate, Gold, Oil, Barclays US Treasury and CSI Barc Index\footnote{
+The 9 indices are \textbf{Insert formal name of all indices as indice 1, indice 2 etc.}.
+}.
+Again, the first years are used for initialization, meaning the the trading strategy is not implemented until September 2007, just before the financial crisis. This makes it an interesting period to study, as most assets had significant drawdowns during the crisis, and because it additionally includes the sovereign debt crisis in 2012 and the Covid-19 outbreak in 2020. As note by (\textbf{Insert REF}), asset correlations tend to increase during recessions, as can be seen in \cref{fig:MPC_data_oos}, meaning that many portfolios, such as an equally weighted or value weighted portfolio generally would suffer significant drawdowns in such periods. 
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=1\textwidth]{analysis/portfolio_exercise/images/asset_vals_oos.png}
-    \caption[Historical asset prices during the out-of-sample period]{Historical asset prices during the out-of-sample period.}
-    \label{fig:MPC_data}
+    \caption[Historical asset prices during the out-of-sample period]{Historical asset prices during the out-of-sample period. \textbf{Vis den fulde oos periode og forklar at de første 1700 observationer er brugt til initialization}}
+    \label{fig:MPC_data_oos}
 \end{figure}
 
-In \cref{tab:MPC_asset_performance} we show annualized\footnote
+Finally, \cref{tab:MPC_asset_performance} shows the annualized\footnote
 {Daily returns are analyzed using
 \begin{flalign*}
     \mu_{annual} &= (1+\mu_{daily})^{1/252}-1 \\
     \Sigma_{annual} &= {\Sigma}_{daily} * 252
 \end{flalign*}
 }
-asset performance.
+asset performance. 
 
 \begin{table}[H]
 \centering
@@ -53,21 +59,15 @@ performance for each asset during the out-of-sample period. All measures are in 
     \item go over each tuning parameter separately.
 \end{itemize}
 
-\textbf{Maximize portfolio Sharpe, excess return and minimize annual turnover over the hyperparameters}
 
 \subsection{Out-of-sample results}
 
-\begin{itemize}
-    \item Plot allocations
-    \item Plot portfolio performance
-    \item Table summarizing KPIs
-\end{itemize}
 
 \subsubsection*{Allocations}
 
 \textbf{A very large allocation is in the risky asset across most time periods. This is likely due to it having a very low covariance with other assets and thus being desirable in a mean-variance setting - is there some clever way to reduce the overall allocation to rf?}
 
-\textbf{Consider adding allocation plots with and without drawdown control to see difference. CUrrently showing with drawdown control}
+\textbf{Consider adding allocation plots with and without drawdown control to see difference. Currently showing with drawdown control}
 
 \begin{figure}[H]
     \centering
@@ -92,6 +92,8 @@ performance for each asset during the out-of-sample period. All measures are in 
 
 \subsubsection*{Performance comparison}
 
+\textbf{$D_{max}$ indikerer den maksimale drawdown tolerance. Hvis en portefølje når $D_{max}$, går risikoaversionen $\gamma$ mod uendelig. Alle plots er efter transaction costs på 10 basispoint per one-way transaktion.}
+
 \begin{figure}[H]
     \centering
     \includegraphics[width=1\textwidth]{analysis/portfolio_exercise/images/mle/port_vals_lo.png}
@@ -115,6 +117,8 @@ performance for each asset during the out-of-sample period. All measures are in 
 
 
 \subsubsection*{Efficient frontiers long-only}
+
+\textbf{Vi skal have udvalgt nogle enkelte plots herfra. Umiddelbart syntes jeg de plots med excess return på y-aksen skal fjernes. De plots med sharpe på y-aksen og henholdsvist $\gamma_0$, calmar ratio og maximum drawdown giver meget bedre mening --> Det er også de parametre vi optimerer imod in-sample.}
 
 \begin{figure}[H]
     \centering

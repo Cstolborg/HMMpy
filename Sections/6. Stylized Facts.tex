@@ -3,33 +3,9 @@
 \section{Reproducing stylized facts with HMMs}
 \label{Section: Stylized facts}
 
+\textbf{Still need to figure out whether to move data section to here, deleting data section completetly or keeping it...}
 
-\textbf{Section structure:}
-\begin{itemize}
-    \item Consider moving data section to here
-    \item Discuss why rolling estimation might be better than Bulla 2011 and Ryden 1998 - go over some the results where they did not get accuracte results - such as PED 1-3. Explain how we expand on a lot of things Nystrup (2017) never considered.
-    \item Show estimated models
-    \begin{itemize}
-        \item Plot estimated models. Discuss certain smoothing procedures to improve models.
-        \item Plot first four moments to further see "fit"
-        \item If possible here would be a nice place to put the 3d plot of distribution histogram as a function of time
-    \end{itemize} 
-    \item Review stylized facts of GD
-    \item Distributional properties
-    \begin{itemize}
-        \item DP2+DP3: Plot mean/std, skewness + kurtosis of absolute returns
-        \item Show plot again for outlier corrected data. Note whether this is necessary.
-    \end{itemize}
-    \item Temporal properties
-    \begin{itemize}
-        \item Show calculations of plots for TP1+TP4 - very basic though.
-        \item Start by showing ACF of full data and data split into subsamples to further motivate rolling models. Then show ACF of absolute returns of models in subsamples.
-        \item TP2: Plot ACF of absolute returns. Consider also showing that ACF of squared returns is indeed smaller.
-        \item TP3: Plot Taylor effect and explain procedure.
-        
-    \end{itemize}
-    \item Current decoding/prediction is not really used for anything. Consider deleting or changing the analysis. Basing the section on smoothing probabilities in the rolling model might be better than showing predictions since this is what is used in forecasting in MPC framework.
-\end{itemize}
+\textbf{Current decoding/prediction is not really used for anything. Consider deleting or changing the analysis. Basing the section on smoothing probabilities in the rolling model might be better than showing predictions since this is what is used in forecasting in MPC framework.}
 
 In the previous section, we tuned the \jump and \mle estimators and showed how they perform in a number of simulated environments. In this section, we will use that knowledge to train the models on financial data. The purpose of this section is to analyze the estimator's fit to financial returns, which is mostly analyzed by evaluating the models' ability to reproduce some well established stylized facts. As highlighted throughout section \ref{section: Data} the normal distribution provides a poor fit for financial returns and it is in fact very hard to train a model capable of omitting the same distributional and temporal properties as those of financial returns (Cont, 2001). Researchers including Granger \& Ding (1995b), Cont (2001) and Malmsten \& Teräsvirta (2010) have found a variety of different stylized facts that are persistent across asset returns. 
 
@@ -95,7 +71,7 @@ As the rolling models' parameters have been shown, we now turn to briefly defini
 TP1: Returns $r_t$ are not autocorrelated (except for, possibly, at lag 1). \newline
 TP2: $|r_t|$ and $r_t^2$ are the 'long memory' i.e. their autocorrelation functions decay slowly starting from the first order autocorrelation and $corr(|r_t|, |r_{t-k}|) > corr(r_t^2, r^2_{t-k})$. The autocorrelations remain positive for many lags and the decay is much slower than the exponential rate of a typical ARMA model. \newline
 TP3: The Taylor effect $corr(|r_t|, |r_{t-k}|) > corr(|r_t|^{\theta}, |r_{t-k}|^{\theta})$, $\theta \neq 1$. Autocorrelations of powers of absolute returns are highest at power one. \newline
-TP4: The autocorrelation of $sign(r_t)$ are negligibly small.
+TP4: The autocorrelations of $sign(r_t)$ are negligibly small.
 
 The three distributional properties are as follows
 
@@ -129,7 +105,7 @@ Still, it appears that both models are able to capture the changing skewness and
 \begin{figure}[H] 
     \centering
     \includegraphics[width=1.0\textwidth]{analysis/stylized_facts/images/moments_bulla_abs.png}
-    \caption[Plot of $r_t$ and the models' distributional properties]{Plot of $r_t$ and the models' distributional properties. The first plot shows the mean to std ratio, the middle plot shows the skewness and the final plot shows the excess kurtosis.}
+    \caption[$|r_t|$ and the models' distributional properties]{$|r_t|$ and the models' distributional properties. The top panel shows the mean to std ratio, the middle panel shows the skewness and the bottom panel shows the excess kurtosis.}
     \label{fig:stylized_facts_moments_bulla_abs} 
 \end{figure}
 
@@ -146,7 +122,7 @@ As a final remark on the distributional properties, we shall examine outlier cor
 \begin{figure}[H] 
     \centering
     \includegraphics[width=1.0\textwidth]{analysis/stylized_facts/images/moments_bulla_abs_outlier.png}
-    \caption[Plot of $r_t$ and the models' outlier corrected distributional properties]{Plot of $r_t$ and the models' outlier corrected distributional properties. The first plot shows the mean to std ratio, the middle plot shows the skewness and the final plot shows the excess kurtosis. \textbf{Consider moving to appendix}}
+    \caption[$|r_t|$ and the models' outlier corrected distributional properties]{$|r_t|$ and the models' outlier corrected distributional properties. The top panel shows the mean to std ratio, the middle panel shows the skewness and the bottom panel shows the excess kurtosis. \textbf{Consider moving to appendix}}
     \label{fig:stylized_facts_moments_bulla_abs_outliers} 
 \end{figure}
 
@@ -174,7 +150,7 @@ This finding should already make one suspicious of estimating static models in a
 \begin{figure}[H] 
     \centering
     \includegraphics[width=1.0\textwidth]{analysis/stylized_facts/images/acf_abs_subperiods.png}
-    \caption[Autocorrelation function of estimated models and $|r_t|$ on subsamples]{Autocorrelation function of estimated models and $|r_t|$ in a breakdown of 10 sub each of 1700 observations. \textbf{Ret stavefejl i Sub-period.}}
+    \caption[Autocorrelation function of estimated models and $|r_t|$ on subsamples]{Autocorrelation function of estimated models and $|r_t|$ in a breakdown of 10 subperiods each of 1700 observations. Results are similar to those of Ryden et al. (1998) and Bulla (2011). In most periods the ACF is underestimated and both models' ACF becomes insignificant within 50 lags. \textbf{Ret stavefejl i Sub-period.}}
     \label{fig:stylized_facts_acf_plots_sub_periods} 
 \end{figure}
 

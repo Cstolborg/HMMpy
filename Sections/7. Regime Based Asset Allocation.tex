@@ -42,14 +42,16 @@ A natural objective for investors is seeking to maximize the present value of th
 
 \begin{equation}
 \begin{split}
-    E\left[\sum_{t=0}^{T-1}\eta^{t+1}\left(r_{t+1}^Tw_{t+1} -\gamma_{t+1}\psi_{t+1}(w_{t+1})\right) \right. \\
-    \left. -\eta^t\left(\phi_t^{trade}(w_{t+1}-w_t)+\phi_t^{hold}(w_{t+1})\right)
+    E\left[\sum_{t=0}^{T-1}\eta_{t+1}\left(r_{t+1}^Tw_{t+1} -\gamma_{t+1}\psi_{t+1}(w_{t+1})\right) \right. \\
+    \left. -\eta_t\left(\phi_t^{trade}(w_{t+1}-w_t)+\phi_t^{hold}(w_{t+1})\right)
     \vphantom{\sum_{t=0}^{T-1}} \right]
     \label{eq: MPC_stochastic}
 \end{split}
 \end{equation}
 
-As such, the expectation is taken over the sequence of returns $r_1, r_2...., r_T \in \mathbb{R}^{n+1}$ conditioned on all past observations. Further, $\psi_t:\mathbb{R}^{n+1} \rightarrow \mathbb{R}$ is a risk function, $\gamma_t$ is a risk-aversion parameter which is used to adjust and control the relative importance of return versus risk, $\phi_t^{trade}: \mathbb{R}^{n+1}\rightarrow\mathbb{R}$ serves as a cost function for trading, $\phi_t^{hold}: \mathbb{R}^{n+1}\rightarrow\mathbb{R}$ serves as a holding cost function and $\eta \in (0,1)$ is the discount factor equal to the inverse of $1+r_f$ where $r_f$ is the risk-free rate.  
+As such, the expectation is taken over the sequence of returns $r_1, r_2...., r_T \in \mathbb{R}^{n+1}$ conditioned on all past observations. Further, $\psi_t:\mathbb{R}^{n+1} \rightarrow \mathbb{R}$ is a risk function, $\gamma_t$ is a risk-aversion parameter which is used to adjust and control the relative importance of return versus risk, $\phi_t^{trade}: \mathbb{R}^{n+1}\rightarrow\mathbb{R}$ serves as a cost function for trading, $\phi_t^{hold}: \mathbb{R}^{n+1}\rightarrow\mathbb{R}$ serves as a holding cost function and $\eta \in (0,1)$ is the discount factor, usually equal to the inverse of $1+r_f$ where $r_f$ is the risk-free rate.
+
+\textbf{Describe the bounds of $\eta$. Can discount factor not exceed 1 if rf<=0?}
 
 \subsubsection{Deterministic control formulation}
 
@@ -92,9 +94,7 @@ In the next sections, we first explain the use of HMM models in the forecasting 
 \subsection{Forecasting with HMMs}
 \label{section: forecasting MPC HMM}
 
-\textbf{Consider using rolling estimation of state sequence where only 1 new state is detected each time step (like in BP) - current approach estimates a new state sequence over entire rolling window at each time step, which might make estimated means and covariances more unstable?}
-
-Forecasting will be performed using the HMM estimators described throughout previous chapters. We consider rolling windows of same length as described previously, i.e. 2000 observations. In a Markowitz portfolio optimization, we rely on expected quantities of assets' expected returns, variance their covariance. Thus, the procedure described here is structured as follows; First an HMM is estimated at time step t. Then, using the Viterbi algorithm, the state sequence over the rolling window is decoded. This allows one to estimate each asset's sample mean return, standard deviation and covariance in each state. Based on those estimates, and by assuming returns follow a multivariate log-normal distribution, parameters are transformed into normally distributed variables. Having computed conditional estimates of asset returns as a multivariate normal distribution, the unconditional distribution is found, for each time t and each time $t+H$, by weighting the conditional distribution by the state probabilities $P(s_{T+H}=i | O)$ for all $i\in\K$. We proceed by describing this procedure in greater detail in the next paragraphs.
+Forecasting will be performed using the HMM estimators described throughout previous chapters. We consider rolling windows of same length as described previously, i.e. \textbf{2000 observations}. In a Markowitz portfolio optimization, we rely on expected quantities of assets' expected returns, variance their covariance. Thus, the procedure described here is structured as follows; First an HMM is estimated at time step t. Then, using the Viterbi algorithm, the state sequence over the rolling window is decoded. This allows one to estimate each asset's sample mean return, standard deviation and covariance in each state. Based on those estimates, and by assuming returns follow a multivariate log-normal distribution, parameters are transformed into normally distributed variables. Having computed conditional estimates of asset returns as a multivariate normal distribution, the unconditional distribution is found, for each time t and each time $t+H$, by weighting the conditional distribution by the state probabilities $P(s_{T+H}=i | O)$ for all $i\in\K$. We proceed by describing this procedure in greater detail in the next paragraphs.
 
 Having decoded the state sequence over the rolling window, the conditional means and covariances of returns are calculated from the estimated log-returns. Thus, log-returns are in each state assumed to be i.i.d. and follow a multivariate gaussian distribution
 \begin{equation}
@@ -216,22 +216,7 @@ Finally, a maximum leverage constraint is implemented as
 
 which requires the leverage in risky assets to not exceed $L^{max}$. For long-short and leveraged long-only we impose $L^{max}=2$. Other direct constraint such as asset specific constraints can be imposed, however, such possible constraints will be mentioned in the results section.
 
-\subsection{Computing portfolio returns}
 
-\textbf{TO be deleted}
+\textbf{Write a short section on forecast error risk and how this is regularized in this framework.}
 
-\textbf{Add formulas for shorting costs and transaction costs here.}
-
-Using the weights estimated at time t, the portfolio returns are calculated each day as the product of all assets' gross return and their respective weights.
-\begin{equation}
-    r_{t,portfolio} = \sum_{i=1}^N \left(w_{t,i}\times(1+r_{t,i})\right)  - 1
-\end{equation}
-Where, $r_{t,portfolio}$ is the portfolio return for day $t$ and $r_{t,i}$ \& $\pi_{t,i}$ denotes the return and weight of asset $i$ at day $t$. The weights are updated accordingly by the end of each day to reflect returns. The result is a series of portfolio returns with length equal to the amount of days in the sample. Total return over the period is then the product of all daily portfolio returns over the period
-\begin{equation}
-    r_{total} = \prod_{t=1}^T (1+r_{t, portfolio} ) - 1
-    \label{eq:total_ret}
-\end{equation}
-\begin{equation}
-    r_{annual}=(1+r_{total})^{1/T}-1
-    \label{eq:annual_ret}
-\end{equation}
+\textbf{Make a short conclusion}
