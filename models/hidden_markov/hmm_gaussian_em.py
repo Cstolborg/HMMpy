@@ -46,17 +46,12 @@ class EMHiddenMarkov(BaseHiddenMarkov):
         Initial state occupation distribution
     gamma : ndarray of shape (n_states,)
         Entails the probability of being in a state at time t knowing
-        all the observations that has come and all the observations to come. (Its a bowtie)
-    aic_ : float
-        Measurement to select the best fitted model
-    bic_ : float
-        Measurement to select the best fitted model
+        all the observations that has come and all the observations to come.
     """
 
     def __init__(self, n_states: int = 2, init: str = 'random', max_iter: int = 100, tol: float = 1e-6,
                  epochs: int = 10, random_state: int = 42):
         super().__init__(n_states, init, max_iter, tol, epochs, random_state)
-
         self.type = 'mle'
 
     def compute_log_posteriors(self, log_alphas, log_betas):

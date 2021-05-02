@@ -3,6 +3,8 @@ from functools import partial
 from multiprocessing import Pool
 
 import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sns
 import numpy as np
 import tqdm
 from sklearn.metrics import confusion_matrix
@@ -11,7 +13,7 @@ from models.hidden_markov.hmm_jump import JumpHMM
 from utils.hmm_sampler import SampleHMM
 
 
-def plot_jump_penalties(bac_outer, sample_lengths, penalties, save=True):
+def plot_jump_penalties(bac_outer, sample_lengths, penalties, savefig=None):
     # Plot line
     plt.rcParams.update({'font.size': 15})
     fig, ax = plt.subplots(figsize=(12, 7))
@@ -24,7 +26,8 @@ def plot_jump_penalties(bac_outer, sample_lengths, penalties, save=True):
 
     ax.legend()
     plt.tight_layout()
-    plt.savefig('./images/jump_penalties_feature_set_3_all.png') # Remember to change name when running with different penalties.
+    if not savefig == None:
+        plt.savefig('./images/' + savefig) # Remember to change name when running with different penalties.
     plt.show()
 
 def plot_jump_penalties_box(bac_outer, sample_lengths, penalties, save=True):
@@ -38,6 +41,37 @@ def plot_jump_penalties_box(bac_outer, sample_lengths, penalties, save=True):
     plt.xticks(list(range(len(penalties))), penalties)
     plt.tight_layout()
     plt.savefig('./images/jump_penalties_box_feature_set_3_all.png')  # Remember to change name when running with different penalities.
+    plt.show()
+
+def plot_optimal_penalties_box(df, savefig=None):
+    # Plotting
+    plt.rcParams.update({'font.size': 24})
+    fig, axes = plt.subplots(4, 1, figsize=(15, 12), sharex=True)
+
+    sample_lengths = [250, 500, 1000, 2000]
+    for i in range(4):
+        to_plot = df[df['sample_length'] == sample_lengths[i]]
+        sns.boxplot(x='$\lambda$', y='BAC', data=to_plot,
+                    showfliers=False, ax=axes[i], hue='sample_length')
+        axes[i].set_ylabel('BAC')
+
+    # Remove seaborn legends and x-labels
+    for ax in axes.flatten():
+        ax.legend([], [], frameon=False)
+        ax.legend(loc='lower left', fontsize=15)
+        ax.set_xlabel("")
+        ax.set_ylim(bottom=0.45, top=1.01)
+
+    axes[-1].set_xlabel('$\lambda$')
+
+    # Set ylims
+    #axes[2, 0].set_ylim(0.75, 1.01)
+    #axes[2, 1].set_ylim(0.75, top=1.01)
+
+    plt.tight_layout()
+
+    if not savefig == None:
+        plt.savefig('./images/' + savefig)
     plt.show()
 
 def compute_penalties(X, true_states, viterbi_states, penalties, sample_lengths=[250, 500, 1000, 2000]):
@@ -98,10 +132,19 @@ if __name__ == '__main__':
     # Compute Bac across sample lens and for all penalties
     bac_outer = compute_penalties(X, true_states, viterbi_states, penalties, sample_lengths=sample_lengths)
 
+    #Turn bac_outer into a pd.DataFrame
+    df = pd.DataFrame()
+    for i in range(len(sample_lengths)):
+        df_temp = pd.DataFrame(np.array(bac_outer[0]).T, columns=penalties)
+        df_temp['sample_length'] = sample_lengths[i]
+        df = df.append(df_temp)
+
+    df = df.melt(id_vars=['sample_length'], var_name='$\lambda$', value_name='BAC')
+
     # Plotting
-    plot_jump_penalties(bac_outer, sample_lengths, penalties)
+    plot_jump_penalties(bac_outer, sample_lengths, penalties, savefig=None)
 
-
+    plot_optimal_penalties_box(df, savefig='jump_penalties_feature_set_3_box.png')
 
 
 

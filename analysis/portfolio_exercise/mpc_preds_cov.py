@@ -33,10 +33,10 @@ if __name__ == "__main__":
     # Get data - logreturns is used in HMM model
     data = DataPrep(out_of_sample=out_of_sample)
     X = data.logrets["S&P 500 "]
-
+    window_len = 1500
 
     # Uncomment this section to perform new backtest - generating forecast distributions
     # Leave commented to used existing preds and covariances from file
-    preds, cov = backtester.rolling_preds_cov_from_hmm(X, data.logrets, model, window_len=1500, shrinkage_factor=(0.3, 0.3), verbose=True)
-    np.save(path + 'preds_' + sample_type + '.npy', preds)
-    np.save(path + 'cov_' + sample_type + '.npy', cov)
+    preds, cov = backtester.rolling_preds_cov_from_hmm(X, data.logrets, model, window_len=window_len, shrinkage_factor=(0.3, 0.3), verbose=True)
+    np.save(path + 'preds_' + sample_type + str(window_len) + '.npy', preds)
+    np.save(path + 'cov_' + sample_type + str(window_len) + '.npy', cov)

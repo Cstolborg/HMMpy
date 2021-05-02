@@ -23,8 +23,8 @@ if __name__ == '__main__':
     X = np.load(path + 'sampled_t_returns.npy')
     true_states = np.load(path + 'sampled_t_true_states.npy')
 
-    df = pd.read_csv(path + 'simulation_t.csv')
-    #df = test_model_convergence(jump, mle, sampler, X, true_states, sample_lengths=(250, 500, 1000, 2000))
+    #df = pd.read_csv(path + 'simulation_t.csv')
+    df = test_model_convergence(jump, mle, sampler, X, true_states, sample_lengths=(250, 500, 1000, 2000))
 
     # Summarize results
     data_table = df.groupby(['Simulation length', 'model']).mean().sort_index(ascending=[True, False])

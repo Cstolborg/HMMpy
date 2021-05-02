@@ -27,7 +27,7 @@ def test_model_convergence(jump, mle, sampler, X, Y_true, sample_lengths=(250, 5
         'BAC': [], 'is_fitted': [],
         'two_states': []
     }
-
+    viterbi_bac = []
     # Compute models params for each sample length
     for sample_length in sample_lengths:
         print(f'Computing values for sample length = {sample_length}')
@@ -49,6 +49,9 @@ def test_model_convergence(jump, mle, sampler, X, Y_true, sample_lengths=(250, 5
             else:
                 data['mle']['two_states'].append(True)
                 data['jump']['two_states'].append(True)
+
+            # Get viterbi sequence with true parameters
+            viterbi_bac.append(sampler.bac_score(x, y_true))
 
             jump.fit(x, sort_state_seq=True, get_hmm_params=True, verbose=True)
             mle.fit(x, sort_state_seq=True, verbose=True)
@@ -86,7 +89,8 @@ def test_model_convergence(jump, mle, sampler, X, Y_true, sample_lengths=(250, 5
             df = df.append(df_temp)
 
     # Add true values to data
-    for sample_length in sample_lengths:
+    viterbi_bac = np.array(viterbi_bac).reshape(len(sample_lengths), -1)
+    for i, sample_length in enumerate(sample_lengths):
         true_data = \
             {'model': 'true',
              '$\mu_1$': sampler.mu[0],
@@ -95,7 +99,8 @@ def test_model_convergence(jump, mle, sampler, X, Y_true, sample_lengths=(250, 5
              '$\sigma_2$': sampler.std[1],
              '$q_{11}$': sampler.tpm[0, 0],
              '$q_{22}$': sampler.tpm[1, 1],
-             'Simulation length': sample_length
+             'Simulation length': sample_length,
+             'BAC': np.mean(viterbi_bac[i])
              }
         df = df.append(pd.DataFrame(true_data, index=[0]))
 
@@ -142,7 +147,9 @@ def plot_simulated_model_convergence(df, sampler, savefig=None):
 def plot_simulated_model_convergence_box(df, sampler, savefig=None):
     # Plotting
     plt.rcParams.update({'font.size': 24})
-    fig, axes = plt.subplots(3, 2, figsize=(15, 12), sharex=True)
+    fig, axes = plt.subplots(4, 2, figsize=(15, 12))
+
+    ax4 = plt.subplot2grid((4, 2), (3, 0), rowspan=1, colspan=2)
 
     # Set symbols on y-axis
     symbol_list = [['$\mu_1$', '$\mu_2$'],
@@ -158,6 +165,12 @@ def plot_simulated_model_convergence_box(df, sampler, savefig=None):
             axes[i, j].set_ylabel(symbol_list[i][j])
             k += 1
 
+
+    sns.boxplot(data=to_plot, x='Simulation length', y='BAC',
+                hue='model', showfliers=False, ax=ax4)
+    #ax4_data = df[df['model']=='true']
+    #sns.lineplot(x='Simulation length', y='BAC', data=ax4_data, ax=ax4)
+
     # Plot true values
     for i in range(2):
         axes[0, i].axhline(y=sampler.mu[i], ls="--", color="black", label='True')
@@ -165,21 +178,56 @@ def plot_simulated_model_convergence_box(df, sampler, savefig=None):
         axes[2, i].axhline(y=sampler.tpm[i, i], ls="--", color="black", label='True')
 
     # Remove seaborn legends and x-labels
-    for ax in axes.flatten():
+    for i, ax in enumerate(axes.flatten()):
         ax.legend([], [], frameon=False)
         ax.set_xlabel("")
+        ax.tick_params(axis='x', labelsize=15)
 
-    axes[-1, 0].legend(loc='lower right', fontsize=15)
+    ax4.legend([], [], frameon=False)
+    ax4.tick_params(axis='x', labelsize=15)
+    ax4.set_xlabel("")
+
+    axes[2, 0].legend(loc='lower right', fontsize=15)
 
     # Set ylims
-    axes[-1, 0].set_ylim(0.75, 1.01)
-    axes[-1, 1].set_ylim(0.75, top=1.01)
+    axes[2, 0].set_ylim(0.75, 1.01)
+    axes[2, 1].set_ylim(0.75, top=1.01)
 
     plt.tight_layout()
 
     if not savefig == None:
         plt.savefig('./images/' + savefig)
     plt.show()
+
+def plot_simulated_bac_box(df, sampler, savefig=None):
+    # Plotting
+    plt.rcParams.update({'font.size': 24})
+    fig, ax = plt.subplots(1, 1, figsize=(15, 12))
+
+    to_plot = df[df['model'] != 'true']
+    sns.boxplot(data=to_plot, x='Simulation length', y='BAC',
+                            hue='model', showfliers=False, ax=ax)
+    ax.set_ylabel('BAC')
+
+    # Plot true values
+    #ax.axhline(y=sampler.mu[i], ls="--", color="black", label='True')
+
+    # Remove seaborn legends and x-labels
+    #ax.legend([], [], frameon=False)
+    #ax.set_xlabel("")
+
+    ax.legend(loc='lower right', fontsize=15)
+
+    # Set ylims
+    #ax[-1, .set_ylim(0.75, 1.01)
+    #ax[-1, 1].set_ylim(0.75, top=1.01)
+
+    plt.tight_layout()
+
+    if not savefig == None:
+        plt.savefig('./images/' + savefig)
+    plt.show()
+#plot_simulated_bac_box(df, sampler, savefig=None)
 
 if __name__ == '__main__':
     jump = JumpHMM(n_states=2, jump_penalty=16, window_len=(6, 14))
@@ -190,8 +238,8 @@ if __name__ == '__main__':
     X = np.load(path + 'sampled_returns.npy')
     true_states = np.load(path + 'sampled_true_states.npy')
 
-    df = pd.read_csv(path + 'simulation_normal.csv')
-    #df = test_model_convergence(jump, mle, sampler, X, true_states, sample_lengths=(250, 500, 1000, 2000))
+    #df = pd.read_csv(path + 'simulation_normal.csv')
+    df = test_model_convergence(jump, mle, sampler, X, true_states, sample_lengths=(250, 500, 1000, 2000))
 
     # Summarize results
     data_table = df.groupby(['Simulation length', 'model']).mean().sort_index(ascending=[True, False])

@@ -38,11 +38,11 @@ class MPC:
 
     def __init__(self, rets, covariances, prev_port_vals, start_weights,
                  max_drawdown=0.4, gamma_0=5, kappa1=0.004, kappa2=0.,
-                 rho1=0., rho2=0.0005, max_holding=0.4, max_leverage=2.0,
+                 rho1=0., rho2=0.0005, max_holding=0.4, max_holding_rf=1., max_leverage=2.0,
                  short_cons='LLO', eps=0.0000001):
-        if not short_cons in ['LLO', 'leveraged_long_only', 'LO', 'long_only', 'max_leverage', None]:
+        if not short_cons in ['LLO', 'leveraged_long_only', 'LO', 'long_only', 'max_leverage', 'LS', None]:
             raise Exception("""short_cons must be declared as a str.
-                            Options include 'LLO', 'leveraged_long_only', 'LO', 'long_only', 'max_leverage', None.""")
+                            Options include 'LLO', 'leveraged_long_only', 'LO', 'long_only', 'max_leverage', 'LS, None.""")
 
         self.max_drawdown = max_drawdown
         self.gamma_0 = gamma_0
@@ -51,6 +51,7 @@ class MPC:
         self.rho1 = rho1
         self.rho2 = rho2
         self.max_holding = max_holding
+        self.max_holding_rf = max_holding_rf
         self.max_leverage = max_leverage
         self.short_cons = short_cons
         self.eps = eps
@@ -105,7 +106,8 @@ class MPC:
         constraints : list
             list containing all construct for time period t.
         """
-        constraints = [cp.sum(current_weights) == 1, cp.abs(current_weights) <= self.max_holding]
+        constraints = [cp.sum(current_weights) == 1, cp.abs(current_weights[:-1]) <= self.max_holding]
+        constraints += [cp.abs(current_weights[-1]) <= self.max_holding_rf]  # Risk-free asset constraint
 
         # Leverage constraint. Exclude risk-free asset from this computation
         constraints += [cp.sum(cp.abs(current_weights[:-1])) <= self.max_leverage]
@@ -113,7 +115,7 @@ class MPC:
             constraints += [current_weights[:-1] >= 0]
         elif self.short_cons in ['LO', 'long_only']:
             constraints += [current_weights >= 0]
-        elif self.short_cons in ['max_leverage', None]:
+        elif self.short_cons in ['max_leverage', 'LS', None]:
             pass
 
         return constraints
