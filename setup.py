@@ -31,7 +31,7 @@ class build_ext(build_ext):
 
 setup(
     name='cstolborg',
-    version='0.0.5',
+    version='0.0.6',
     url='https://github.com/Cstolborg/hmm-master',
     author='Cstolborg',
     author_email='christianstolborg@gmail.com',
