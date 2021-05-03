@@ -1,9 +1,8 @@
-# cython: language_level = 3, boundscheck=False, wraparound=False
+#cython: boundscheck=False, wraparound=False
 
 cimport cython
 from cython cimport view
 from libc.math cimport exp, log, INFINITY, isinf
-#from numpy.math cimport expl, logl, isinf, INFINITY
 
 import numpy as np
 

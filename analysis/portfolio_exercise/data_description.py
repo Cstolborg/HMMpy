@@ -99,6 +99,6 @@ if __name__ == '__main__':
         plot_asset_vals(data_oos.prices, eval_vline=True,start=start, savefig='asset_vals_oos.png')
         plot_asset_vals(data_is.prices, start=start, savefig='asset_vals_insample')
     else:
-        plot_asset_vals(data_oos.prices, start=start, savefig=None)
+        plot_asset_vals(data_oos.prices.iloc[1000:], start=start, savefig=None)
         plot_asset_vals(data_is.prices, start=start, savefig=None)
 
