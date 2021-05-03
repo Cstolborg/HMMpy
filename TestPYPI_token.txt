@@ -1,4 +1,4 @@
 pypi-AgENdGVzdC5weXBpLm9yZwIkOGYyYTE5ZWUtYjkzYS00MjhmLWFhZWItZDI2NzhlNWQ2MmQ2AAIleyJwZXJtaXNzaW9ucyI6ICJ1c2VyIiwgInZlcnNpb24iOiAxfQAABiDaL4j1__dH0VvdiNEPcyCevErE-q0w5PUj0satZMrA_w
 
- pip install -i https://test.pypi.org/pypi/ --extra-index-url https://pypi.org/simple cstolborg==0.0.2
+ pip install -i https://test.pypi.org/pypi/ --extra-index-url https://pypi.org/simple cstolborg==0.0.3
 

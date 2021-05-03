@@ -5,12 +5,12 @@ import pandas as pd
 from scipy import stats
 from scipy.special import logsumexp
 from sklearn.base import BaseEstimator
-
-import pyximport;
 from sklearn.metrics import confusion_matrix
+import pyximport
+
+from models.hidden_markov import hmm_cython
 
 pyximport.install()  # TODO can only be active during development -- must be done through setup.py
-from models.hidden_markov import hmm_cython
 
 
 class BaseHiddenMarkov(BaseEstimator):

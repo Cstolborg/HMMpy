@@ -1,4 +1,4 @@
-from setuptools import Extension, setup
+from setuptools import Extension, setup, find_packages
 from setuptools.command.build_ext import build_ext
 
 
@@ -31,14 +31,17 @@ class build_ext(build_ext):
 
 setup(
     name='cstolborg',
-    version='0.0.2',
+    version='0.0.5',
     url='https://github.com/Cstolborg/hmm-master',
     author='Cstolborg',
     author_email='christianstolborg@gmail.com',
     description='A python module to implement Hidden Markov hidden_markov for financial times series.',
-    packages=['utils', 'models'],
+    long_description=open("README.md", 'r').read(),
+    long_description_content_type='text/markdown',
+    packages=find_packages(),
     classifiers =[
         "Programming Language :: Cython",
+        "Programming Language :: Python",
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent"
@@ -51,7 +54,11 @@ setup(
     install_requires=[
         "numpy>=1.20.1",
         "scikit-learn>=0.24.0",
-        "scipy>=1.5.4"
+        "scipy>=1.5.4",
+        "pandas>=1.2.0",
+        "cvxpy==1.1.10"
+        "tqdm",
+        'cython',
     ],
     extras_require={
         'docs': ['Sphinx', 'sphinx-gallery']

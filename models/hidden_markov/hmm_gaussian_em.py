@@ -1,16 +1,9 @@
 import numpy as np
 from numpy import ndarray
-from scipy import stats
 from scipy.special import logsumexp
-import matplotlib.pyplot as plt
 
-from utils.simulate_returns import simulate_2state_gaussian
-from utils.hmm_sampler import SampleHMM
 from models.hidden_markov.hmm_base import BaseHiddenMarkov
-
-from multiprocessing import Pool
-from functools import partial
-from loguru import logger
+from utils.hmm_sampler import SampleHMM
 
 
 class EMHiddenMarkov(BaseHiddenMarkov):
