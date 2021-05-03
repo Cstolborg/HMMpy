@@ -4,10 +4,8 @@ import numpy as np
 import pandas as pd
 import tqdm
 
-from models.hidden_markov.hmm_gaussian_em import EMHiddenMarkov
-from models.finance.mpc_model import MPC
-from models.finance.backtest import FinanceHMM, Backtester
-from utils.data_prep import load_returns, load_logreturns, load_prices, DataPrep
+from hmmpy.finance.backtest import Backtester
+from hmmpy.utils.data_prep import DataPrep
 
 
 warnings.filterwarnings('ignore')

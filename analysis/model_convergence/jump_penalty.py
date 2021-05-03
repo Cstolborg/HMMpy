@@ -1,16 +1,13 @@
-import multiprocessing
 from functools import partial
-from multiprocessing import Pool
 
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 import numpy as np
-import tqdm
 from sklearn.metrics import confusion_matrix
 
-from models.hidden_markov.hmm_jump import JumpHMM
-from utils.hmm_sampler import SampleHMM
+from hmmpy.hidden_markov.hmm_jump import JumpHMM
+from hmmpy.utils.hmm_sampler import SampleHMM
 
 
 def plot_jump_penalties(bac_outer, sample_lengths, penalties, savefig=None):

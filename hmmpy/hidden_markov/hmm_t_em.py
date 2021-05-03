@@ -4,7 +4,7 @@ from scipy.special import digamma
 import scipy.optimize as opt
 import matplotlib.pyplot as plt
 
-from utils.simulate_returns import simulate_2state_gaussian
+from hmmpy.utils.simulate_returns import simulate_2state_gaussian
 from hmm_gaussian_em import EMHiddenMarkov
 
 

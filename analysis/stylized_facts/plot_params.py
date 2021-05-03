@@ -4,17 +4,11 @@ import warnings
 import pandas as pd
 from scipy import stats
 import numpy as np
-import matplotlib.pyplot as plt
 import tqdm
 from statsmodels.tsa.stattools import acf
 
-from analysis.stylized_facts.rolling_estimations import train_rolling_window
-from utils.data_prep import load_long_series_logret
-from models.hidden_markov.hmm_gaussian_em import EMHiddenMarkov
-from models.hidden_markov.hmm_jump import JumpHMM
-
-from models.hidden_markov.hmm_jump import JumpHMM
-from utils.data_prep import DataPrep
+from hmmpy.hidden_markov.hmm_jump import JumpHMM
+from hmmpy.utils.data_prep import DataPrep
 from analysis.stylized_facts.plot_rolling_estimations import plot_rolling_parameters
 
 

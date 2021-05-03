@@ -2,12 +2,11 @@ import warnings
 
 import numpy as np
 import pandas as pd
-from matplotlib import pyplot as plt
 
-from models.finance.backtest import Backtester
-from models.hidden_markov.hmm_gaussian_em import EMHiddenMarkov
-from models.hidden_markov.hmm_jump import JumpHMM
-from utils.data_prep import load_returns, load_logreturns, load_prices, DataPrep
+from hmmpy.finance.backtest import Backtester
+from hmmpy.hidden_markov.hmm_gaussian_em import EMHiddenMarkov
+from hmmpy.hidden_markov.hmm_jump import JumpHMM
+from hmmpy.utils.data_prep import DataPrep
 
 np.seterr(divide='ignore')
 warnings.filterwarnings('ignore')

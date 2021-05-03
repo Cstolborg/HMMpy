@@ -1,18 +1,11 @@
 import numpy as np
-from numpy import ndarray
 from scipy import stats
 from scipy.special import logsumexp
 import matplotlib.pyplot as plt
 
-from utils.simulate_returns import simulate_2state_gaussian
-from utils.hmm_sampler import SampleHMM
-from models.hidden_markov.hmm_base import BaseHiddenMarkov
-from models.hidden_markov.hmm_gaussian_em import EMHiddenMarkov
-
-from multiprocessing import Pool
-from functools import partial
-from loguru import logger
-
+from hmmpy.utils.hmm_sampler import SampleHMM
+from hmmpy.hidden_markov.hmm_base import BaseHiddenMarkov
+from hmmpy.hidden_markov.hmm_gaussian_em import EMHiddenMarkov
 
 
 class OnlineHMM(EMHiddenMarkov, BaseHiddenMarkov):
@@ -184,5 +177,5 @@ if __name__ == '__main__':
 
     plt.show()
 
-    from utils.plotting.plot_hmm import plot_samples_states
+    from hmmpy.utils.plotting.plot_hmm import plot_samples_states
     plot_samples_states(X, true_states)

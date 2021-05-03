@@ -1,6 +1,6 @@
 import numpy as np
 
-from utils.hmm_sampler import SampleHMM
+from hmmpy.utils.hmm_sampler import SampleHMM
 
 if __name__ == '__main__':
     sampler = SampleHMM(n_states=2, random_state=42)

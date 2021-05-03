@@ -1,9 +1,8 @@
 import numpy as np
 import pandas as pd; pd.set_option('display.max_columns', 10); pd.set_option('display.width', 320)
-import matplotlib.pyplot as plt
 import cvxpy as cp
 
-from utils.data_prep import load_returns
+from hmmpy.utils.data_prep import load_returns
 
 """ TODO
 

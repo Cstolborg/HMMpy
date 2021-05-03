@@ -1,14 +1,10 @@
-import copy
-
 import numpy as np
 import pandas as pd; pd.set_option('display.max_columns', 10); pd.set_option('display.width', 320)
-import tqdm
-import matplotlib.pyplot as plt
 
-from utils.hmm_sampler import SampleHMM
+from hmmpy.utils.hmm_sampler import SampleHMM
 from analysis.model_convergence.simulation import test_model_convergence, plot_simulated_model_convergence, plot_simulated_model_convergence_box
-from models.hidden_markov.hmm_gaussian_em import EMHiddenMarkov
-from models.hidden_markov.hmm_jump import JumpHMM
+from hmmpy.hidden_markov.hmm_gaussian_em import EMHiddenMarkov
+from hmmpy.hidden_markov.hmm_jump import JumpHMM
 
 import warnings
 warnings.filterwarnings("ignore")

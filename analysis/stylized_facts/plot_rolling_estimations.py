@@ -7,7 +7,7 @@ import pandas as pd
 import tqdm
 from scipy import stats
 
-from utils.data_prep import load_long_series_logret, moving_average, DataPrep
+from hmmpy.utils.data_prep import moving_average, DataPrep
 
 warnings.filterwarnings("ignore")
 pd.set_option('display.max_columns', 10); pd.set_option('display.width', 320)

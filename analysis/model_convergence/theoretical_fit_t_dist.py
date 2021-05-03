@@ -1,5 +1,3 @@
-import copy
-
 import numpy as np
 import pandas as pd; pd.set_option('display.max_columns', 10); pd.set_option('display.width', 320)
 import tqdm
@@ -8,10 +6,7 @@ import seaborn as sns
 
 from scipy import stats
 
-from utils.hmm_sampler import SampleHMM
-from analysis.model_convergence.simulation import test_model_convergence, plot_simulated_model_convergence
-from models.hidden_markov.hmm_gaussian_em import EMHiddenMarkov
-from models.hidden_markov.hmm_jump import JumpHMM
+from hmmpy.utils.hmm_sampler import SampleHMM
 
 
 def fit_t_dist():

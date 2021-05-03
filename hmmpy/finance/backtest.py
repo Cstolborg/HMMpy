@@ -20,9 +20,9 @@ import pandas as pd
 import tqdm
 from matplotlib import pyplot as plt
 
-from models.hidden_markov.hmm_gaussian_em import EMHiddenMarkov
-from models.finance.mpc_model import MPC
-from utils.data_prep import DataPrep, load_returns, load_logreturns, load_prices
+from hmmpy.hidden_markov.hmm_gaussian_em import EMHiddenMarkov
+from hmmpy.finance.mpc_model import MPC
+from hmmpy.utils.data_prep import DataPrep
 
 warnings.filterwarnings('ignore')
 pd.set_option('display.max_columns', 10); pd.set_option('display.width', 320)

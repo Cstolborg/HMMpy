@@ -8,7 +8,7 @@ from sklearn.base import BaseEstimator
 from sklearn.metrics import confusion_matrix
 import pyximport
 
-from models.hidden_markov import hmm_cython
+from hmmpy.hidden_markov import hmm_cython
 
 pyximport.install()  # TODO can only be active during development -- must be done through setup.py
 

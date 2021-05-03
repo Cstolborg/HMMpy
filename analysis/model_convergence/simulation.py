@@ -7,9 +7,9 @@ import seaborn as sns
 import tqdm
 import matplotlib.pyplot as plt
 
-from utils.hmm_sampler import SampleHMM
-from models.hidden_markov.hmm_gaussian_em import EMHiddenMarkov
-from models.hidden_markov.hmm_jump import JumpHMM
+from hmmpy.utils.hmm_sampler import SampleHMM
+from hmmpy.hidden_markov.hmm_gaussian_em import EMHiddenMarkov
+from hmmpy.hidden_markov.hmm_jump import JumpHMM
 
 
 warnings.filterwarnings("ignore")

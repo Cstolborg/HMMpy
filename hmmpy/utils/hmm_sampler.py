@@ -2,7 +2,7 @@ import numpy as np
 import tqdm
 from scipy import stats
 
-from models.hidden_markov.hmm_base import BaseHiddenMarkov
+from hmmpy.hidden_markov.hmm_base import BaseHiddenMarkov
 
 import pyximport; pyximport.install()  # TODO can only be active during development -- must be done through setup.py
 

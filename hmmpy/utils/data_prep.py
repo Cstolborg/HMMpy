@@ -159,7 +159,7 @@ def get_cov_mat(df_ret):
 
 
 if __name__ == '__main__':
-    path = '../data/price_series.csv'
+    path = '../../data/price_series.csv'
     data = DataPrep(path=path, out_of_sample=True)
     print(data.prices)
     print(data.rets)

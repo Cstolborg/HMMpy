@@ -56,7 +56,7 @@ setup(
         "scikit-learn>=0.24.0",
         "scipy>=1.5.4",
         "pandas>=1.2.0",
-        "cvxpy==1.1.10"
+        "cvxpy==1.1.10",
         "tqdm",
         'cython',
     ],

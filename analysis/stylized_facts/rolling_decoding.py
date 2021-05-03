@@ -1,5 +1,4 @@
 import copy
-import json
 import pickle
 
 import pandas as pd;
@@ -12,10 +11,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import tqdm
-from statsmodels.tsa.stattools import acf
-from utils.data_prep import load_long_series_logret
-from models.hidden_markov.hmm_gaussian_em import EMHiddenMarkov
-from models.hidden_markov.hmm_jump import JumpHMM
+from hmmpy.utils.data_prep import load_long_series_logret
+from hmmpy.hidden_markov.hmm_gaussian_em import EMHiddenMarkov
+from hmmpy.hidden_markov.hmm_jump import JumpHMM
 import warnings
 
 warnings.filterwarnings("ignore")

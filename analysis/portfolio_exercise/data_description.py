@@ -1,9 +1,8 @@
 import pandas as pd; pd.set_option('display.max_columns', 10); pd.set_option('display.width', 320)
 import numpy as np
 import matplotlib.pyplot as plt
-from datetime import datetime
 
-from utils.data_prep import load_prices, DataPrep
+from hmmpy.utils.data_prep import DataPrep
 
 import warnings
 warnings.filterwarnings('ignore')

@@ -6,11 +6,10 @@ from numpy import ndarray
 from sklearn.cluster._kmeans import kmeans_plusplus
 from sklearn.metrics import confusion_matrix
 from sklearn.preprocessing import StandardScaler
-from sklearn.decomposition import PCA
 
-from utils.hmm_sampler import SampleHMM
-from models.hidden_markov.hmm_base import BaseHiddenMarkov
-from models.hidden_markov import hmm_cython
+from hmmpy.utils.hmm_sampler import SampleHMM
+from hmmpy.hidden_markov.hmm_base import BaseHiddenMarkov
+from hmmpy.hidden_markov import hmm_cython
 
 
 pyximport.install()  # TODO can only be active during development -- must be done through setup.py
