@@ -291,7 +291,8 @@ class Backtester:
     def backtest_mpc(self, df_rets, preds, covariances, n_preds=15, port_val=1000,
                      start_weights=None, max_drawdown=0.4, max_holding_rf=1.,
                      max_leverage=2.0, gamma_0=5, kappa1=0.008,
-                     rho2=0.0005, max_holding=0.4, short_cons="LLO", eps=1e-6):
+                     rho2=0.0005, rho_rf=0.0001, max_holding=0.4, short_cons="LLO",
+                     rf_included=True, eps=1e-6):
         """
        Wrapper for backtesting MPC models on given data and predictions.
 
@@ -332,8 +333,8 @@ class Backtester:
         # Instantiate MPC object
         mpc_solver = MPC(rets=preds[0], covariances=covariances[0], prev_port_vals=self.port_val,
                          start_weights=self.weights[0], max_drawdown=max_drawdown, gamma_0=gamma_0,
-                         kappa1=kappa1, rho2=rho2, max_holding=max_holding, max_holding_rf=max_holding_rf
-                         ,max_leverage=max_leverage, short_cons=short_cons, eps=eps)
+                         kappa1=kappa1, rho2=rho2, rho_rf=rho_rf, max_holding=max_holding, max_holding_rf=max_holding_rf
+                         ,max_leverage=max_leverage, short_cons=short_cons, rf_included=rf_included, eps=eps)
 
         for t in tqdm.trange(preds.shape[0]):
             # Update MPC object
@@ -380,31 +381,35 @@ class Backtester:
         return annual_ret, annual_std, self.annual_turnover
 
     def gridsearch_mpc(self, grid, df_rets, preds, covariances, n_preds=15, port_val=1000,
-                     start_weights=None, max_drawdown=0.4, max_leverage=2.0, gamma_0=5, kappa1=0.008,
-                     rho2=0.0005, max_holding=0.4, short_cons="LO", eps=1e-6):
+                     start_weights=None, max_drawdown=1000, max_leverage=2.0, gamma_0=5, kappa1=0.008,
+                     rho2=0.0005, max_holding=0.4, short_cons="LO", rf_included=True, eps=1e-6):
         results = pd.DataFrame()
         for max_holding in grid['max_holding']:
             for trans_costs in grid['trans_costs']:
                 for holding_costs in grid['holding_costs']:
-                    print(f"""Computing grid -- max_holding {max_holding} -- trans_costs {trans_costs} holding_costs {holding_costs}""")
-                    try:
-                        annual_ret, annual_std, annual_turnover = \
-                            self.backtest_mpc(df_rets, preds, covariances, n_preds=n_preds, port_val=port_val,
-                         start_weights=start_weights, max_drawdown=max_drawdown, max_leverage=max_leverage,
-                        gamma_0=gamma_0, kappa1=trans_costs, rho2=holding_costs, max_holding=max_holding,
-                                          short_cons=short_cons, eps=eps)
+                    for holding_costs_rf in grid['holding_costs_rf']:
+                        print(f"""Computing grid -- max_holding {max_holding} -- trans_costs {trans_costs} holding_costs {holding_costs} holding_costs_rf {holding_costs_rf}""")
+                        #try:
+                        annual_ret, annual_std, annual_turnover = self.backtest_mpc(
+                            df_rets, preds, covariances, n_preds=n_preds, port_val=port_val,
+                            start_weights=start_weights, max_drawdown=max_drawdown, max_leverage=max_leverage,
+                            gamma_0=gamma_0, kappa1=trans_costs, rho2=holding_costs, rho_rf=holding_costs_rf, max_holding=max_holding,
+                            short_cons=short_cons, rf_included=rf_included, eps=eps
+                        )
 
                         results_dict = {'max_holding': max_holding,
                                         'trans_costs': trans_costs,
                                         'holding_costs': holding_costs,
+                                        'holding_costs_rf': holding_costs_rf,
                                         'return': annual_ret,
                                         'std': annual_std,
                                         'turnover': annual_turnover}
-                        print(results_dict)
                         results = results.append(results_dict, ignore_index=True)
-                    except:
-                        print('No convergence')
-                        continue
+                        print(results.tail(1))
+                        #except Exception as e:
+                        #    print('No convergence')
+                        #    print(e)
+                        #    continue
         self.gridsearch_df = results
         return results
 

@@ -12,7 +12,7 @@ from hmmpy.hidden_markov.hmm_base import BaseHiddenMarkov
 from hmmpy.hidden_markov import hmm_cython
 
 
-pyximport.install()  # TODO can only be active during development -- must be done through setup.py
+#pyximport.install()  # TODO can only be active during development -- must be done through setup.py
 
 class JumpHMM(BaseHiddenMarkov):
 

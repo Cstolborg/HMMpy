@@ -6,12 +6,8 @@ from scipy import stats
 from scipy.special import logsumexp
 from sklearn.base import BaseEstimator
 from sklearn.metrics import confusion_matrix
-import pyximport
 
 from hmmpy.hidden_markov import hmm_cython
-
-pyximport.install()  # TODO can only be active during development -- must be done through setup.py
-
 
 class BaseHiddenMarkov(BaseEstimator):
     """
@@ -327,11 +323,11 @@ class BaseHiddenMarkov(BaseEstimator):
         return stationary_dist
 
     def _log_forward_proba(self):
-        """
+        r"""
         Compute log forward probabilities in scaled form.
 
         Forward probability is essentially the joint probability of observing
-        a state = i and observation sequences x^t=x_1...x_t, i.e. P(St=i , X^t=x^t).
+        a state = i and observation sequences x^t=x_1...x_t, i.e. $P(S_t=i , X^t=x^t)$.
         Follows the method by Zucchini A.1.8 p 334.
 
         Returns
@@ -359,6 +355,7 @@ class BaseHiddenMarkov(BaseEstimator):
         Compute the log of backward probabilities in scaled form.
         Backward probabilities are the conditional probability of
         some observation at t+1 given the current state = i. Equivalent to P(X_t+1 = x_t+1 | S_t = i)
+
         Returns
         -------
         log of backward probabilities: ndarray of shape (n_samples, n_states)

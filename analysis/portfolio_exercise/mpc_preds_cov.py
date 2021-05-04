@@ -16,7 +16,7 @@ if __name__ == "__main__":
     # Set path, model to test and in-sample vs. out-of-sample
     model_str = 'mle'
     path = '../../analysis/portfolio_exercise/output_data/' + model_str + '/'
-    out_of_sample = False
+    out_of_sample = True
 
     sample_type = 'oos' if out_of_sample is True else 'is'  # Used to specify suffix in file names
 
@@ -32,7 +32,7 @@ if __name__ == "__main__":
     # Get data - logreturns is used in HMM model
     data = DataPrep(out_of_sample=out_of_sample)
     X = data.logrets["S&P 500 "]
-    window_len = 1500
+    window_len = 1000
 
     # Uncomment this section to perform new backtest - generating forecast distributions
     # Leave commented to used existing preds and covariances from file

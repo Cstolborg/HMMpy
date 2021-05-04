@@ -13,7 +13,7 @@ class build_ext(build_ext):
         import numpy as np
         import numpy.distutils
 
-        self.distribution.ext_modules[:] = cythonize("models/hidden_markov/*.pyx",language_level='3')
+        self.distribution.ext_modules[:] = cythonize("hmmpy/hidden_markov/*.pyx",language_level='3')
         # Sadly, this part needs to be done manually.
         for ext in self.distribution.ext_modules:
             for k, v in np.distutils.misc_util.get_info("npymath").items():

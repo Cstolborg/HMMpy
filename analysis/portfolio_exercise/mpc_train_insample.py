@@ -14,7 +14,7 @@ pd.set_option('display.max_columns', 10); pd.set_option('display.width', 320)
 
 if __name__ == "__main__":
     # Set path, model to test and in-sample vs. out-of-sample
-    model_str = 'jump'
+    model_str = 'mle'
     path = '../../analysis/portfolio_exercise/output_data/' + model_str + '/'
     out_of_sample = False
     sample_type = 'oos' if out_of_sample is True else 'is'  # Used to specify suffix in file names
@@ -36,21 +36,21 @@ if __name__ == "__main__":
     preds = np.load(path + 'preds_'+ sample_type + '.npy')
     cov = np.load(path + 'cov_' + sample_type + '.npy')
 
-    grid = {'max_holding': [0.2, 0.3, 0.4, 0.5],
-            'trans_costs': [0.0005, 0.001, 0.004, 0.008, 0.012, 0.015],
-            'holding_costs': [0, 0.0005, 0.001, 0.002],
+    grid = {'max_holding': [0.2, 0.35, 0.5],
+            'trans_costs': [0.0001, 0.0005, 0.001, 0.004],
+            'holding_costs': [0, 0.0005, 0.001],
+            'holding_costs_rf': [0,0.0005, 0.001]
             }
 
-    #gridsearch_results = \
-    #            backtester.gridsearch_mpc(grid, data.rets, preds, cov, short_cons='long_only')
-    #gridsearch_results.to_csv(path + 'gridsearch.csv', index=False)
-    #print(gridsearch_results)
+    gridsearch_results = \
+                backtester.gridsearch_mpc(grid, data.rets, preds, cov, short_cons='long_only')
+    gridsearch_results.to_csv(path + 'gridsearch.csv', index=False)
+    print(gridsearch_results)
 
 
-    df_mle = pd.read_csv('./output_data/mle/gridsearch.csv')
-    df_jump = pd.read_csv('./output_data/jump/gridsearch.csv')
+    df = pd.read_csv('./output_data/mle/gridsearch_1000.csv')
+    df['sharpe'] = df['return'] / df['std']
 
-    df_mle['sharpe'] = df_mle['return'] / df_mle['std']
-    df_jump['sharpe'] = df_jump['return'] / df_jump['std']
-
+    #print(df_mle.sort_values(by=['sharpe', 'trans_costs', 'holding_costs',  'max_holding']).tail(20))
+    #print(df_mle.sort_values(by=['sharpe', 'trans_costs', 'holding_costs',  'max_holding']).head(20))
 

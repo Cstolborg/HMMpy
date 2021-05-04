@@ -4,9 +4,6 @@ import cvxpy as cp
 
 from hmmpy.utils.data_prep import load_returns
 
-""" TODO
-
-"""
 
 class MPC:
     """
@@ -37,8 +34,8 @@ class MPC:
 
     def __init__(self, rets, covariances, prev_port_vals, start_weights,
                  max_drawdown=0.4, gamma_0=5, kappa1=0.004, kappa2=0.,
-                 rho1=0., rho2=0.0005, max_holding=0.4, max_holding_rf=1., max_leverage=2.0,
-                 short_cons='LLO', eps=0.0000001):
+                 rho1=0., rho2=0.0005, rho_rf=0.001, max_holding=0.4, max_holding_rf=1., max_leverage=2.0,
+                 short_cons='LO', rf_included=True,eps=0.0000001):
         if not short_cons in ['LLO', 'leveraged_long_only', 'LO', 'long_only', 'max_leverage', 'LS', None]:
             raise Exception("""short_cons must be declared as a str.
                             Options include 'LLO', 'leveraged_long_only', 'LO', 'long_only', 'max_leverage', 'LS, None.""")
@@ -49,10 +46,12 @@ class MPC:
         self.kappa2 = kappa2
         self.rho1 = rho1
         self.rho2 = rho2
+        self.rho_rf = rho_rf
         self.max_holding = max_holding
         self.max_holding_rf = max_holding_rf
         self.max_leverage = max_leverage
         self.short_cons = short_cons
+        self.rf_included = rf_included
         self.eps = eps
 
         self.rets = np.array(rets)
@@ -125,13 +124,27 @@ class MPC:
 
         Returns optimal weights for each forecasted time period as ndarray of shape (n_preds, n_assets).
         """
-        # variable with shape h+1 predictions so first row
-        # can be the known (non-variable) portfolio weight at time t
         self.gamma = self._gamma_from_drawdown_control()
 
-        weights = cp.Variable(shape=(self.n_preds + 1, self.n_assets))
         objective = 0
         constr = []
+
+        # weights variable depends on whether there is a risk-free asset in data
+        if self.rf_included is True:
+            # variable with shape h+1 predictions so first row
+            # can be the known (non-variable) portfolio weight at time t
+            weights = cp.Variable(shape=(self.n_preds + 1, self.n_assets))
+        else:
+            # Set rf to zero in all preds and cov
+            self.rets = np.insert(self.rets, self.n_assets, 0, axis=1)
+            self.cov = np.insert(self.cov, self.n_assets, 0, axis=-2)
+            self.cov = np.insert(self.cov, self.n_assets, 0, axis=-1)  # Has to be done in two steps for cov due to dims
+            self.start_weights = np.append(self.start_weights, 0)
+
+            weights = cp.Variable(shape=(self.n_preds + 1, self.n_assets+1))
+            rf_zero_weights = np.zeros(shape=self.n_preds)
+            constr += [weights[1:, -1] == 0]  # Keep rf pos at zero since it non-present in this case
+
 
         # Loop through each row in the weights variable and construct the optimization problem
         # Note this loop is very cpu-light since no actual computations takes place inside it
@@ -145,7 +158,11 @@ class MPC:
 
         prob = cp.Problem(cp.Maximize(objective), constr) # Construct maximization problem
         prob.solve(solver=cp.ECOS, verbose=verbose)
-        opt_var = weights.value
+
+        if self.rf_included is True:
+            opt_var = weights.value
+        else:
+            opt_var = weights.value[:, :-1]
 
         if verbose is True:
             print("Shape of var: ", opt_var.shape)
@@ -181,7 +198,9 @@ class MPC:
         """
         Portfolio holding costs.
         """
-        holding_cost_ = self.rho1 * cp.abs(weights) + self.rho2 * cp.square(weights)
+        weights_no_rf = weights[:-1]
+        weights_rf = weights[-1]
+        holding_cost_ = self.rho1 * cp.abs(weights_no_rf) + self.rho2 * cp.square(weights_no_rf) + self.rho_rf*cp.square(weights_rf)
         return cp.sum(holding_cost_)
 
     def _gamma_from_drawdown_control(self):
