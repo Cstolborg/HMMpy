@@ -446,8 +446,35 @@ class Backtester:
         self.port_val_df = df
         return df
 
+    def mpc_shortcons(self, constraints,
+                     data, preds, covariances, n_preds=15, port_val=1000,
+                     start_weights=None, max_holding_rf=1.,
+                     max_leverage=2.0, trans_costs=0.001,
+                     holding_costs=0.0000, max_holding=0.2, eps=1e-6):
 
-    def backtest_equal_weighted(self, df_rets, rebal_freq='M', port_val=1000, start_weights=None):
+        df = pd.DataFrame()
+        results = {f'{constr[0]}_{constr[1]}': [] for constr in constraints}
+        for constr in constraints:
+            print(f'Backtesting for params {constr}')
+            short_con = constr[0]
+            max_drawdown = constr[1]
+
+            self.backtest_mpc(data.rets, preds, covariances, n_preds=n_preds, port_val=port_val,
+                              start_weights=start_weights, max_drawdown=max_drawdown, max_leverage=max_leverage,
+                              gamma_0=5, kappa1=trans_costs, rho2=holding_costs, max_holding=max_holding,
+                              short_cons=short_con, eps=eps)
+
+            results[f'{constr[0]}_{constr[1]}'] = self.port_val
+
+        df = pd.DataFrame(results)
+        df['timestamp'] = data.rets.index[-len(df):]
+        df['T-bills rf'] = data.prices['T-bills rf'].iloc[-len(df):].values
+
+        # self.annual_turnover, self.annual_trans_cost, self.port_val
+        self.port_val_df = df
+        return df
+
+    def backtest_equal_weighted(self, df_rets, rebal_freq='M', port_val=1000, use_weights=None, start_weights=None):
         """
        Backtest an equally weighted portfolio, with specified rebalancing frequency.
 
@@ -465,7 +492,10 @@ class Backtester:
        """
         self.port_val = np.array([0, port_val])
         self.n_assets = df_rets.shape[1]
-        equal_weights = np.array([1 / self.n_assets] * self.n_assets)  # Vector of shape (n_assets,)
+
+        if np.any(use_weights) == None:
+            use_weights = np.array([1 / self.n_assets] * self.n_assets)  # Vector of shape (n_assets,)
+
 
         if start_weights == None:  # Standard init with 100% allocated to cash
             start_weights = np.zeros(self.n_assets)
@@ -481,9 +511,9 @@ class Backtester:
         # The problem is recursive and thus requires looping done this way
         for month_dt, df_group in tqdm.tqdm(df_rets.groupby(pd.Grouper(freq=rebal_freq))):
             # Compute transaction costs for each month. Subtracted from gross ret the first of the month
-            delta_weights = equal_weights - weights
+            delta_weights = use_weights - weights
             trans_cost = self.transaction_costs(delta_weights)
-            weights = equal_weights  # Reset weights
+            weights = use_weights  # Reset weights
             for day in range(len(df_group)):
                 # Calculate gross returns for portfolio and append it
                 if day == 0:

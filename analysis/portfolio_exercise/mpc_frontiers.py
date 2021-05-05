@@ -7,6 +7,8 @@ from hmmpy.finance.backtest import Backtester
 from hmmpy.hidden_markov.hmm_gaussian_em import EMHiddenMarkov
 from hmmpy.hidden_markov.hmm_jump import JumpHMM
 from hmmpy.utils.data_prep import DataPrep
+from analysis.portfolio_exercise.data_description import compute_asset_metrics
+
 
 np.seterr(divide='ignore')
 warnings.filterwarnings('ignore')
@@ -46,15 +48,20 @@ if __name__ == "__main__":
     #constraints = [('LLO', 0.1), ('LLO', 0.15), ('LLO', 1000), ('LS', 1000)]
     constraints = [('LS', 0.1), ('LS', 1000), ('LO', 0.1), ('LO', 1000)]
 
-    df = mpc.mpc_gammas_shortcons(gammas, constraints,
+    #df = mpc.mpc_gammas_shortcons(gammas, constraints,
+    #                        data, preds, cov, n_preds=15, max_holding_rf=1.,
+    #                        max_leverage=2.0, trans_costs=trans_costs, holding_costs=holding_costs,
+    #                        max_holding=max_holding)
+
+    df = mpc.mpc_shortcons(constraints,
                             data, preds, cov, n_preds=15, max_holding_rf=1.,
                             max_leverage=2.0, trans_costs=trans_costs, holding_costs=holding_costs,
                             max_holding=max_holding)
 
-    df.to_csv(path + 'frontiers.csv', index=False)
+    #df.to_csv(path + 'frontiers.csv', index=False)
     #df = pd.read_csv(path + 'frontiers_llo.csv')
-    metrics = mpc.mulitple_port_metrics(df_port_val=df)
-
+    #metrics = mpc.mulitple_port_metrics(df_port_val=df)
+    metrics = compute_asset_metrics(df.drop(columns='timestamp'))
     print(metrics)
 
     #equal_weigthed.backtest_equal_weighted(data.rets, rebal_freq='M')

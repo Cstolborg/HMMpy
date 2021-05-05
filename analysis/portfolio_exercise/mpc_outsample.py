@@ -97,17 +97,17 @@ if __name__ == "__main__":
 
     holding_costs = 0.001
     holding_costs_rf = 0.0000
-    max_holding = 0.2
+    max_holding = 0.4
     trans_costs = 0.0040
 
-    mpc.backtest_mpc(data.rets, preds, cov, n_preds=15, short_cons='LS',
+    mpc.backtest_mpc(data.rets, preds, cov, n_preds=15, short_cons='LO',
                                kappa1=trans_costs, max_holding=max_holding, max_holding_rf=1.,
                                rho2=holding_costs, rho_rf=holding_costs_rf, gamma_0=5,
                                max_drawdown=0.1)
 
     weights = pd.DataFrame(mpc.weights, columns=data.prices.columns, index=data.prices.index[-len(mpc.weights):])
 
-    equal_weigthed.backtest_equal_weighted(data.rets, rebal_freq='M')
+    equal_weigthed.backtest_equal_weighted(data.rets.iloc[1000:], rebal_freq='M')
 
 
     metrics = mpc.single_port_metric(data.prices, mpc.port_val, compare_assets=True)
@@ -125,4 +125,8 @@ if __name__ == "__main__":
     else:
         plot_port_weights(weights, constraints='LO')
 
-
+        fig, ax = plt.subplots(figsize=(12, 7))
+        plt.plot(data.prices.index[-len(mpc.weights):], mpc.port_val, label='mpc')
+        plt.plot(data.prices.index[-len(mpc.weights):], equal_weigthed.port_val, label='1/n')
+        plt.legend()
+        plt.show()

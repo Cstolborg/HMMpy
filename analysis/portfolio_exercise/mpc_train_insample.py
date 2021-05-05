@@ -48,7 +48,7 @@ if __name__ == "__main__":
     #print(gridsearch_results)
 
 
-    df = pd.read_csv('./output_data/mle/gridsearch.csv')
+    df = pd.read_csv('output_data/mle/archive/gridsearch.csv')
     df['sharpe'] = df['return'] / df['std']
 
     #print(df_mle.sort_values(by=['sharpe', 'trans_costs', 'holding_costs',  'max_holding']).tail(20))

@@ -7,9 +7,7 @@ from hmmpy.utils.data_prep import DataPrep
 import warnings
 warnings.filterwarnings('ignore')
 
-
 figsize = (20 ,10)
-
 
 def compute_asset_metrics(df,start=None):
     """Compute performance metrics for a given portfolio/asset"""
@@ -24,8 +22,6 @@ def compute_asset_metrics(df,start=None):
     n_years = len(df) / 252
 
     ret = df_ret.drop('T-bills rf', axis=1)
-    cagr = ((1 + ret).prod(axis=0)) ** (1 / n_years) - 1
-    std = ret.std(axis=0, ddof=1) * np.sqrt(252)
 
     excess_ret = df_ret.subtract(df_ret['T-bills rf'], axis=0).drop('T-bills rf', axis=1)
     excess_cagr = ((1 + excess_ret).prod(axis=0)) ** (1 / n_years) - 1
@@ -38,9 +34,7 @@ def compute_asset_metrics(df,start=None):
     max_drawdown = drawdown.max(axis=0)
     calmar = excess_cagr / max_drawdown
 
-    metrics = {#'Return': cagr,
-               #'Std': std,
-               'Excess Return': excess_cagr,
+    metrics = {'Excess Return': excess_cagr,
                'Excess Std': excess_std,
                'Sharpe': sharpe,
                'Max drawdown': max_drawdown,
@@ -100,4 +94,3 @@ if __name__ == '__main__':
     else:
         plot_asset_vals(data_oos.prices.iloc[1000:], start=start, savefig=None)
         plot_asset_vals(data_is.prices.iloc[1000:], start=start, savefig=None)
-

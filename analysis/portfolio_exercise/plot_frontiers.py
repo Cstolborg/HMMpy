@@ -8,6 +8,7 @@ from hmmpy.finance.backtest import Backtester
 from hmmpy.hidden_markov.hmm_gaussian_em import EMHiddenMarkov
 from hmmpy.hidden_markov.hmm_jump import JumpHMM
 from hmmpy.utils.data_prep import DataPrep
+from analysis.portfolio_exercise.data_description import compute_asset_metrics
 
 np.seterr(divide='ignore')
 warnings.filterwarnings('ignore')
@@ -110,29 +111,6 @@ def plot_sharpe_mdd(df_metrics, ew_metrics, savefig=None):
         plt.savefig('./images/' + savefig)
     plt.show()
 
-def plot_port_val(df_frontiers, ew_port_val, savefig=None):
-
-    # Plotting
-    plt.rcParams.update({'font.size': 15})
-    fig, ax = plt.subplots(nrows=1, ncols=1, sharex=True, figsize=(15, 10))
-
-    for type, data in df_frontiers.groupby(['short_cons', 'D_max']):
-        label = f'${type[0]}_{{D_{{max}}={type[1]}}}$' if type[1] < 1. else f'${type[0]}$'
-        ax.plot(data['timestamp'], data['gamma_5'], label=label)
-
-    ax.plot(data['timestamp'], ew_port_val, label='1/n')
-
-    #ax.set_yscale('log')
-    ax.set_ylabel('$P_t$')
-    ax.tick_params('x', labelrotation=45)
-    ax.legend(fontsize=15)
-
-    plt.tight_layout()
-
-    if not savefig == None:
-        plt.savefig('./images/' + savefig)
-    plt.show()
-
 if __name__ == "__main__":
     # Set path, model to test and in-sample vs. out-of-sample
     model_str = 'mle'
@@ -174,12 +152,10 @@ if __name__ == "__main__":
         plot_sharpe_frontier(metrics, ew_metrics, savefig=path+'sharpe_frontier'+suffix)
         plot_sharpe_calmar(metrics, ew_metrics, savefig=path+'sharpe_calmar'+suffix)
         plot_sharpe_mdd(metrics, ew_metrics, savefig=path+'sharpe_mdd'+suffix)
-        plot_port_val(df_frontiers, ew_port_val, savefig=path+'port_vals'+suffix)
     else:
         plot_frontier(metrics, ew_metrics, savefig=None)
         plot_sharpe_frontier(metrics, ew_metrics, savefig=None)
         plot_sharpe_calmar(metrics, ew_metrics, savefig=None)
         plot_sharpe_mdd(metrics, ew_metrics, savefig=None)
-        plot_port_val(df_frontiers, ew_port_val, savefig=None)
 
     #equal_weigthed.backtest_equal_weighted(data.rets, rebal_freq='M')

@@ -43,14 +43,14 @@ if __name__ == "__main__":
     cov = cov[:, :, [3,6], [[3,3],[6,6]]]
     data.rets = data.rets.iloc[:, [3, 6]]
 
-    trans_costs = 0.020
-    holding_costs = 0.0001
+    trans_costs = 0.008
+    holding_costs = 0.00075
     max_holding = 1.
 
-    mpc.backtest_mpc(data.rets, preds, cov, n_preds=15, short_cons='LS', rf_included=False,
+    mpc.backtest_mpc(data.rets, preds, cov, n_preds=15, short_cons='LO', rf_included=False,
                                kappa1=trans_costs, max_holding=max_holding, max_holding_rf=1.,
-                               rho2=holding_costs, gamma_0=5,
-                               max_drawdown=0.1)
+                               rho2=holding_costs, gamma_0=2.5,
+                               max_drawdown=.1)
 
     weights = pd.DataFrame(mpc.weights, columns=data.prices.columns[[3,6]], index=data.prices.index[-len(mpc.weights):])
 
@@ -65,10 +65,11 @@ if __name__ == "__main__":
 
     save = False
     if save is True:
-        path = f'{model_str}/'
+        path = f'{model_str}/2assets/'
         suffix = '_lo.png'
         plot_port_weights(weights, constraints='LO',
                           savefig=path+'weights'+suffix)
+        pd.DataFrame(metrics, index=['2_asset_0.1D']).to_latex('../../analysis/portfolio_exercise/output_data/' + model_str + '/2_assets/results.tex')
     else:
         plot_port_weights(weights, constraints='LO')
 
