@@ -599,17 +599,8 @@ class Backtester:
 
     def mulitple_port_metrics(self, df_port_val):
         """Compute performance metrics for a given portfolio/asset"""
-        # Merge port_val with data
-        """
-        df_prices = df_prices.iloc[-len(port_val):]
-        df_prices = df_prices[['T-bills rf']]  # Remove other assets
-        df_prices['port_val'] = port_val
-        df_prices.dropna(inplace=True)
-        df_ret = df_prices.pct_change().dropna()
-        """
         df = pd.DataFrame()
         for type, df_groupby in df_port_val.groupby(['short_cons', 'D_max']):
-            df_groupby['T-bills rf']
             df_prices = df_groupby.drop(columns=['short_cons', 'D_max', 'timestamp'])
             df_rets = df_prices.pct_change().dropna()
 

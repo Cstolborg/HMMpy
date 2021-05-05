@@ -95,13 +95,14 @@ if __name__ == "__main__":
     preds = np.load(path + 'preds_'+ sample_type + '.npy')
     cov = np.load(path + 'cov_' + sample_type + '.npy')
 
-    holding_costs = 0.0000
+    holding_costs = 0.001
+    holding_costs_rf = 0.0000
     max_holding = 0.2
-    trans_costs = 0.0010
+    trans_costs = 0.0040
 
     mpc.backtest_mpc(data.rets, preds, cov, n_preds=15, short_cons='LS',
                                kappa1=trans_costs, max_holding=max_holding, max_holding_rf=1.,
-                               rho2=holding_costs, gamma_0=5,
+                               rho2=holding_costs, rho_rf=holding_costs_rf, gamma_0=5,
                                max_drawdown=0.1)
 
     weights = pd.DataFrame(mpc.weights, columns=data.prices.columns, index=data.prices.index[-len(mpc.weights):])
@@ -119,10 +120,9 @@ if __name__ == "__main__":
     if save is True:
         path = f'{model_str}/'
         suffix = '_lo.png'
-        weights = pd.DataFrame(mpc.weights, columns=data.prices.columns, index=data.prices.index[-len(mpc.weights):])
         plot_port_weights(weights, constraints='LO',
                           savefig=path+'weights'+suffix)
     else:
-        plot_port_weights(data.prices, mpc.weights, start=None, constraints='LS')
+        plot_port_weights(weights, constraints='LO')
 
 

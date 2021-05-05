@@ -42,20 +42,22 @@ if __name__ == "__main__":
     data.rets = data.rets.iloc[:, [1, 4]]
 
     grid = {'max_holding': [1.],
-            'trans_costs': [0.0001, 0.0005, 0.001, 0.004, 0.008, 0.015],
-            'holding_costs': [0, 0.0005, 0.001, 0.02, 0.05],
+            'trans_costs': [0.015, 0.20, 0.25, 0.3, 0.35, 0.4],
+            'holding_costs': [0, 0.0001, 0.0005, 0.001],
             'holding_costs_rf': [0]
             }
 
-    gridsearch_results = \
-                backtester.gridsearch_mpc(grid, data.rets, preds, cov, rf_included=False, short_cons='long_only')
-    gridsearch_results.to_csv(path + 'gridsearch.csv', index=False)
-    print(gridsearch_results)
+    #gridsearch_results = \
+    #            backtester.gridsearch_mpc(grid, data.rets, preds, cov, rf_included=False, short_cons='long_only')
+    #gridsearch_results.to_csv(path + 'gridsearch.csv', index=False)
+    #print(gridsearch_results)
 
 
-    df = pd.read_csv('./output_data/mle/gridsearch_1000.csv')
+    df = pd.read_csv(path+'/gridsearch_v2.csv')
+    #df = df.drop(columns=['holding_costs_rf', 'max_holding'])
     df['sharpe'] = df['return'] / df['std']
 
+
     #print(df_mle.sort_values(by=['sharpe', 'trans_costs', 'holding_costs',  'max_holding']).tail(20))
-    #print(df_mle.sort_values(by=['sharpe', 'trans_costs', 'holding_costs',  'max_holding']).head(20))
+    print(df.sort_values(by=['sharpe', 'trans_costs', 'holding_costs']))
 

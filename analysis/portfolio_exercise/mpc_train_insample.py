@@ -42,15 +42,15 @@ if __name__ == "__main__":
             'holding_costs_rf': [0,0.0005, 0.001]
             }
 
-    gridsearch_results = \
-                backtester.gridsearch_mpc(grid, data.rets, preds, cov, short_cons='long_only')
-    gridsearch_results.to_csv(path + 'gridsearch.csv', index=False)
-    print(gridsearch_results)
+    #gridsearch_results = \
+    #            backtester.gridsearch_mpc(grid, data.rets, preds, cov, short_cons='long_only')
+    #gridsearch_results.to_csv(path + 'gridsearch.csv', index=False)
+    #print(gridsearch_results)
 
 
-    df = pd.read_csv('./output_data/mle/gridsearch_1000.csv')
+    df = pd.read_csv('./output_data/mle/gridsearch.csv')
     df['sharpe'] = df['return'] / df['std']
 
     #print(df_mle.sort_values(by=['sharpe', 'trans_costs', 'holding_costs',  'max_holding']).tail(20))
-    #print(df_mle.sort_values(by=['sharpe', 'trans_costs', 'holding_costs',  'max_holding']).head(20))
+    print(df.sort_values(by=['sharpe', 'trans_costs', 'holding_costs',  'max_holding']).tail(20))
 

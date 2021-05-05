@@ -37,20 +37,21 @@ if __name__ == "__main__":
     preds = np.load(path + 'preds_'+ sample_type + '.npy')
     cov = np.load(path + 'cov_' + sample_type + '.npy')
 
-    holding_costs = 0.0000
+    holding_costs = 0.001
+    holding_costs_rf = 0.0000
     max_holding = 0.2
-    trans_costs = 0.0010
+    trans_costs = 0.0040
     gammas = [1, 3, 5, 10, 15, 25]
     #constraints = [('LO', 0.1), ('LO', 0.15), ('LO', 1000)]
     #constraints = [('LLO', 0.1), ('LLO', 0.15), ('LLO', 1000), ('LS', 1000)]
-    constraints = [('LS', 0.1), ('LS', 0.15), ('LS', 1000), ('LLO', 1000)]
+    constraints = [('LS', 0.1), ('LS', 1000), ('LO', 0.1), ('LO', 1000)]
 
     df = mpc.mpc_gammas_shortcons(gammas, constraints,
                             data, preds, cov, n_preds=15, max_holding_rf=1.,
                             max_leverage=2.0, trans_costs=trans_costs, holding_costs=holding_costs,
                             max_holding=max_holding)
 
-    df.to_csv(path + 'frontiers_ls.csv', index=False)
+    df.to_csv(path + 'frontiers.csv', index=False)
     #df = pd.read_csv(path + 'frontiers_llo.csv')
     metrics = mpc.mulitple_port_metrics(df_port_val=df)
 

@@ -166,7 +166,7 @@ if __name__ == "__main__":
     ew_metrics = equal_weigthed.single_port_metric(data.prices,
                                                    ew_port_val)
 
-    save = True
+    save = False
     if save == True:
         path = f'{model_str}/'
         suffix = '_ls.png'
