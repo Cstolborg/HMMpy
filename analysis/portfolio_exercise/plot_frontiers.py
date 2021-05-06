@@ -130,7 +130,7 @@ if __name__ == "__main__":
 
     mpc = Backtester()
 
-    df_frontiers = pd.read_csv(path + 'frontiers_ls.csv')
+    df_frontiers = pd.read_csv(path + 'frontiers.csv')
     df_frontiers['timestamp'] = pd.to_datetime(df_frontiers['timestamp'])
     metrics = mpc.mulitple_port_metrics(df_port_val=df_frontiers)
     print(metrics)
@@ -144,10 +144,9 @@ if __name__ == "__main__":
     ew_metrics = equal_weigthed.single_port_metric(data.prices,
                                                    ew_port_val)
 
-    save = False
+    save = True
     if save == True:
-        path = f'{model_str}/'
-        suffix = '_ls.png'
+        path, suffix = '', '.png'
         plot_frontier(metrics, ew_metrics, savefig=path+'frontier'+suffix)
         plot_sharpe_frontier(metrics, ew_metrics, savefig=path+'sharpe_frontier'+suffix)
         plot_sharpe_calmar(metrics, ew_metrics, savefig=path+'sharpe_calmar'+suffix)

@@ -51,20 +51,31 @@ def merge_data():
 
 def plot_port_val(df, savefig=None):
     df = df.drop(columns='T-bills rf')
+
+    # Compute drawdowns
+    peaks = df.cummax(axis=0)
+    drawdown = (df - peaks) / peaks
+
     # Plotting
     plt.rcParams.update({'font.size': 20})
-    fig, ax = plt.subplots(nrows=1, ncols=1, sharex=True, figsize=(15, 10))
+    fig, axes = plt.subplots(nrows=3, ncols=1, sharex=True, figsize=(15, 10))
+    ax1 = plt.subplot2grid((3, 1), (0, 0), rowspan=2, colspan=1)
+    ax2 = plt.subplot2grid((3, 1), (2, 0), rowspan=1, colspan=1, sharex=ax1)
 
     #for col in df_frontiers.groupby(['short_cons', 'D_max']):
     #    label = f'${type[0]}_{{D_{{max}}={type[1]}}}$' if type[1] < 1. else f'${type[0]}$'
     #    ax.plot(data['timestamp'], data['gamma_5'], label=label)
 
-    df.plot(ax=ax)
-    #ax.set_yscale('log')
-    ax.set_ylabel('$P_t$')
-    ax.set_xlabel('')
-    ax.tick_params('x', labelrotation=45)
-    ax.legend(fontsize=15)
+    df.plot(ax=ax1)
+    drawdown.iloc[:, [0,2,5]].plot(ax=ax2)
+
+    ax1.set_ylabel('$P_t$')
+
+    ax2.set_ylabel('Drawdown')
+    ax2.set_yticklabels(['{:,.0%}'.format(x) for x in ax2.get_yticks()])
+    ax2.tick_params('x', labelrotation=45)
+    ax2.set_xlabel('')
+    ax2.legend(fontsize=15)
 
 
     plt.tight_layout()
@@ -85,4 +96,3 @@ if __name__ == '__main__':
     metrics.to_latex('./output_data/port_performance.tex')
 
     plot_port_val(df, savefig='comparison_perf.png')
-
