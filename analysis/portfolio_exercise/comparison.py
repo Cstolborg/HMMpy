@@ -62,14 +62,11 @@ def plot_port_val(df, savefig=None):
     ax1 = plt.subplot2grid((3, 1), (0, 0), rowspan=2, colspan=1)
     ax2 = plt.subplot2grid((3, 1), (2, 0), rowspan=1, colspan=1, sharex=ax1)
 
-    #for col in df_frontiers.groupby(['short_cons', 'D_max']):
-    #    label = f'${type[0]}_{{D_{{max}}={type[1]}}}$' if type[1] < 1. else f'${type[0]}$'
-    #    ax.plot(data['timestamp'], data['gamma_5'], label=label)
-
     df.plot(ax=ax1)
     drawdown.iloc[:, [0,2,5]].plot(ax=ax2)
 
     ax1.set_ylabel('$P_t$')
+    ax1.legend(fontsize=15, loc='upper left')
 
     ax2.set_ylabel('Drawdown')
     ax2.set_yticklabels(['{:,.0%}'.format(x) for x in ax2.get_yticks()])
@@ -84,6 +81,34 @@ def plot_port_val(df, savefig=None):
         plt.savefig('./images/' + savefig)
     plt.show()
 
+def plot_rolling_sharpe(df, savefig=None):
+    df_ret = df.pct_change().dropna()
+    excess_ret = df_ret.subtract(df_ret['T-bills rf'], axis=0).drop('T-bills rf', axis=1)
+    excess_std = excess_ret.std(axis=0, ddof=1)
+
+    window_len = 252*5
+    rolling_cagr = (1+excess_ret).rolling(window=window_len).apply(np.prod, raw=True)**(1/5) - 1
+    rolling_std = excess_ret.rolling(window=window_len).std(ddof=1) * np.sqrt(252)
+    rolling_sharpe = rolling_cagr/rolling_std
+    rolling_sharpe.dropna(inplace=True)
+
+    # Plotting
+    plt.rcParams.update({'font.size': 20})
+    fig, ax = plt.subplots(nrows=1, ncols=1, sharex=True, figsize=(15, 10))
+
+    rolling_sharpe.iloc[:, [0,1,5]].plot(ax=ax)
+
+    ax.set_ylabel('Sharpe')
+    ax.legend(fontsize=15, loc='upper left')
+
+    ax.tick_params('x', labelrotation=45)
+    ax.set_xlabel('')
+
+    plt.tight_layout()
+
+    if not savefig == None:
+        plt.savefig('./images/' + savefig)
+    plt.show()
 
 if __name__ == '__main__':
     data = DataPrep(out_of_sample=True)
@@ -92,7 +117,11 @@ if __name__ == '__main__':
     #df = merge_data()
     #df.to_csv('./output_data/comparison.csv')
 
-    metrics = compute_asset_metrics(df)
-    metrics.to_latex('./output_data/port_performance.tex')
+    metrics = compute_asset_metrics(df).round(4)
+    metrics.to_latex('./output_data/port_performance.tex', escape=False)
 
     plot_port_val(df, savefig='comparison_perf.png')
+
+    plot_rolling_sharpe(df, savefig='rolling_sharpe.png')
+
+
