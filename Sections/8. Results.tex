@@ -54,8 +54,6 @@ performance for each asset during the out-of-sample evaluation period 2007-2021.
 
 \subsection{In-sample training}
 
-\textbf{Overvej om det er muligt at tegne en pareto-frontier over optimale værdier - in any case så er det gjort oos for forskellige gammaer.}
-
 In-sample training is performed by evaluating three distinct objectives. Concretely, we are interested in maximizing the sharpe ratio, maximizing the calmar ratio and minimizing portfolio turnover. That is, just as in a regular Markowitz mean-variance setting, high excess returns and low standard deviations are preferred, though with the added objective that, for a given return and standard deviation, a lower drawdown over the period is preferred. Minimizing annual turnover is imposed as a means of regularizing the amount of trades ocurring, and thus minimizing actual trading costs incurred. Training is carried out for a long-only portfolio with $\gamma_0=5$ because that results in excess risk similar to the 1/n portfolios\footnote
 {Refer to the out-of-sample section to see a range of $\gamma_0$.
 }. Furthermore, $D_{max}$ is set to 0.15 - the choice of this parameter is arbitrary as it is up to the individual portfolio manager to determine how much drawdown she will allow in practice. Finally, one-way transaction costs are assumed to be 10 basis points, while there are zero costs associated with trading the risk-free asset. This is a realistic assumption for institutional investors (Nystrup et al, 2017).
@@ -63,8 +61,6 @@ In-sample training is performed by evaluating three distinct objectives. Concret
 The training is quite challenging because many of the hyperparameters are mutually dependent, meaning we have to test all combinations within a specified grid. One of the advantages of the MPC approach, as outlined in \cref{algo:MPC}, is the complete separability between forecasting expected conditional asset parameters $\hat\mu_{t+H}$ \& $\hat\Sigma_{t+H}$ and solving for the optimal sequence of trades in \cref{eq: maximizing objective MPC}. Therefore, to reduce training time, the set of predicted means and covariances for each asset can first be computed for the set of hyperparameters relating to the forecast model, i.e. length of forecast horizon H, size of shrinkage factors $\upsilon$ etc. This can then stored into memory after which tuning the MPC hyperparameters can be performed.
 
 \subsubsection*{Forecasting model}
-
-\textbf{If possible redo the gridsearch whilst trying various rolling window lenghts, more shrinkage factors etc. Then fill in this section}
 
 \subsubsection*{MPC parameters}
 
@@ -85,9 +81,21 @@ In this section the model specified in the section above is run on the out-of-sa
 
 \subsubsection*{Allocations}
 
-\textbf{A very large allocation is in the risk-free asset across most time periods. This is likely due to it having a very low covariance with other assets and thus being desirable in a mean-variance setting - is there some clever way to reduce the overall allocation to rf?}
+\textbf{To-aktivs game: Kan man slå S\&P 500 ved at "time" markedet.}
 
-\textbf{Consider adding allocation plots with and without drawdown control to see difference. Currently showing with drawdown control}
+\textbf{Lav mean-variance portefølje over hele porteføljen}
+
+\textbf{Add table of performance}
+
+\textbf{Add high-water mark - drawdown at each time period}
+
+\textbf{Consider rolling sharpe values}
+
+\textbf{Hvis resultater er ens så noter at resultater er de samme mellem mle og jump.}
+
+\textbf{Kan man komme ind og ud hurtigt nok - er singalerne hurtige nok? - kan man evt. besvare ved et fixed-mix.}
+
+
 
 \begin{figure}[H]
     \centering
@@ -103,13 +111,6 @@ In this section the model specified in the section above is run on the out-of-sa
     \label{fig:MPC_port_weights_ls}
 \end{figure}
 
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=1\textwidth]{analysis/portfolio_exercise/images/mle/weights_llo.png}
-    \caption[Asset weights over time for a leveraged long-only portfolio]{Asset weights over time for a leveraged long-only portfolio.}
-    \label{fig:MPC_port_weights_llo}
-\end{figure}
-
 \subsubsection*{Performance comparison}
 
 \textbf{$D_{max}$ indikerer den maksimale drawdown tolerance. Hvis en portefølje når $D_{max}$, går risikoaversionen $\gamma$ mod uendelig. Alle plots er efter transaction costs på 10 basispoint per one-way transaktion.}
@@ -123,18 +124,10 @@ In this section the model specified in the section above is run on the out-of-sa
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=1\textwidth]{analysis/portfolio_exercise/images/mle/port_vals_llo.png}
+    \includegraphics[width=1\textwidth]{analysis/portfolio_exercise/images/mle/port_vals_ls.png}
     \caption[Comparison of MPC investment strategies for various values of $D_{max}$]{Comparison of MPC investment strategies for various values of $D_{max}$.}
     \label{fig:MPC_port_vals_ls}
 \end{figure}
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=1\textwidth]{analysis/portfolio_exercise/images/mle/port_vals_llo.png}
-    \caption[Comparison of MPC investment strategies for various values of $D_{max}$]{Comparison of MPC investment strategies for various values of $D_{max}$.}
-    \label{fig:MPC_port_vals_llo}
-\end{figure}
-
 
 \subsubsection*{Efficient frontiers long-only}
 
@@ -142,23 +135,9 @@ In this section the model specified in the section above is run on the out-of-sa
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=1\textwidth]{analysis/portfolio_exercise/images/mle/frontier_lo.png}
-    \caption[Efficient frontiers for various values of $D_{max}$]{Efficient frontiers for various values of $D_{max}$. The points from right to left correspond to $\gamma_0=1,3,5,10,15,25$}
-    \label{fig:MPC_frontier_lo}
-\end{figure}
-
-\begin{figure}[H]
-    \centering
     \includegraphics[width=1\textwidth]{analysis/portfolio_exercise/images/mle/sharpe_frontier_lo.png}
     \caption[Sharpe and Calmar ratio as function of $\gamma_0$ various values of $D_{max}$]{Sharpe and Calmar ratio as function of $\gamma_0$ various values of $D_{max}$.}
     \label{fig:MPC_sharpe_frontier_lo}
-\end{figure}
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=1\textwidth]{analysis/portfolio_exercise/images/mle/sharpe_calmar_lo.png}
-    \caption[Sharpe vs. Calmar ratio for various values of $D_{max}$]{Sharpe vs. Calmar ratio for various values of $D_{max}$. The points from left to right correspond to $\gamma_0=1,3,5,10,15,25$}
-    \label{fig:MPC_sharpe_calmar_lo}
 \end{figure}
 
 \begin{figure}[H]
@@ -172,13 +151,6 @@ In this section the model specified in the section above is run on the out-of-sa
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=1\textwidth]{analysis/portfolio_exercise/images/mle/frontier_ls.png}
-    \caption[Efficient frontiers for various values of $D_{max}$]{Efficient frontiers for various values of $D_{max}$. The points from right to left correspond to $\gamma_0=1,3,5,10,15,25$}
-    \label{fig:MPC_frontier_ls}
-\end{figure}
-
-\begin{figure}[H]
-    \centering
     \includegraphics[width=1\textwidth]{analysis/portfolio_exercise/images/mle/sharpe_frontier_ls.png}
     \caption[Sharpe and Calmar ratio as function of $\gamma_0$ various values of $D_{max}$]{Sharpe and Calmar ratio as function of $\gamma_0$ various values of $D_{max}$.}
     \label{fig:MPC_sharpe_frontier_ls}
@@ -186,46 +158,9 @@ In this section the model specified in the section above is run on the out-of-sa
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=1\textwidth]{analysis/portfolio_exercise/images/mle/sharpe_calmar_lo.png}
-    \caption[Sharpe vs. Calmar ratio for various values of $D_{max}$]{Sharpe vs. Calmar ratio for various values of $D_{max}$. The points from left to right correspond to $\gamma_0=1,3,5,10,15,25$}
-    \label{fig:MPC_sharpe_calmar_ls}
-\end{figure}
-
-\begin{figure}[H]
-    \centering
     \includegraphics[width=1\textwidth]{analysis/portfolio_exercise/images/mle/sharpe_mdd_lo.png}
     \caption[Sharpe as function of MDD for various values of $D_{max}$]{Sharpe as function of MDD for various values of $D_{max}$. The points from right to left correspond to $\gamma_0=1,3,5,10,15,25$}
     \label{fig:MPC_sharpe_mdd_ls}
-\end{figure}
-
-\subsubsection*{Efficient frontiers leveraged long-only}
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=1\textwidth]{analysis/portfolio_exercise/images/mle/frontier_llo.png}
-    \caption[Efficient frontiers for various values of $D_{max}$]{Efficient frontiers for various values of $D_{max}$. The points from right to left correspond to $\gamma_0=1,3,5,10,15,25$}
-    \label{fig:MPC_frontier_llo}
-\end{figure}
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=1\textwidth]{analysis/portfolio_exercise/images/mle/sharpe_frontier_llo.png}
-    \caption[Sharpe and Calmar ratio as function of $\gamma_0$ various values of $D_{max}$]{Sharpe and Calmar ratio as function of $\gamma_0$ various values of $D_{max}$.}
-    \label{fig:MPC_sharpe_frontier_llo}
-\end{figure}
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=1\textwidth]{analysis/portfolio_exercise/images/mle/sharpe_calmar_llo.png}
-    \caption[Sharpe vs. Calmar ratio for various values of $D_{max}$]{Sharpe vs. Calmar ratio for various values of $D_{max}$. The points from left to right correspond to $\gamma_0=1,3,5,10,15,25$}
-    \label{fig:MPC_sharpe_calmar_llo}
-\end{figure}
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=1\textwidth]{analysis/portfolio_exercise/images/mle/sharpe_mdd_llo.png}
-    \caption[Sharpe as function of MDD for various values of $D_{max}$]{Sharpe as function of MDD for various values of $D_{max}$. The points from right to left correspond to $\gamma_0=1,3,5,10,15,25$}
-    \label{fig:MPC_sharpe_mdd_llo}
 \end{figure}
 
 \subsubsection{Comparison}
