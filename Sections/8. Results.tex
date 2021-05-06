@@ -75,63 +75,40 @@ The training is quite challenging because many of the hyperparameters are mutual
 
 \subsection{Out-of-sample results}
 
-\textbf{Man kan evt. tegne rullende perfomance, eksempelvis rullende 5-årge Sharpes.}
-
 In this section the model specified in the section above is run on the out-of-sample data and evaluated on the evaluation set. Initially, portfolio allocations and price developments are shown for a variety of borrowing constraints and for different values of $D_{max}$, using $\gamma_0=5$. Then, the analysis is expanded to also include a grid of risk aversion parameters $\gamma_0$, in which a variety of efficient frontiers and indifference curves are analyzed. Again, a fee of 10 basis points per one-way transaction is assumed, not including the risk-less asset, and the fee for shorting assets is assumed equal to the risk-free rate. There are assumed no price-impacts upon trading and no holding costs.
 
 \subsubsection*{Allocations}
 
-\textbf{To-aktivs game: Kan man slå S\&P 500 ved at "time" markedet.}
-
-\textbf{Lav mean-variance portefølje over hele porteføljen}
-
-\textbf{Add table of performance}
-
-\textbf{Add high-water mark - drawdown at each time period}
-
-\textbf{Consider rolling sharpe values}
-
 \textbf{Hvis resultater er ens så noter at resultater er de samme mellem mle og jump.}
-
-\textbf{Kan man komme ind og ud hurtigt nok - er singalerne hurtige nok? - kan man evt. besvare ved et fixed-mix.}
-
 
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=1\textwidth]{analysis/portfolio_exercise/images/mle/weights_lo.png}
+    \includegraphics[width=1\textwidth]{analysis/portfolio_exercise/images/mle/weights_ls.png}
     \caption[Asset weights over time for a long-only portfolio]{Asset weights over time for a long-only portfolio.}
     \label{fig:MPC_port_weights_lo}
-\end{figure}
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=1\textwidth]{analysis/portfolio_exercise/images/mle/weights_ls.png}
-    \caption[Asset weights over time for a long-short portfolio]{Asset weights over time for a long-short portfolio.}
-    \label{fig:MPC_port_weights_ls}
 \end{figure}
 
 \subsubsection*{Performance comparison}
 
 \textbf{$D_{max}$ indikerer den maksimale drawdown tolerance. Hvis en portefølje når $D_{max}$, går risikoaversionen $\gamma$ mod uendelig. Alle plots er efter transaction costs på 10 basispoint per one-way transaktion.}
 
+\begin{table}[H]
+\centering
+\caption[]{}
+\input{analysis/portfolio_exercise/output_data/port_performance}
+\label{tab:mpc_performance}
+\end{table}
+
 \begin{figure}[H]
     \centering
-    \includegraphics[width=1\textwidth]{analysis/portfolio_exercise/images/mle/port_vals_lo.png}
+    \includegraphics[width=1\textwidth]{analysis/portfolio_exercise/images/comparison_perf.png}
     \caption[Comparison of MPC investment strategies for various values of $D_{max}$]{Comparison of MPC investment strategies for various values of $D_{max}$.}
     \label{fig:MPC_port_vals_lo}
 \end{figure}
 
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=1\textwidth]{analysis/portfolio_exercise/images/mle/port_vals_ls.png}
-    \caption[Comparison of MPC investment strategies for various values of $D_{max}$]{Comparison of MPC investment strategies for various values of $D_{max}$.}
-    \label{fig:MPC_port_vals_ls}
-\end{figure}
-
-\subsubsection*{Efficient frontiers long-only}
-
-\textbf{Vi skal have udvalgt nogle enkelte plots herfra. Umiddelbart syntes jeg de plots med excess return på y-aksen skal fjernes. De plots med sharpe på y-aksen og henholdsvist $\gamma_0$, calmar ratio og maximum drawdown giver meget bedre mening --> Det er også de parametre vi optimerer imod in-sample.}
+\subsubsection*{Efficient frontiers}
 
 \begin{figure}[H]
     \centering
@@ -147,29 +124,4 @@ In this section the model specified in the section above is run on the out-of-sa
     \label{fig:MPC_sharpe_mdd_lo}
 \end{figure}
 
-\subsubsection*{Efficient frontiers long-short}
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=1\textwidth]{analysis/portfolio_exercise/images/mle/sharpe_frontier_ls.png}
-    \caption[Sharpe and Calmar ratio as function of $\gamma_0$ various values of $D_{max}$]{Sharpe and Calmar ratio as function of $\gamma_0$ various values of $D_{max}$.}
-    \label{fig:MPC_sharpe_frontier_ls}
-\end{figure}
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=1\textwidth]{analysis/portfolio_exercise/images/mle/sharpe_mdd_lo.png}
-    \caption[Sharpe as function of MDD for various values of $D_{max}$]{Sharpe as function of MDD for various values of $D_{max}$. The points from right to left correspond to $\gamma_0=1,3,5,10,15,25$}
-    \label{fig:MPC_sharpe_mdd_ls}
-\end{figure}
-
 \subsubsection{Comparison}
-
-
-
-\subsubsection{Notes to self}
-
-
-\textbf{Consider using rolling estimation of state sequence where only 1 new state is detected each time step(like in BP) - current approach estimates a new state sequence over entire rolling window at each timestep, which might make estimated means and covariances more unstable. Also, do we include rf in theestimates of mu and covariance matrix or how do we handle that asset?}
-
-\textbf{Consider adding estimation section for portfolio allocation as in BP - trained on the same in-sample data as the rest.}
