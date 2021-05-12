@@ -1,3 +1,8 @@
 sphinx>=2.0
 numpy>=1.20.1
 sphinx_math_dollar
+numpy>=1.20.1
+scikit-learn>=0.24.0
+scipy>=1.5.4
+pandas>=1.2.0
+tqdm
