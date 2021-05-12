@@ -21,9 +21,13 @@ pip install -i https://test.pypi.org/pypi/ --extra-index-url https://pypi.org/si
 
 HMMpy has the following dependencies:
 
-- Python >= 3.6
-- NumPy >= 1.15
-- SciPy >= 1.1.0
+- Python >= 3.8
+- Cython >= 0.29
+- NumPy >= 1.20.1
+- Pandas >= 1.2.0
+- SciPy >= 1.5.4
+- tqdm
+
 
 ## Getting started
 The following code samples some data, and then trains an hidden markov model using the JumpHMM class:

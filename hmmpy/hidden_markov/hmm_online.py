@@ -3,7 +3,7 @@ from scipy import stats
 from scipy.special import logsumexp
 import matplotlib.pyplot as plt
 
-from hmmpy.utils.hmm_sampler import SampleHMM
+from hmmpy.hidden_markov.hmm_sampler import SampleHMM
 from hmmpy.hidden_markov.hmm_base import BaseHiddenMarkov
 from hmmpy.hidden_markov.hmm_gaussian_em import EMHiddenMarkov
 

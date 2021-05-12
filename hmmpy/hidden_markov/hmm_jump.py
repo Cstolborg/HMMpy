@@ -1,13 +1,12 @@
 import numpy as np
 import pandas as pd
-import pyximport
 import tqdm
 from numpy import ndarray
 from sklearn.cluster._kmeans import kmeans_plusplus
 from sklearn.metrics import confusion_matrix
 from sklearn.preprocessing import StandardScaler
 
-from hmmpy.utils.hmm_sampler import SampleHMM
+from hmmpy.hidden_markov.hmm_sampler import SampleHMM
 from hmmpy.hidden_markov.hmm_base import BaseHiddenMarkov
 from hmmpy.hidden_markov import hmm_cython
 

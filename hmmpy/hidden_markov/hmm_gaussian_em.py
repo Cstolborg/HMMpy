@@ -3,7 +3,7 @@ from numpy import ndarray
 from scipy.special import logsumexp
 
 from hmmpy.hidden_markov.hmm_base import BaseHiddenMarkov
-from hmmpy.utils.hmm_sampler import SampleHMM
+from hmmpy.hidden_markov.hmm_sampler import SampleHMM
 
 
 class EMHiddenMarkov(BaseHiddenMarkov):

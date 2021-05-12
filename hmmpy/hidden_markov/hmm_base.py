@@ -449,27 +449,3 @@ class BaseHiddenMarkov(BaseEstimator):
                 print(conf_matrix)
 
         return bac
-
-
-if __name__ == '__main__':
-    # Including data to train on S&P 500
-    path_1 = '../../data/'
-    df_returns = pd.read_csv(path_1 + 'price_series.csv', index_col='Time')
-    df_returns.index = pd.to_datetime(df_returns.index)
-    df_SP500 = df_returns[['S&P 500 ']]
-    df_SP500['S&P 500 Index'] = df_SP500['S&P 500 '] / df_SP500['S&P 500 '][0] * 100
-    df_SP500['Returns'] = df_SP500['S&P 500 Index'].pct_change()
-    df_SP500['Log returns'] = np.log(df_SP500['S&P 500 Index']) - np.log(df_SP500['S&P 500 Index'].shift(1))
-    df_SP500.dropna(inplace = True)
-    print(df_SP500)
-
-    #X = np.arange(1,1000)
-
-    X = df_SP500['S&P 500 ']
-    model = BaseHiddenMarkov(n_states=2)
-    #returns, true_regimes = simulate_2state_gaussian(plotting=False)  # Simulate some data from two normal distributions
-    model._init_params(df_SP500['Log returns'])
-    probs, logprobs = model.emission_probs(df_SP500['Log returns'])
-    print(probs)
-
-    model.fit(X)
