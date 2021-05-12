@@ -5,11 +5,11 @@ import scipy.optimize as opt
 import matplotlib.pyplot as plt
 
 from hmmpy.utils.simulate_returns import simulate_2state_gaussian
-from gaussian import GaussianHMM
+from mle import MLEHMM
 
 
 
-class EMTHiddenMarkov(GaussianHMM):
+class EMTHiddenMarkov(MLEHMM):
     """
     Class for estimating HMMs with a mixture of gaussian and students t distributions.
     """

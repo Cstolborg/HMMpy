@@ -7,21 +7,28 @@ This is the api reference of ``hmmpy``. The classes are structured as follows:
 * hmmpy.EMHiddenMarkov: Methods related to maximum likeleihood estimation using Expectation Maximizing (Baum-Welch) algorithm.
 * hmmpy.JumpHMM: Methods related to jump estimation.
 
-hmmpy.Base
+hmmpy.base
 ----------
-.. autoclass:: hmmpy.hidden_markov.hmm_base.BaseHiddenMarkov
+.. autoclass:: hmmpy.base.BaseHiddenMarkov
    :private-members:
    :exclude-members: set_params, get_params, _get_param_names
    :no-inherited-members:
 
-HMMpy Gaussian
+hmmpy.gaussian
 --------------
-.. autoclass:: hmmpy.hidden_markov.hmm_gaussian_em.EMHiddenMarkov
+.. autoclass:: hmmpy.mle.MLEHMM
    :exclude-members: set_params, get_params, _get_param_names
    :no-inherited-members:
 
-HMMpy Jump
+hmmpy.jump
 -----------
-.. autoclass:: hmmpy.hidden_markov.hmm_jump.JumpHMM
+.. autoclass:: hmmpy.jump.JumpHMM
+   :exclude-members: set_params, get_params, _get_param_names
+   :no-inherited-members:
+
+
+hmmpy.sampler
+-----------
+.. autoclass:: hmmpy.sampler.SampleHMM
    :exclude-members: set_params, get_params, _get_param_names
    :no-inherited-members:

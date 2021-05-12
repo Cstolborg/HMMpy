@@ -5,10 +5,10 @@ import matplotlib.pyplot as plt
 
 from hmmpy.sampler import SampleHMM
 from hmmpy.base import BaseHiddenMarkov
-from hmmpy.gaussian import GaussianHMM
+from hmmpy.mle import MLEHMM
 
 
-class OnlineHMM(GaussianHMM, BaseHiddenMarkov):
+class OnlineHMM(MLEHMM, BaseHiddenMarkov):
 
     def __init__(self, n_states: int = 2, init: str = 'random', max_iter: int = 100, tol: float = 1e-6,
                  epochs: int = 10, random_state: int = 42):

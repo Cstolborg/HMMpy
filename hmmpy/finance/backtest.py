@@ -20,7 +20,7 @@ import pandas as pd
 import tqdm
 from matplotlib import pyplot as plt
 
-from hmmpy.gaussian import GaussianHMM
+from hmmpy.mle import MLEHMM
 from hmmpy.finance.mpc_model import MPC
 from hmmpy.utils.data_prep import DataPrep
 
@@ -706,7 +706,7 @@ if __name__ == "__main__":
     df_logret = data.logrets
     X = df_logret["S&P 500 "]
 
-    model1 = GaussianHMM(n_states=2, init="random", random_state=42, epochs=20, max_iter=100)
+    model1 = MLEHMM(n_states=2, init="random", random_state=42, epochs=20, max_iter=100)
     backtester = Backtester()
 
     #preds = np.load(path + 'rolling_preds.npy')

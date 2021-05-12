@@ -13,7 +13,7 @@ class build_ext(build_ext):
         import numpy as np
         import numpy.distutils
 
-        self.distribution.ext_modules[:] = cythonize("hmmpy/hidden_markov/*.pyx",language_level='3')
+        self.distribution.ext_modules[:] = cythonize("hmmpy/*.pyx", language_level='3')
         # Sadly, this part needs to be done manually.
         for ext in self.distribution.ext_modules:
             for k, v in np.distutils.misc_util.get_info("npymath").items():
@@ -30,9 +30,9 @@ class build_ext(build_ext):
         super().build_extensions()
 
 setup(
-    name='cstolborg',
-    version='0.0.6',
-    url='https://github.com/Cstolborg/hmm-master',
+    name='hmm-py',
+    version='0.0.0',
+    url='https://github.com/Cstolborg/hmmpy',
     author='Cstolborg',
     author_email='christianstolborg@gmail.com',
     description='A python module to implement Hidden Markov hidden_markov for financial times series.',
@@ -46,7 +46,7 @@ setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent"
     ],
-    python_requires='>=3.6',
+    python_requires='>=3.8',
     setup_requires=[
         'Cython',
         'numpy>=1.20.1'

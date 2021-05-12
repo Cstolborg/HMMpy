@@ -6,9 +6,10 @@ from hmmpy.base import BaseHiddenMarkov
 from hmmpy.sampler import SampleHMM
 
 
-class GaussianHMM(BaseHiddenMarkov):
+class MLEHMM(BaseHiddenMarkov):
     """"
     Class for computing HMM's using the EM algorithm.
+
     Can be used to fit HMM parameters or to decode hidden states.
 
     Parameters
@@ -211,7 +212,7 @@ class GaussianHMM(BaseHiddenMarkov):
 if __name__ == '__main__':
     sampler = SampleHMM(n_states=2, random_state=42)
     X, viterbi_states, true_states = sampler.sample_with_viterbi(1000, 1)
-    model = GaussianHMM(n_states=2, init="random", random_state=42, epochs=20, max_iter=100)
+    model = MLEHMM(n_states=2, init="random", random_state=42, epochs=20, max_iter=100)
 
     model.fit(X, verbose=True)
     print(model.tpm.sum(axis=1))
