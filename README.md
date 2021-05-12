@@ -1,7 +1,6 @@
 HMMpy
 =====================
-[![Build Status](https://travis-ci.com/cvxpy/cvxpy.png?branch=master)](https://travis-ci.com/github/cvxpy/cvxpy)
-[![Build status](https://ci.appveyor.com/api/projects/status/jo7tkvc58c3hgfd7?svg=true)](https://ci.appveyor.com/project/StevenDiamond/cvxpy)
+[![Build Status](https://travis-ci.com/Cstolborg/HMMpy.svg?branch=main)](https://travis-ci.com/Cstolborg/HMMpy)
 
 **The HMMpy documentation is at [insert link when website is ready](http://www.google.com/).**
 
@@ -58,6 +57,4 @@ print(hmm.mu)
 print(hmm.std)
 print(hmm.tpm)
 ```
-
-Apart from the JumpHMM class
 
