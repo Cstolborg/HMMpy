@@ -4,12 +4,12 @@
 {
     "distutils": {
         "depends": [],
-        "name": "hmmpy.hidden_markov.hmm_cython",
+        "name": "hmmpy.hmm_cython",
         "sources": [
-            "hmmpy/hidden_markov\\hmm_cython.pyx"
+            "hmmpy\\hmm_cython.pyx"
         ]
     },
-    "module_name": "hmmpy.hidden_markov.hmm_cython"
+    "module_name": "hmmpy.hmm_cython"
 }
 END: Cython Metadata */
 
@@ -615,8 +615,8 @@ static CYTHON_INLINE float __PYX_NAN() {
   #endif
 #endif
 
-#define __PYX_HAVE__hmmpy__hidden_markov__hmm_cython
-#define __PYX_HAVE_API__hmmpy__hidden_markov__hmm_cython
+#define __PYX_HAVE__hmmpy__hmm_cython
+#define __PYX_HAVE_API__hmmpy__hmm_cython
 /* Early includes */
 #include <math.h>
 #include "pythread.h"
@@ -832,7 +832,7 @@ static const char *__pyx_filename;
 
 
 static const char *__pyx_f[] = {
-  "hmmpy\\hidden_markov\\hmm_cython.pyx",
+  "hmmpy\\hmm_cython.pyx",
   "stringsource",
 };
 /* NoFastGil.proto */
@@ -944,14 +944,14 @@ typedef struct {
 } __Pyx_BufFmt_Context;
 
 
-/* "hmmpy/hidden_markov/hmm_cython.pyx":9
+/* "hmmpy/hmm_cython.pyx":9
  * import numpy as np
  * 
  * ctypedef double dtype_t             # <<<<<<<<<<<<<<
  * 
  * cdef inline int _argmax(dtype_t[:] X) nogil:
  */
-typedef double __pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t;
+typedef double __pyx_t_5hmmpy_10hmm_cython_dtype_t;
 
 /*--- Type declarations ---*/
 struct __pyx_array_obj;
@@ -1659,10 +1659,10 @@ static int __Pyx_ValidateAndInit_memviewslice(
                 PyObject *original_obj);
 
 /* ObjectToMemviewSlice.proto */
-static CYTHON_INLINE __Pyx_memviewslice __Pyx_PyObject_to_MemoryviewSlice_ds_nn___pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t(PyObject *, int writable_flag);
+static CYTHON_INLINE __Pyx_memviewslice __Pyx_PyObject_to_MemoryviewSlice_ds_nn___pyx_t_5hmmpy_10hmm_cython_dtype_t(PyObject *, int writable_flag);
 
 /* ObjectToMemviewSlice.proto */
-static CYTHON_INLINE __Pyx_memviewslice __Pyx_PyObject_to_MemoryviewSlice_dsds_nn___pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t(PyObject *, int writable_flag);
+static CYTHON_INLINE __Pyx_memviewslice __Pyx_PyObject_to_MemoryviewSlice_dsds_nn___pyx_t_5hmmpy_10hmm_cython_dtype_t(PyObject *, int writable_flag);
 
 /* CIntToPy.proto */
 static CYTHON_INLINE PyObject* __Pyx_PyInt_From_int(int value);
@@ -1671,8 +1671,8 @@ static CYTHON_INLINE PyObject* __Pyx_PyInt_From_int(int value);
 static CYTHON_INLINE PyObject* __Pyx_PyInt_From_long(long value);
 
 /* MemviewDtypeToObject.proto */
-static CYTHON_INLINE PyObject *__pyx_memview_get_nn___pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t(const char *itemp);
-static CYTHON_INLINE int __pyx_memview_set_nn___pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t(const char *itemp, PyObject *obj);
+static CYTHON_INLINE PyObject *__pyx_memview_get_nn___pyx_t_5hmmpy_10hmm_cython_dtype_t(const char *itemp);
+static CYTHON_INLINE int __pyx_memview_set_nn___pyx_t_5hmmpy_10hmm_cython_dtype_t(const char *itemp, PyObject *obj);
 
 /* MemviewDtypeToObject.proto */
 static CYTHON_INLINE PyObject *__pyx_memview_get_int(const char *itemp);
@@ -1695,13 +1695,13 @@ static CYTHON_INLINE long __Pyx_PyInt_As_long(PyObject *);
 static CYTHON_INLINE char __Pyx_PyInt_As_char(PyObject *);
 
 /* ObjectToMemviewSlice.proto */
-static CYTHON_INLINE __Pyx_memviewslice __Pyx_PyObject_to_MemoryviewSlice_dc_nn___pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t(PyObject *, int writable_flag);
+static CYTHON_INLINE __Pyx_memviewslice __Pyx_PyObject_to_MemoryviewSlice_dc_nn___pyx_t_5hmmpy_10hmm_cython_dtype_t(PyObject *, int writable_flag);
 
 /* ObjectToMemviewSlice.proto */
 static CYTHON_INLINE __Pyx_memviewslice __Pyx_PyObject_to_MemoryviewSlice_dc_int(PyObject *, int writable_flag);
 
 /* ObjectToMemviewSlice.proto */
-static CYTHON_INLINE __Pyx_memviewslice __Pyx_PyObject_to_MemoryviewSlice_dsdc_nn___pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t(PyObject *, int writable_flag);
+static CYTHON_INLINE __Pyx_memviewslice __Pyx_PyObject_to_MemoryviewSlice_dsdc_nn___pyx_t_5hmmpy_10hmm_cython_dtype_t(PyObject *, int writable_flag);
 
 /* CheckBinaryVersion.proto */
 static int __Pyx_check_binary_version(void);
@@ -1726,7 +1726,7 @@ static PyObject *__pyx_memoryviewslice_assign_item_from_object(struct __pyx_memo
 
 /* Module declarations from 'libc.math' */
 
-/* Module declarations from 'hmmpy.hidden_markov.hmm_cython' */
+/* Module declarations from 'hmmpy.hmm_cython' */
 static PyTypeObject *__pyx_array_type = 0;
 static PyTypeObject *__pyx_MemviewEnum_type = 0;
 static PyTypeObject *__pyx_memoryview_type = 0;
@@ -1738,11 +1738,11 @@ static PyObject *contiguous = 0;
 static PyObject *indirect_contiguous = 0;
 static int __pyx_memoryview_thread_locks_used;
 static PyThread_type_lock __pyx_memoryview_thread_locks[8];
-static CYTHON_INLINE int __pyx_f_5hmmpy_13hidden_markov_10hmm_cython__argmax(__Pyx_memviewslice); /*proto*/
-static CYTHON_INLINE __pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t __pyx_f_5hmmpy_13hidden_markov_10hmm_cython__max(__Pyx_memviewslice); /*proto*/
-static CYTHON_INLINE int __pyx_f_5hmmpy_13hidden_markov_10hmm_cython__argmin(__Pyx_memviewslice); /*proto*/
-static CYTHON_INLINE __pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t __pyx_f_5hmmpy_13hidden_markov_10hmm_cython__min(__Pyx_memviewslice); /*proto*/
-static CYTHON_INLINE __pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t __pyx_f_5hmmpy_13hidden_markov_10hmm_cython_logsumexp_cython(__Pyx_memviewslice, int); /*proto*/
+static CYTHON_INLINE int __pyx_f_5hmmpy_10hmm_cython__argmax(__Pyx_memviewslice); /*proto*/
+static CYTHON_INLINE __pyx_t_5hmmpy_10hmm_cython_dtype_t __pyx_f_5hmmpy_10hmm_cython__max(__Pyx_memviewslice); /*proto*/
+static CYTHON_INLINE int __pyx_f_5hmmpy_10hmm_cython__argmin(__Pyx_memviewslice); /*proto*/
+static CYTHON_INLINE __pyx_t_5hmmpy_10hmm_cython_dtype_t __pyx_f_5hmmpy_10hmm_cython__min(__Pyx_memviewslice); /*proto*/
+static CYTHON_INLINE __pyx_t_5hmmpy_10hmm_cython_dtype_t __pyx_f_5hmmpy_10hmm_cython_logsumexp_cython(__Pyx_memviewslice, int); /*proto*/
 static struct __pyx_array_obj *__pyx_array_new(PyObject *, Py_ssize_t, char *, char *, char *); /*proto*/
 static void *__pyx_align_pointer(void *, size_t); /*proto*/
 static PyObject *__pyx_memoryview_new(PyObject *, int, int, __Pyx_TypeInfo *); /*proto*/
@@ -1776,13 +1776,13 @@ static void __pyx_memoryview_refcount_objects_in_slice(char *, Py_ssize_t *, Py_
 static void __pyx_memoryview_slice_assign_scalar(__Pyx_memviewslice *, int, size_t, void *, int); /*proto*/
 static void __pyx_memoryview__slice_assign_scalar(char *, Py_ssize_t *, Py_ssize_t *, int, size_t, void *); /*proto*/
 static PyObject *__pyx_unpickle_Enum__set_state(struct __pyx_MemviewEnum_obj *, PyObject *); /*proto*/
-static __Pyx_TypeInfo __Pyx_TypeInfo_nn___pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t = { "dtype_t", NULL, sizeof(__pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t), { 0 }, 0, 'R', 0, 0 };
+static __Pyx_TypeInfo __Pyx_TypeInfo_nn___pyx_t_5hmmpy_10hmm_cython_dtype_t = { "dtype_t", NULL, sizeof(__pyx_t_5hmmpy_10hmm_cython_dtype_t), { 0 }, 0, 'R', 0, 0 };
 static __Pyx_TypeInfo __Pyx_TypeInfo_int = { "int", NULL, sizeof(int), { 0 }, 0, IS_UNSIGNED(int) ? 'U' : 'I', IS_UNSIGNED(int), 0 };
-#define __Pyx_MODULE_NAME "hmmpy.hidden_markov.hmm_cython"
-extern int __pyx_module_is_main_hmmpy__hidden_markov__hmm_cython;
-int __pyx_module_is_main_hmmpy__hidden_markov__hmm_cython = 0;
+#define __Pyx_MODULE_NAME "hmmpy.hmm_cython"
+extern int __pyx_module_is_main_hmmpy__hmm_cython;
+int __pyx_module_is_main_hmmpy__hmm_cython = 0;
 
-/* Implementation of 'hmmpy.hidden_markov.hmm_cython' */
+/* Implementation of 'hmmpy.hmm_cython' */
 static PyObject *__pyx_builtin_range;
 static PyObject *__pyx_builtin_ValueError;
 static PyObject *__pyx_builtin_MemoryError;
@@ -1879,10 +1879,12 @@ static const char __pyx_k_allocate_buffer[] = "allocate_buffer";
 static const char __pyx_k_dtype_is_object[] = "dtype_is_object";
 static const char __pyx_k_pyx_PickleError[] = "__pyx_PickleError";
 static const char __pyx_k_setstate_cython[] = "__setstate_cython__";
+static const char __pyx_k_hmmpy_hmm_cython[] = "hmmpy.hmm_cython";
 static const char __pyx_k_pyx_unpickle_Enum[] = "__pyx_unpickle_Enum";
 static const char __pyx_k_cline_in_traceback[] = "cline_in_traceback";
 static const char __pyx_k_log_emission_proba[] = "log_emission_proba";
 static const char __pyx_k_strided_and_direct[] = "<strided and direct>";
+static const char __pyx_k_hmmpy_hmm_cython_pyx[] = "hmmpy\\hmm_cython.pyx";
 static const char __pyx_k_state_change_penalty[] = "state_change_penalty";
 static const char __pyx_k_strided_and_indirect[] = "<strided and indirect>";
 static const char __pyx_k_contiguous_and_direct[] = "<contiguous and direct>";
@@ -1893,7 +1895,6 @@ static const char __pyx_k_Cannot_index_with_type_s[] = "Cannot index with type '
 static const char __pyx_k_Invalid_shape_in_axis_d_d[] = "Invalid shape in axis %d: %d.";
 static const char __pyx_k_itemsize_0_for_cython_array[] = "itemsize <= 0 for cython.array";
 static const char __pyx_k_unable_to_allocate_array_data[] = "unable to allocate array data.";
-static const char __pyx_k_hmmpy_hidden_markov_hmm_cython[] = "hmmpy.hidden_markov.hmm_cython";
 static const char __pyx_k_strided_and_direct_or_indirect[] = "<strided and direct or indirect>";
 static const char __pyx_k_Buffer_view_does_not_expose_stri[] = "Buffer view does not expose strides";
 static const char __pyx_k_Can_only_create_a_buffer_that_is[] = "Can only create a buffer that is contiguous in memory.";
@@ -1906,7 +1907,6 @@ static const char __pyx_k_Invalid_mode_expected_c_or_fortr[] = "Invalid mode, ex
 static const char __pyx_k_Out_of_bounds_on_buffer_access_a[] = "Out of bounds on buffer access (axis %d)";
 static const char __pyx_k_Unable_to_convert_item_to_object[] = "Unable to convert item to object";
 static const char __pyx_k_got_differing_extents_in_dimensi[] = "got differing extents in dimension %d (got %d and %d)";
-static const char __pyx_k_hmmpy_hidden_markov_hmm_cython_p[] = "hmmpy\\hidden_markov\\hmm_cython.pyx";
 static const char __pyx_k_no_default___reduce___due_to_non[] = "no default __reduce__ due to non-trivial __cinit__";
 static const char __pyx_k_unable_to_allocate_shape_and_str[] = "unable to allocate shape and strides.";
 static PyObject *__pyx_n_s_ASCII;
@@ -1958,8 +1958,8 @@ static PyObject *__pyx_n_u_fortran;
 static PyObject *__pyx_n_s_forward_proba;
 static PyObject *__pyx_n_s_getstate;
 static PyObject *__pyx_kp_s_got_differing_extents_in_dimensi;
-static PyObject *__pyx_n_s_hmmpy_hidden_markov_hmm_cython;
-static PyObject *__pyx_kp_s_hmmpy_hidden_markov_hmm_cython_p;
+static PyObject *__pyx_n_s_hmmpy_hmm_cython;
+static PyObject *__pyx_kp_s_hmmpy_hmm_cython_pyx;
 static PyObject *__pyx_n_s_i;
 static PyObject *__pyx_n_s_id;
 static PyObject *__pyx_n_s_import;
@@ -2029,10 +2029,10 @@ static PyObject *__pyx_n_s_viterbi;
 static PyObject *__pyx_n_s_where_from;
 static PyObject *__pyx_n_s_work_buffer;
 static PyObject *__pyx_n_s_zeros;
-static PyObject *__pyx_pf_5hmmpy_13hidden_markov_10hmm_cython_forward_proba(CYTHON_UNUSED PyObject *__pyx_self, int __pyx_v_n_samples, int __pyx_v_n_states, __Pyx_memviewslice __pyx_v_log_startprob, __Pyx_memviewslice __pyx_v_log_tpm, __Pyx_memviewslice __pyx_v_log_emission_proba, __Pyx_memviewslice __pyx_v_log_alphas); /* proto */
-static PyObject *__pyx_pf_5hmmpy_13hidden_markov_10hmm_cython_2backward_proba(CYTHON_UNUSED PyObject *__pyx_self, int __pyx_v_n_samples, int __pyx_v_n_states, CYTHON_UNUSED __Pyx_memviewslice __pyx_v_log_startprob, __Pyx_memviewslice __pyx_v_log_tpm, __Pyx_memviewslice __pyx_v_log_emission_proba, __Pyx_memviewslice __pyx_v_log_betas); /* proto */
-static PyObject *__pyx_pf_5hmmpy_13hidden_markov_10hmm_cython_4jump_state_seq(CYTHON_UNUSED PyObject *__pyx_self, int __pyx_v_n_samples, int __pyx_v_n_states, CYTHON_UNUSED int __pyx_v_n_features, __pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t __pyx_v_jump_penalty, __Pyx_memviewslice __pyx_v_l2_norms); /* proto */
-static PyObject *__pyx_pf_5hmmpy_13hidden_markov_10hmm_cython_6viterbi(CYTHON_UNUSED PyObject *__pyx_self, int __pyx_v_n_samples, int __pyx_v_n_states, __Pyx_memviewslice __pyx_v_log_startprob, __Pyx_memviewslice __pyx_v_log_tpm, __Pyx_memviewslice __pyx_v_log_emission_proba); /* proto */
+static PyObject *__pyx_pf_5hmmpy_10hmm_cython_forward_proba(CYTHON_UNUSED PyObject *__pyx_self, int __pyx_v_n_samples, int __pyx_v_n_states, __Pyx_memviewslice __pyx_v_log_startprob, __Pyx_memviewslice __pyx_v_log_tpm, __Pyx_memviewslice __pyx_v_log_emission_proba, __Pyx_memviewslice __pyx_v_log_alphas); /* proto */
+static PyObject *__pyx_pf_5hmmpy_10hmm_cython_2backward_proba(CYTHON_UNUSED PyObject *__pyx_self, int __pyx_v_n_samples, int __pyx_v_n_states, CYTHON_UNUSED __Pyx_memviewslice __pyx_v_log_startprob, __Pyx_memviewslice __pyx_v_log_tpm, __Pyx_memviewslice __pyx_v_log_emission_proba, __Pyx_memviewslice __pyx_v_log_betas); /* proto */
+static PyObject *__pyx_pf_5hmmpy_10hmm_cython_4jump_state_seq(CYTHON_UNUSED PyObject *__pyx_self, int __pyx_v_n_samples, int __pyx_v_n_states, CYTHON_UNUSED int __pyx_v_n_features, __pyx_t_5hmmpy_10hmm_cython_dtype_t __pyx_v_jump_penalty, __Pyx_memviewslice __pyx_v_l2_norms); /* proto */
+static PyObject *__pyx_pf_5hmmpy_10hmm_cython_6viterbi(CYTHON_UNUSED PyObject *__pyx_self, int __pyx_v_n_samples, int __pyx_v_n_states, __Pyx_memviewslice __pyx_v_log_startprob, __Pyx_memviewslice __pyx_v_log_tpm, __Pyx_memviewslice __pyx_v_log_emission_proba); /* proto */
 static int __pyx_array___pyx_pf_15View_dot_MemoryView_5array___cinit__(struct __pyx_array_obj *__pyx_v_self, PyObject *__pyx_v_shape, Py_ssize_t __pyx_v_itemsize, PyObject *__pyx_v_format, PyObject *__pyx_v_mode, int __pyx_v_allocate_buffer); /* proto */
 static int __pyx_array___pyx_pf_15View_dot_MemoryView_5array_2__getbuffer__(struct __pyx_array_obj *__pyx_v_self, Py_buffer *__pyx_v_info, int __pyx_v_flags); /* proto */
 static void __pyx_array___pyx_pf_15View_dot_MemoryView_5array_4__dealloc__(struct __pyx_array_obj *__pyx_v_self); /* proto */
@@ -2118,7 +2118,7 @@ static PyObject *__pyx_codeobj__26;
 static PyObject *__pyx_codeobj__33;
 /* Late includes */
 
-/* "hmmpy/hidden_markov/hmm_cython.pyx":11
+/* "hmmpy/hmm_cython.pyx":11
  * ctypedef double dtype_t
  * 
  * cdef inline int _argmax(dtype_t[:] X) nogil:             # <<<<<<<<<<<<<<
@@ -2126,8 +2126,8 @@ static PyObject *__pyx_codeobj__33;
  *     cdef int pos = 0
  */
 
-static CYTHON_INLINE int __pyx_f_5hmmpy_13hidden_markov_10hmm_cython__argmax(__Pyx_memviewslice __pyx_v_X) {
-  __pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t __pyx_v_X_max;
+static CYTHON_INLINE int __pyx_f_5hmmpy_10hmm_cython__argmax(__Pyx_memviewslice __pyx_v_X) {
+  __pyx_t_5hmmpy_10hmm_cython_dtype_t __pyx_v_X_max;
   int __pyx_v_pos;
   int __pyx_v_i;
   int __pyx_r;
@@ -2137,7 +2137,7 @@ static CYTHON_INLINE int __pyx_f_5hmmpy_13hidden_markov_10hmm_cython__argmax(__P
   Py_ssize_t __pyx_t_4;
   int __pyx_t_5;
 
-  /* "hmmpy/hidden_markov/hmm_cython.pyx":12
+  /* "hmmpy/hmm_cython.pyx":12
  * 
  * cdef inline int _argmax(dtype_t[:] X) nogil:
  *     cdef dtype_t X_max = -INFINITY             # <<<<<<<<<<<<<<
@@ -2146,7 +2146,7 @@ static CYTHON_INLINE int __pyx_f_5hmmpy_13hidden_markov_10hmm_cython__argmax(__P
  */
   __pyx_v_X_max = (-INFINITY);
 
-  /* "hmmpy/hidden_markov/hmm_cython.pyx":13
+  /* "hmmpy/hmm_cython.pyx":13
  * cdef inline int _argmax(dtype_t[:] X) nogil:
  *     cdef dtype_t X_max = -INFINITY
  *     cdef int pos = 0             # <<<<<<<<<<<<<<
@@ -2155,7 +2155,7 @@ static CYTHON_INLINE int __pyx_f_5hmmpy_13hidden_markov_10hmm_cython__argmax(__P
  */
   __pyx_v_pos = 0;
 
-  /* "hmmpy/hidden_markov/hmm_cython.pyx":15
+  /* "hmmpy/hmm_cython.pyx":15
  *     cdef int pos = 0
  *     cdef int i
  *     for i in range(X.shape[0]):             # <<<<<<<<<<<<<<
@@ -2167,7 +2167,7 @@ static CYTHON_INLINE int __pyx_f_5hmmpy_13hidden_markov_10hmm_cython__argmax(__P
   for (__pyx_t_3 = 0; __pyx_t_3 < __pyx_t_2; __pyx_t_3+=1) {
     __pyx_v_i = __pyx_t_3;
 
-    /* "hmmpy/hidden_markov/hmm_cython.pyx":16
+    /* "hmmpy/hmm_cython.pyx":16
  *     cdef int i
  *     for i in range(X.shape[0]):
  *         if X[i] > X_max:             # <<<<<<<<<<<<<<
@@ -2175,10 +2175,10 @@ static CYTHON_INLINE int __pyx_f_5hmmpy_13hidden_markov_10hmm_cython__argmax(__P
  *             pos = i
  */
     __pyx_t_4 = __pyx_v_i;
-    __pyx_t_5 = (((*((__pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t *) ( /* dim=0 */ (__pyx_v_X.data + __pyx_t_4 * __pyx_v_X.strides[0]) ))) > __pyx_v_X_max) != 0);
+    __pyx_t_5 = (((*((__pyx_t_5hmmpy_10hmm_cython_dtype_t *) ( /* dim=0 */ (__pyx_v_X.data + __pyx_t_4 * __pyx_v_X.strides[0]) ))) > __pyx_v_X_max) != 0);
     if (__pyx_t_5) {
 
-      /* "hmmpy/hidden_markov/hmm_cython.pyx":17
+      /* "hmmpy/hmm_cython.pyx":17
  *     for i in range(X.shape[0]):
  *         if X[i] > X_max:
  *             X_max = X[i]             # <<<<<<<<<<<<<<
@@ -2186,9 +2186,9 @@ static CYTHON_INLINE int __pyx_f_5hmmpy_13hidden_markov_10hmm_cython__argmax(__P
  *     return pos
  */
       __pyx_t_4 = __pyx_v_i;
-      __pyx_v_X_max = (*((__pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t *) ( /* dim=0 */ (__pyx_v_X.data + __pyx_t_4 * __pyx_v_X.strides[0]) )));
+      __pyx_v_X_max = (*((__pyx_t_5hmmpy_10hmm_cython_dtype_t *) ( /* dim=0 */ (__pyx_v_X.data + __pyx_t_4 * __pyx_v_X.strides[0]) )));
 
-      /* "hmmpy/hidden_markov/hmm_cython.pyx":18
+      /* "hmmpy/hmm_cython.pyx":18
  *         if X[i] > X_max:
  *             X_max = X[i]
  *             pos = i             # <<<<<<<<<<<<<<
@@ -2197,7 +2197,7 @@ static CYTHON_INLINE int __pyx_f_5hmmpy_13hidden_markov_10hmm_cython__argmax(__P
  */
       __pyx_v_pos = __pyx_v_i;
 
-      /* "hmmpy/hidden_markov/hmm_cython.pyx":16
+      /* "hmmpy/hmm_cython.pyx":16
  *     cdef int i
  *     for i in range(X.shape[0]):
  *         if X[i] > X_max:             # <<<<<<<<<<<<<<
@@ -2207,7 +2207,7 @@ static CYTHON_INLINE int __pyx_f_5hmmpy_13hidden_markov_10hmm_cython__argmax(__P
     }
   }
 
-  /* "hmmpy/hidden_markov/hmm_cython.pyx":19
+  /* "hmmpy/hmm_cython.pyx":19
  *             X_max = X[i]
  *             pos = i
  *     return pos             # <<<<<<<<<<<<<<
@@ -2217,7 +2217,7 @@ static CYTHON_INLINE int __pyx_f_5hmmpy_13hidden_markov_10hmm_cython__argmax(__P
   __pyx_r = __pyx_v_pos;
   goto __pyx_L0;
 
-  /* "hmmpy/hidden_markov/hmm_cython.pyx":11
+  /* "hmmpy/hmm_cython.pyx":11
  * ctypedef double dtype_t
  * 
  * cdef inline int _argmax(dtype_t[:] X) nogil:             # <<<<<<<<<<<<<<
@@ -2230,7 +2230,7 @@ static CYTHON_INLINE int __pyx_f_5hmmpy_13hidden_markov_10hmm_cython__argmax(__P
   return __pyx_r;
 }
 
-/* "hmmpy/hidden_markov/hmm_cython.pyx":21
+/* "hmmpy/hmm_cython.pyx":21
  *     return pos
  * 
  * cdef inline dtype_t _max(dtype_t[:] X) nogil:             # <<<<<<<<<<<<<<
@@ -2238,22 +2238,22 @@ static CYTHON_INLINE int __pyx_f_5hmmpy_13hidden_markov_10hmm_cython__argmax(__P
  * 
  */
 
-static CYTHON_INLINE __pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t __pyx_f_5hmmpy_13hidden_markov_10hmm_cython__max(__Pyx_memviewslice __pyx_v_X) {
-  __pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t __pyx_r;
+static CYTHON_INLINE __pyx_t_5hmmpy_10hmm_cython_dtype_t __pyx_f_5hmmpy_10hmm_cython__max(__Pyx_memviewslice __pyx_v_X) {
+  __pyx_t_5hmmpy_10hmm_cython_dtype_t __pyx_r;
   Py_ssize_t __pyx_t_1;
 
-  /* "hmmpy/hidden_markov/hmm_cython.pyx":22
+  /* "hmmpy/hmm_cython.pyx":22
  * 
  * cdef inline dtype_t _max(dtype_t[:] X) nogil:
  *     return X[_argmax(X)]             # <<<<<<<<<<<<<<
  * 
  * cdef inline int _argmin(dtype_t[:] X) nogil:
  */
-  __pyx_t_1 = __pyx_f_5hmmpy_13hidden_markov_10hmm_cython__argmax(__pyx_v_X);
-  __pyx_r = (*((__pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t *) ( /* dim=0 */ (__pyx_v_X.data + __pyx_t_1 * __pyx_v_X.strides[0]) )));
+  __pyx_t_1 = __pyx_f_5hmmpy_10hmm_cython__argmax(__pyx_v_X);
+  __pyx_r = (*((__pyx_t_5hmmpy_10hmm_cython_dtype_t *) ( /* dim=0 */ (__pyx_v_X.data + __pyx_t_1 * __pyx_v_X.strides[0]) )));
   goto __pyx_L0;
 
-  /* "hmmpy/hidden_markov/hmm_cython.pyx":21
+  /* "hmmpy/hmm_cython.pyx":21
  *     return pos
  * 
  * cdef inline dtype_t _max(dtype_t[:] X) nogil:             # <<<<<<<<<<<<<<
@@ -2266,7 +2266,7 @@ static CYTHON_INLINE __pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t __pyx_f
   return __pyx_r;
 }
 
-/* "hmmpy/hidden_markov/hmm_cython.pyx":24
+/* "hmmpy/hmm_cython.pyx":24
  *     return X[_argmax(X)]
  * 
  * cdef inline int _argmin(dtype_t[:] X) nogil:             # <<<<<<<<<<<<<<
@@ -2274,8 +2274,8 @@ static CYTHON_INLINE __pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t __pyx_f
  *     cdef int pos = 0
  */
 
-static CYTHON_INLINE int __pyx_f_5hmmpy_13hidden_markov_10hmm_cython__argmin(__Pyx_memviewslice __pyx_v_X) {
-  __pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t __pyx_v_X_min;
+static CYTHON_INLINE int __pyx_f_5hmmpy_10hmm_cython__argmin(__Pyx_memviewslice __pyx_v_X) {
+  __pyx_t_5hmmpy_10hmm_cython_dtype_t __pyx_v_X_min;
   int __pyx_v_pos;
   int __pyx_v_i;
   int __pyx_r;
@@ -2285,7 +2285,7 @@ static CYTHON_INLINE int __pyx_f_5hmmpy_13hidden_markov_10hmm_cython__argmin(__P
   Py_ssize_t __pyx_t_4;
   int __pyx_t_5;
 
-  /* "hmmpy/hidden_markov/hmm_cython.pyx":25
+  /* "hmmpy/hmm_cython.pyx":25
  * 
  * cdef inline int _argmin(dtype_t[:] X) nogil:
  *     cdef dtype_t X_min = INFINITY             # <<<<<<<<<<<<<<
@@ -2294,7 +2294,7 @@ static CYTHON_INLINE int __pyx_f_5hmmpy_13hidden_markov_10hmm_cython__argmin(__P
  */
   __pyx_v_X_min = INFINITY;
 
-  /* "hmmpy/hidden_markov/hmm_cython.pyx":26
+  /* "hmmpy/hmm_cython.pyx":26
  * cdef inline int _argmin(dtype_t[:] X) nogil:
  *     cdef dtype_t X_min = INFINITY
  *     cdef int pos = 0             # <<<<<<<<<<<<<<
@@ -2303,7 +2303,7 @@ static CYTHON_INLINE int __pyx_f_5hmmpy_13hidden_markov_10hmm_cython__argmin(__P
  */
   __pyx_v_pos = 0;
 
-  /* "hmmpy/hidden_markov/hmm_cython.pyx":28
+  /* "hmmpy/hmm_cython.pyx":28
  *     cdef int pos = 0
  *     cdef int i
  *     for i in range(X.shape[0]):             # <<<<<<<<<<<<<<
@@ -2315,7 +2315,7 @@ static CYTHON_INLINE int __pyx_f_5hmmpy_13hidden_markov_10hmm_cython__argmin(__P
   for (__pyx_t_3 = 0; __pyx_t_3 < __pyx_t_2; __pyx_t_3+=1) {
     __pyx_v_i = __pyx_t_3;
 
-    /* "hmmpy/hidden_markov/hmm_cython.pyx":29
+    /* "hmmpy/hmm_cython.pyx":29
  *     cdef int i
  *     for i in range(X.shape[0]):
  *         if X[i] < X_min:             # <<<<<<<<<<<<<<
@@ -2323,10 +2323,10 @@ static CYTHON_INLINE int __pyx_f_5hmmpy_13hidden_markov_10hmm_cython__argmin(__P
  *             pos = i
  */
     __pyx_t_4 = __pyx_v_i;
-    __pyx_t_5 = (((*((__pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t *) ( /* dim=0 */ (__pyx_v_X.data + __pyx_t_4 * __pyx_v_X.strides[0]) ))) < __pyx_v_X_min) != 0);
+    __pyx_t_5 = (((*((__pyx_t_5hmmpy_10hmm_cython_dtype_t *) ( /* dim=0 */ (__pyx_v_X.data + __pyx_t_4 * __pyx_v_X.strides[0]) ))) < __pyx_v_X_min) != 0);
     if (__pyx_t_5) {
 
-      /* "hmmpy/hidden_markov/hmm_cython.pyx":30
+      /* "hmmpy/hmm_cython.pyx":30
  *     for i in range(X.shape[0]):
  *         if X[i] < X_min:
  *             X_min = X[i]             # <<<<<<<<<<<<<<
@@ -2334,9 +2334,9 @@ static CYTHON_INLINE int __pyx_f_5hmmpy_13hidden_markov_10hmm_cython__argmin(__P
  *     return pos
  */
       __pyx_t_4 = __pyx_v_i;
-      __pyx_v_X_min = (*((__pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t *) ( /* dim=0 */ (__pyx_v_X.data + __pyx_t_4 * __pyx_v_X.strides[0]) )));
+      __pyx_v_X_min = (*((__pyx_t_5hmmpy_10hmm_cython_dtype_t *) ( /* dim=0 */ (__pyx_v_X.data + __pyx_t_4 * __pyx_v_X.strides[0]) )));
 
-      /* "hmmpy/hidden_markov/hmm_cython.pyx":31
+      /* "hmmpy/hmm_cython.pyx":31
  *         if X[i] < X_min:
  *             X_min = X[i]
  *             pos = i             # <<<<<<<<<<<<<<
@@ -2345,7 +2345,7 @@ static CYTHON_INLINE int __pyx_f_5hmmpy_13hidden_markov_10hmm_cython__argmin(__P
  */
       __pyx_v_pos = __pyx_v_i;
 
-      /* "hmmpy/hidden_markov/hmm_cython.pyx":29
+      /* "hmmpy/hmm_cython.pyx":29
  *     cdef int i
  *     for i in range(X.shape[0]):
  *         if X[i] < X_min:             # <<<<<<<<<<<<<<
@@ -2355,7 +2355,7 @@ static CYTHON_INLINE int __pyx_f_5hmmpy_13hidden_markov_10hmm_cython__argmin(__P
     }
   }
 
-  /* "hmmpy/hidden_markov/hmm_cython.pyx":32
+  /* "hmmpy/hmm_cython.pyx":32
  *             X_min = X[i]
  *             pos = i
  *     return pos             # <<<<<<<<<<<<<<
@@ -2365,7 +2365,7 @@ static CYTHON_INLINE int __pyx_f_5hmmpy_13hidden_markov_10hmm_cython__argmin(__P
   __pyx_r = __pyx_v_pos;
   goto __pyx_L0;
 
-  /* "hmmpy/hidden_markov/hmm_cython.pyx":24
+  /* "hmmpy/hmm_cython.pyx":24
  *     return X[_argmax(X)]
  * 
  * cdef inline int _argmin(dtype_t[:] X) nogil:             # <<<<<<<<<<<<<<
@@ -2378,7 +2378,7 @@ static CYTHON_INLINE int __pyx_f_5hmmpy_13hidden_markov_10hmm_cython__argmin(__P
   return __pyx_r;
 }
 
-/* "hmmpy/hidden_markov/hmm_cython.pyx":34
+/* "hmmpy/hmm_cython.pyx":34
  *     return pos
  * 
  * cdef inline dtype_t _min(dtype_t[:] X) nogil:             # <<<<<<<<<<<<<<
@@ -2386,22 +2386,22 @@ static CYTHON_INLINE int __pyx_f_5hmmpy_13hidden_markov_10hmm_cython__argmin(__P
  * 
  */
 
-static CYTHON_INLINE __pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t __pyx_f_5hmmpy_13hidden_markov_10hmm_cython__min(__Pyx_memviewslice __pyx_v_X) {
-  __pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t __pyx_r;
+static CYTHON_INLINE __pyx_t_5hmmpy_10hmm_cython_dtype_t __pyx_f_5hmmpy_10hmm_cython__min(__Pyx_memviewslice __pyx_v_X) {
+  __pyx_t_5hmmpy_10hmm_cython_dtype_t __pyx_r;
   Py_ssize_t __pyx_t_1;
 
-  /* "hmmpy/hidden_markov/hmm_cython.pyx":35
+  /* "hmmpy/hmm_cython.pyx":35
  * 
  * cdef inline dtype_t _min(dtype_t[:] X) nogil:
  *     return X[_argmin(X)]             # <<<<<<<<<<<<<<
  * 
  * 
  */
-  __pyx_t_1 = __pyx_f_5hmmpy_13hidden_markov_10hmm_cython__argmin(__pyx_v_X);
-  __pyx_r = (*((__pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t *) ( /* dim=0 */ (__pyx_v_X.data + __pyx_t_1 * __pyx_v_X.strides[0]) )));
+  __pyx_t_1 = __pyx_f_5hmmpy_10hmm_cython__argmin(__pyx_v_X);
+  __pyx_r = (*((__pyx_t_5hmmpy_10hmm_cython_dtype_t *) ( /* dim=0 */ (__pyx_v_X.data + __pyx_t_1 * __pyx_v_X.strides[0]) )));
   goto __pyx_L0;
 
-  /* "hmmpy/hidden_markov/hmm_cython.pyx":34
+  /* "hmmpy/hmm_cython.pyx":34
  *     return pos
  * 
  * cdef inline dtype_t _min(dtype_t[:] X) nogil:             # <<<<<<<<<<<<<<
@@ -2414,7 +2414,7 @@ static CYTHON_INLINE __pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t __pyx_f
   return __pyx_r;
 }
 
-/* "hmmpy/hidden_markov/hmm_cython.pyx":40
+/* "hmmpy/hmm_cython.pyx":40
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
  * cdef inline dtype_t logsumexp_cython(dtype_t[:] a, int n_states) nogil:             # <<<<<<<<<<<<<<
@@ -2422,18 +2422,18 @@ static CYTHON_INLINE __pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t __pyx_f
  *     cdef double result = 0.0
  */
 
-static CYTHON_INLINE __pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t __pyx_f_5hmmpy_13hidden_markov_10hmm_cython_logsumexp_cython(__Pyx_memviewslice __pyx_v_a, int __pyx_v_n_states) {
+static CYTHON_INLINE __pyx_t_5hmmpy_10hmm_cython_dtype_t __pyx_f_5hmmpy_10hmm_cython_logsumexp_cython(__Pyx_memviewslice __pyx_v_a, int __pyx_v_n_states) {
   int __pyx_v_i;
   double __pyx_v_result;
   double __pyx_v_largest_in_a;
-  __pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t __pyx_r;
+  __pyx_t_5hmmpy_10hmm_cython_dtype_t __pyx_r;
   Py_ssize_t __pyx_t_1;
   int __pyx_t_2;
   int __pyx_t_3;
   int __pyx_t_4;
   int __pyx_t_5;
 
-  /* "hmmpy/hidden_markov/hmm_cython.pyx":42
+  /* "hmmpy/hmm_cython.pyx":42
  * cdef inline dtype_t logsumexp_cython(dtype_t[:] a, int n_states) nogil:
  *     cdef int i
  *     cdef double result = 0.0             # <<<<<<<<<<<<<<
@@ -2442,7 +2442,7 @@ static CYTHON_INLINE __pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t __pyx_f
  */
   __pyx_v_result = 0.0;
 
-  /* "hmmpy/hidden_markov/hmm_cython.pyx":43
+  /* "hmmpy/hmm_cython.pyx":43
  *     cdef int i
  *     cdef double result = 0.0
  *     cdef double largest_in_a = a[0]             # <<<<<<<<<<<<<<
@@ -2450,9 +2450,9 @@ static CYTHON_INLINE __pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t __pyx_f
  *         if (a[i] > largest_in_a):
  */
   __pyx_t_1 = 0;
-  __pyx_v_largest_in_a = (*((__pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t *) ( /* dim=0 */ (__pyx_v_a.data + __pyx_t_1 * __pyx_v_a.strides[0]) )));
+  __pyx_v_largest_in_a = (*((__pyx_t_5hmmpy_10hmm_cython_dtype_t *) ( /* dim=0 */ (__pyx_v_a.data + __pyx_t_1 * __pyx_v_a.strides[0]) )));
 
-  /* "hmmpy/hidden_markov/hmm_cython.pyx":44
+  /* "hmmpy/hmm_cython.pyx":44
  *     cdef double result = 0.0
  *     cdef double largest_in_a = a[0]
  *     for i in range(1, n_states):             # <<<<<<<<<<<<<<
@@ -2464,7 +2464,7 @@ static CYTHON_INLINE __pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t __pyx_f
   for (__pyx_t_4 = 1; __pyx_t_4 < __pyx_t_3; __pyx_t_4+=1) {
     __pyx_v_i = __pyx_t_4;
 
-    /* "hmmpy/hidden_markov/hmm_cython.pyx":45
+    /* "hmmpy/hmm_cython.pyx":45
  *     cdef double largest_in_a = a[0]
  *     for i in range(1, n_states):
  *         if (a[i] > largest_in_a):             # <<<<<<<<<<<<<<
@@ -2472,10 +2472,10 @@ static CYTHON_INLINE __pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t __pyx_f
  *     for i in range(n_states):
  */
     __pyx_t_1 = __pyx_v_i;
-    __pyx_t_5 = (((*((__pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t *) ( /* dim=0 */ (__pyx_v_a.data + __pyx_t_1 * __pyx_v_a.strides[0]) ))) > __pyx_v_largest_in_a) != 0);
+    __pyx_t_5 = (((*((__pyx_t_5hmmpy_10hmm_cython_dtype_t *) ( /* dim=0 */ (__pyx_v_a.data + __pyx_t_1 * __pyx_v_a.strides[0]) ))) > __pyx_v_largest_in_a) != 0);
     if (__pyx_t_5) {
 
-      /* "hmmpy/hidden_markov/hmm_cython.pyx":46
+      /* "hmmpy/hmm_cython.pyx":46
  *     for i in range(1, n_states):
  *         if (a[i] > largest_in_a):
  *             largest_in_a = a[i]             # <<<<<<<<<<<<<<
@@ -2483,9 +2483,9 @@ static CYTHON_INLINE __pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t __pyx_f
  *         result += exp(a[i] - largest_in_a)
  */
       __pyx_t_1 = __pyx_v_i;
-      __pyx_v_largest_in_a = (*((__pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t *) ( /* dim=0 */ (__pyx_v_a.data + __pyx_t_1 * __pyx_v_a.strides[0]) )));
+      __pyx_v_largest_in_a = (*((__pyx_t_5hmmpy_10hmm_cython_dtype_t *) ( /* dim=0 */ (__pyx_v_a.data + __pyx_t_1 * __pyx_v_a.strides[0]) )));
 
-      /* "hmmpy/hidden_markov/hmm_cython.pyx":45
+      /* "hmmpy/hmm_cython.pyx":45
  *     cdef double largest_in_a = a[0]
  *     for i in range(1, n_states):
  *         if (a[i] > largest_in_a):             # <<<<<<<<<<<<<<
@@ -2495,7 +2495,7 @@ static CYTHON_INLINE __pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t __pyx_f
     }
   }
 
-  /* "hmmpy/hidden_markov/hmm_cython.pyx":47
+  /* "hmmpy/hmm_cython.pyx":47
  *         if (a[i] > largest_in_a):
  *             largest_in_a = a[i]
  *     for i in range(n_states):             # <<<<<<<<<<<<<<
@@ -2507,7 +2507,7 @@ static CYTHON_INLINE __pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t __pyx_f
   for (__pyx_t_4 = 0; __pyx_t_4 < __pyx_t_3; __pyx_t_4+=1) {
     __pyx_v_i = __pyx_t_4;
 
-    /* "hmmpy/hidden_markov/hmm_cython.pyx":48
+    /* "hmmpy/hmm_cython.pyx":48
  *             largest_in_a = a[i]
  *     for i in range(n_states):
  *         result += exp(a[i] - largest_in_a)             # <<<<<<<<<<<<<<
@@ -2515,10 +2515,10 @@ static CYTHON_INLINE __pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t __pyx_f
  * 
  */
     __pyx_t_1 = __pyx_v_i;
-    __pyx_v_result = (__pyx_v_result + exp(((*((__pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t *) ( /* dim=0 */ (__pyx_v_a.data + __pyx_t_1 * __pyx_v_a.strides[0]) ))) - __pyx_v_largest_in_a)));
+    __pyx_v_result = (__pyx_v_result + exp(((*((__pyx_t_5hmmpy_10hmm_cython_dtype_t *) ( /* dim=0 */ (__pyx_v_a.data + __pyx_t_1 * __pyx_v_a.strides[0]) ))) - __pyx_v_largest_in_a)));
   }
 
-  /* "hmmpy/hidden_markov/hmm_cython.pyx":49
+  /* "hmmpy/hmm_cython.pyx":49
  *     for i in range(n_states):
  *         result += exp(a[i] - largest_in_a)
  *     return largest_in_a + log(result)             # <<<<<<<<<<<<<<
@@ -2528,7 +2528,7 @@ static CYTHON_INLINE __pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t __pyx_f
   __pyx_r = (__pyx_v_largest_in_a + log(__pyx_v_result));
   goto __pyx_L0;
 
-  /* "hmmpy/hidden_markov/hmm_cython.pyx":40
+  /* "hmmpy/hmm_cython.pyx":40
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
  * cdef inline dtype_t logsumexp_cython(dtype_t[:] a, int n_states) nogil:             # <<<<<<<<<<<<<<
@@ -2541,7 +2541,7 @@ static CYTHON_INLINE __pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t __pyx_f
   return __pyx_r;
 }
 
-/* "hmmpy/hidden_markov/hmm_cython.pyx":52
+/* "hmmpy/hmm_cython.pyx":52
  * 
  * 
  * def forward_proba(int n_samples, int n_states,             # <<<<<<<<<<<<<<
@@ -2550,9 +2550,9 @@ static CYTHON_INLINE __pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t __pyx_f
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_5hmmpy_13hidden_markov_10hmm_cython_1forward_proba(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static PyMethodDef __pyx_mdef_5hmmpy_13hidden_markov_10hmm_cython_1forward_proba = {"forward_proba", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_5hmmpy_13hidden_markov_10hmm_cython_1forward_proba, METH_VARARGS|METH_KEYWORDS, 0};
-static PyObject *__pyx_pw_5hmmpy_13hidden_markov_10hmm_cython_1forward_proba(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+static PyObject *__pyx_pw_5hmmpy_10hmm_cython_1forward_proba(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyMethodDef __pyx_mdef_5hmmpy_10hmm_cython_1forward_proba = {"forward_proba", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_5hmmpy_10hmm_cython_1forward_proba, METH_VARARGS|METH_KEYWORDS, 0};
+static PyObject *__pyx_pw_5hmmpy_10hmm_cython_1forward_proba(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   int __pyx_v_n_samples;
   int __pyx_v_n_states;
   __Pyx_memviewslice __pyx_v_log_startprob = { 0, 0, { 0 }, { 0 }, { 0 } };
@@ -2638,27 +2638,27 @@ static PyObject *__pyx_pw_5hmmpy_13hidden_markov_10hmm_cython_1forward_proba(PyO
     }
     __pyx_v_n_samples = __Pyx_PyInt_As_int(values[0]); if (unlikely((__pyx_v_n_samples == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 52, __pyx_L3_error)
     __pyx_v_n_states = __Pyx_PyInt_As_int(values[1]); if (unlikely((__pyx_v_n_states == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 52, __pyx_L3_error)
-    __pyx_v_log_startprob = __Pyx_PyObject_to_MemoryviewSlice_ds_nn___pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t(values[2], PyBUF_WRITABLE); if (unlikely(!__pyx_v_log_startprob.memview)) __PYX_ERR(0, 53, __pyx_L3_error)
-    __pyx_v_log_tpm = __Pyx_PyObject_to_MemoryviewSlice_dsds_nn___pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t(values[3], PyBUF_WRITABLE); if (unlikely(!__pyx_v_log_tpm.memview)) __PYX_ERR(0, 54, __pyx_L3_error)
-    __pyx_v_log_emission_proba = __Pyx_PyObject_to_MemoryviewSlice_dsds_nn___pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t(values[4], PyBUF_WRITABLE); if (unlikely(!__pyx_v_log_emission_proba.memview)) __PYX_ERR(0, 55, __pyx_L3_error)
-    __pyx_v_log_alphas = __Pyx_PyObject_to_MemoryviewSlice_dsds_nn___pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t(values[5], PyBUF_WRITABLE); if (unlikely(!__pyx_v_log_alphas.memview)) __PYX_ERR(0, 56, __pyx_L3_error)
+    __pyx_v_log_startprob = __Pyx_PyObject_to_MemoryviewSlice_ds_nn___pyx_t_5hmmpy_10hmm_cython_dtype_t(values[2], PyBUF_WRITABLE); if (unlikely(!__pyx_v_log_startprob.memview)) __PYX_ERR(0, 53, __pyx_L3_error)
+    __pyx_v_log_tpm = __Pyx_PyObject_to_MemoryviewSlice_dsds_nn___pyx_t_5hmmpy_10hmm_cython_dtype_t(values[3], PyBUF_WRITABLE); if (unlikely(!__pyx_v_log_tpm.memview)) __PYX_ERR(0, 54, __pyx_L3_error)
+    __pyx_v_log_emission_proba = __Pyx_PyObject_to_MemoryviewSlice_dsds_nn___pyx_t_5hmmpy_10hmm_cython_dtype_t(values[4], PyBUF_WRITABLE); if (unlikely(!__pyx_v_log_emission_proba.memview)) __PYX_ERR(0, 55, __pyx_L3_error)
+    __pyx_v_log_alphas = __Pyx_PyObject_to_MemoryviewSlice_dsds_nn___pyx_t_5hmmpy_10hmm_cython_dtype_t(values[5], PyBUF_WRITABLE); if (unlikely(!__pyx_v_log_alphas.memview)) __PYX_ERR(0, 56, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
   __Pyx_RaiseArgtupleInvalid("forward_proba", 1, 6, 6, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 52, __pyx_L3_error)
   __pyx_L3_error:;
-  __Pyx_AddTraceback("hmmpy.hidden_markov.hmm_cython.forward_proba", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("hmmpy.hmm_cython.forward_proba", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_5hmmpy_13hidden_markov_10hmm_cython_forward_proba(__pyx_self, __pyx_v_n_samples, __pyx_v_n_states, __pyx_v_log_startprob, __pyx_v_log_tpm, __pyx_v_log_emission_proba, __pyx_v_log_alphas);
+  __pyx_r = __pyx_pf_5hmmpy_10hmm_cython_forward_proba(__pyx_self, __pyx_v_n_samples, __pyx_v_n_states, __pyx_v_log_startprob, __pyx_v_log_tpm, __pyx_v_log_emission_proba, __pyx_v_log_alphas);
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_5hmmpy_13hidden_markov_10hmm_cython_forward_proba(CYTHON_UNUSED PyObject *__pyx_self, int __pyx_v_n_samples, int __pyx_v_n_states, __Pyx_memviewslice __pyx_v_log_startprob, __Pyx_memviewslice __pyx_v_log_tpm, __Pyx_memviewslice __pyx_v_log_emission_proba, __Pyx_memviewslice __pyx_v_log_alphas) {
+static PyObject *__pyx_pf_5hmmpy_10hmm_cython_forward_proba(CYTHON_UNUSED PyObject *__pyx_self, int __pyx_v_n_samples, int __pyx_v_n_states, __Pyx_memviewslice __pyx_v_log_startprob, __Pyx_memviewslice __pyx_v_log_tpm, __Pyx_memviewslice __pyx_v_log_emission_proba, __Pyx_memviewslice __pyx_v_log_alphas) {
   int __pyx_v_t;
   int __pyx_v_i;
   int __pyx_v_j;
@@ -2689,7 +2689,7 @@ static PyObject *__pyx_pf_5hmmpy_13hidden_markov_10hmm_cython_forward_proba(CYTH
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("forward_proba", 0);
 
-  /* "hmmpy/hidden_markov/hmm_cython.pyx":59
+  /* "hmmpy/hmm_cython.pyx":59
  * 
  *     cdef int t, i, j
  *     cdef dtype_t[::view.contiguous] alpha_temp = np.zeros(n_states)  # vector to store each alpha_t before multiplied with emissions             # <<<<<<<<<<<<<<
@@ -2719,13 +2719,13 @@ static PyObject *__pyx_pf_5hmmpy_13hidden_markov_10hmm_cython_forward_proba(CYTH
   if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 59, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_5 = __Pyx_PyObject_to_MemoryviewSlice_dc_nn___pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t(__pyx_t_1, PyBUF_WRITABLE); if (unlikely(!__pyx_t_5.memview)) __PYX_ERR(0, 59, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_to_MemoryviewSlice_dc_nn___pyx_t_5hmmpy_10hmm_cython_dtype_t(__pyx_t_1, PyBUF_WRITABLE); if (unlikely(!__pyx_t_5.memview)) __PYX_ERR(0, 59, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_v_alpha_temp = __pyx_t_5;
   __pyx_t_5.memview = NULL;
   __pyx_t_5.data = NULL;
 
-  /* "hmmpy/hidden_markov/hmm_cython.pyx":61
+  /* "hmmpy/hmm_cython.pyx":61
  *     cdef dtype_t[::view.contiguous] alpha_temp = np.zeros(n_states)  # vector to store each alpha_t before multiplied with emissions
  * 
  *     with nogil:             # <<<<<<<<<<<<<<
@@ -2740,7 +2740,7 @@ static PyObject *__pyx_pf_5hmmpy_13hidden_markov_10hmm_cython_forward_proba(CYTH
       #endif
       /*try:*/ {
 
-        /* "hmmpy/hidden_markov/hmm_cython.pyx":63
+        /* "hmmpy/hmm_cython.pyx":63
  *     with nogil:
  *         # compute first forward
  *         for i in range(n_states):             # <<<<<<<<<<<<<<
@@ -2752,7 +2752,7 @@ static PyObject *__pyx_pf_5hmmpy_13hidden_markov_10hmm_cython_forward_proba(CYTH
         for (__pyx_t_8 = 0; __pyx_t_8 < __pyx_t_7; __pyx_t_8+=1) {
           __pyx_v_i = __pyx_t_8;
 
-          /* "hmmpy/hidden_markov/hmm_cython.pyx":64
+          /* "hmmpy/hmm_cython.pyx":64
  *         # compute first forward
  *         for i in range(n_states):
  *             log_alphas[0, i] = log_startprob[i] + log_emission_proba[0, i]             # <<<<<<<<<<<<<<
@@ -2764,10 +2764,10 @@ static PyObject *__pyx_pf_5hmmpy_13hidden_markov_10hmm_cython_forward_proba(CYTH
           __pyx_t_11 = __pyx_v_i;
           __pyx_t_12 = 0;
           __pyx_t_13 = __pyx_v_i;
-          *((__pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_log_alphas.data + __pyx_t_12 * __pyx_v_log_alphas.strides[0]) ) + __pyx_t_13 * __pyx_v_log_alphas.strides[1]) )) = ((*((__pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t *) ( /* dim=0 */ (__pyx_v_log_startprob.data + __pyx_t_9 * __pyx_v_log_startprob.strides[0]) ))) + (*((__pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_log_emission_proba.data + __pyx_t_10 * __pyx_v_log_emission_proba.strides[0]) ) + __pyx_t_11 * __pyx_v_log_emission_proba.strides[1]) ))));
+          *((__pyx_t_5hmmpy_10hmm_cython_dtype_t *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_log_alphas.data + __pyx_t_12 * __pyx_v_log_alphas.strides[0]) ) + __pyx_t_13 * __pyx_v_log_alphas.strides[1]) )) = ((*((__pyx_t_5hmmpy_10hmm_cython_dtype_t *) ( /* dim=0 */ (__pyx_v_log_startprob.data + __pyx_t_9 * __pyx_v_log_startprob.strides[0]) ))) + (*((__pyx_t_5hmmpy_10hmm_cython_dtype_t *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_log_emission_proba.data + __pyx_t_10 * __pyx_v_log_emission_proba.strides[0]) ) + __pyx_t_11 * __pyx_v_log_emission_proba.strides[1]) ))));
         }
 
-        /* "hmmpy/hidden_markov/hmm_cython.pyx":66
+        /* "hmmpy/hmm_cython.pyx":66
  *             log_alphas[0, i] = log_startprob[i] + log_emission_proba[0, i]
  * 
  *         for t in range(1, n_samples):             # <<<<<<<<<<<<<<
@@ -2779,7 +2779,7 @@ static PyObject *__pyx_pf_5hmmpy_13hidden_markov_10hmm_cython_forward_proba(CYTH
         for (__pyx_t_8 = 1; __pyx_t_8 < __pyx_t_7; __pyx_t_8+=1) {
           __pyx_v_t = __pyx_t_8;
 
-          /* "hmmpy/hidden_markov/hmm_cython.pyx":67
+          /* "hmmpy/hmm_cython.pyx":67
  * 
  *         for t in range(1, n_samples):
  *             for j in range(n_states):             # <<<<<<<<<<<<<<
@@ -2791,7 +2791,7 @@ static PyObject *__pyx_pf_5hmmpy_13hidden_markov_10hmm_cython_forward_proba(CYTH
           for (__pyx_t_16 = 0; __pyx_t_16 < __pyx_t_15; __pyx_t_16+=1) {
             __pyx_v_j = __pyx_t_16;
 
-            /* "hmmpy/hidden_markov/hmm_cython.pyx":68
+            /* "hmmpy/hmm_cython.pyx":68
  *         for t in range(1, n_samples):
  *             for j in range(n_states):
  *                 for i in range(n_states):             # <<<<<<<<<<<<<<
@@ -2803,7 +2803,7 @@ static PyObject *__pyx_pf_5hmmpy_13hidden_markov_10hmm_cython_forward_proba(CYTH
             for (__pyx_t_19 = 0; __pyx_t_19 < __pyx_t_18; __pyx_t_19+=1) {
               __pyx_v_i = __pyx_t_19;
 
-              /* "hmmpy/hidden_markov/hmm_cython.pyx":69
+              /* "hmmpy/hmm_cython.pyx":69
  *             for j in range(n_states):
  *                 for i in range(n_states):
  *                     alpha_temp[i] = log_alphas[t - 1, i] + log_tpm[i, j]             # <<<<<<<<<<<<<<
@@ -2815,10 +2815,10 @@ static PyObject *__pyx_pf_5hmmpy_13hidden_markov_10hmm_cython_forward_proba(CYTH
               __pyx_t_9 = __pyx_v_i;
               __pyx_t_13 = __pyx_v_j;
               __pyx_t_12 = __pyx_v_i;
-              *((__pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t *) ( /* dim=0 */ ((char *) (((__pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t *) __pyx_v_alpha_temp.data) + __pyx_t_12)) )) = ((*((__pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_log_alphas.data + __pyx_t_11 * __pyx_v_log_alphas.strides[0]) ) + __pyx_t_10 * __pyx_v_log_alphas.strides[1]) ))) + (*((__pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_log_tpm.data + __pyx_t_9 * __pyx_v_log_tpm.strides[0]) ) + __pyx_t_13 * __pyx_v_log_tpm.strides[1]) ))));
+              *((__pyx_t_5hmmpy_10hmm_cython_dtype_t *) ( /* dim=0 */ ((char *) (((__pyx_t_5hmmpy_10hmm_cython_dtype_t *) __pyx_v_alpha_temp.data) + __pyx_t_12)) )) = ((*((__pyx_t_5hmmpy_10hmm_cython_dtype_t *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_log_alphas.data + __pyx_t_11 * __pyx_v_log_alphas.strides[0]) ) + __pyx_t_10 * __pyx_v_log_alphas.strides[1]) ))) + (*((__pyx_t_5hmmpy_10hmm_cython_dtype_t *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_log_tpm.data + __pyx_t_9 * __pyx_v_log_tpm.strides[0]) ) + __pyx_t_13 * __pyx_v_log_tpm.strides[1]) ))));
             }
 
-            /* "hmmpy/hidden_markov/hmm_cython.pyx":71
+            /* "hmmpy/hmm_cython.pyx":71
  *                     alpha_temp[i] = log_alphas[t - 1, i] + log_tpm[i, j]
  * 
  *                 log_alphas[t, j] = logsumexp_cython(alpha_temp, n_states) + log_emission_proba[t, j]             # <<<<<<<<<<<<<<
@@ -2829,12 +2829,12 @@ static PyObject *__pyx_pf_5hmmpy_13hidden_markov_10hmm_cython_forward_proba(CYTH
             __pyx_t_9 = __pyx_v_j;
             __pyx_t_10 = __pyx_v_t;
             __pyx_t_11 = __pyx_v_j;
-            *((__pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_log_alphas.data + __pyx_t_10 * __pyx_v_log_alphas.strides[0]) ) + __pyx_t_11 * __pyx_v_log_alphas.strides[1]) )) = (__pyx_f_5hmmpy_13hidden_markov_10hmm_cython_logsumexp_cython(__pyx_v_alpha_temp, __pyx_v_n_states) + (*((__pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_log_emission_proba.data + __pyx_t_13 * __pyx_v_log_emission_proba.strides[0]) ) + __pyx_t_9 * __pyx_v_log_emission_proba.strides[1]) ))));
+            *((__pyx_t_5hmmpy_10hmm_cython_dtype_t *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_log_alphas.data + __pyx_t_10 * __pyx_v_log_alphas.strides[0]) ) + __pyx_t_11 * __pyx_v_log_alphas.strides[1]) )) = (__pyx_f_5hmmpy_10hmm_cython_logsumexp_cython(__pyx_v_alpha_temp, __pyx_v_n_states) + (*((__pyx_t_5hmmpy_10hmm_cython_dtype_t *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_log_emission_proba.data + __pyx_t_13 * __pyx_v_log_emission_proba.strides[0]) ) + __pyx_t_9 * __pyx_v_log_emission_proba.strides[1]) ))));
           }
         }
       }
 
-      /* "hmmpy/hidden_markov/hmm_cython.pyx":61
+      /* "hmmpy/hmm_cython.pyx":61
  *     cdef dtype_t[::view.contiguous] alpha_temp = np.zeros(n_states)  # vector to store each alpha_t before multiplied with emissions
  * 
  *     with nogil:             # <<<<<<<<<<<<<<
@@ -2853,7 +2853,7 @@ static PyObject *__pyx_pf_5hmmpy_13hidden_markov_10hmm_cython_forward_proba(CYTH
       }
   }
 
-  /* "hmmpy/hidden_markov/hmm_cython.pyx":52
+  /* "hmmpy/hmm_cython.pyx":52
  * 
  * 
  * def forward_proba(int n_samples, int n_states,             # <<<<<<<<<<<<<<
@@ -2870,7 +2870,7 @@ static PyObject *__pyx_pf_5hmmpy_13hidden_markov_10hmm_cython_forward_proba(CYTH
   __Pyx_XDECREF(__pyx_t_3);
   __Pyx_XDECREF(__pyx_t_4);
   __PYX_XDEC_MEMVIEW(&__pyx_t_5, 1);
-  __Pyx_AddTraceback("hmmpy.hidden_markov.hmm_cython.forward_proba", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("hmmpy.hmm_cython.forward_proba", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __PYX_XDEC_MEMVIEW(&__pyx_v_alpha_temp, 1);
@@ -2883,7 +2883,7 @@ static PyObject *__pyx_pf_5hmmpy_13hidden_markov_10hmm_cython_forward_proba(CYTH
   return __pyx_r;
 }
 
-/* "hmmpy/hidden_markov/hmm_cython.pyx":74
+/* "hmmpy/hmm_cython.pyx":74
  * 
  * 
  * def backward_proba(int n_samples, int n_states,             # <<<<<<<<<<<<<<
@@ -2892,9 +2892,9 @@ static PyObject *__pyx_pf_5hmmpy_13hidden_markov_10hmm_cython_forward_proba(CYTH
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_5hmmpy_13hidden_markov_10hmm_cython_3backward_proba(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static PyMethodDef __pyx_mdef_5hmmpy_13hidden_markov_10hmm_cython_3backward_proba = {"backward_proba", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_5hmmpy_13hidden_markov_10hmm_cython_3backward_proba, METH_VARARGS|METH_KEYWORDS, 0};
-static PyObject *__pyx_pw_5hmmpy_13hidden_markov_10hmm_cython_3backward_proba(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+static PyObject *__pyx_pw_5hmmpy_10hmm_cython_3backward_proba(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyMethodDef __pyx_mdef_5hmmpy_10hmm_cython_3backward_proba = {"backward_proba", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_5hmmpy_10hmm_cython_3backward_proba, METH_VARARGS|METH_KEYWORDS, 0};
+static PyObject *__pyx_pw_5hmmpy_10hmm_cython_3backward_proba(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   int __pyx_v_n_samples;
   int __pyx_v_n_states;
   CYTHON_UNUSED __Pyx_memviewslice __pyx_v_log_startprob = { 0, 0, { 0 }, { 0 }, { 0 } };
@@ -2980,27 +2980,27 @@ static PyObject *__pyx_pw_5hmmpy_13hidden_markov_10hmm_cython_3backward_proba(Py
     }
     __pyx_v_n_samples = __Pyx_PyInt_As_int(values[0]); if (unlikely((__pyx_v_n_samples == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 74, __pyx_L3_error)
     __pyx_v_n_states = __Pyx_PyInt_As_int(values[1]); if (unlikely((__pyx_v_n_states == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 74, __pyx_L3_error)
-    __pyx_v_log_startprob = __Pyx_PyObject_to_MemoryviewSlice_ds_nn___pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t(values[2], PyBUF_WRITABLE); if (unlikely(!__pyx_v_log_startprob.memview)) __PYX_ERR(0, 75, __pyx_L3_error)
-    __pyx_v_log_tpm = __Pyx_PyObject_to_MemoryviewSlice_dsds_nn___pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t(values[3], PyBUF_WRITABLE); if (unlikely(!__pyx_v_log_tpm.memview)) __PYX_ERR(0, 76, __pyx_L3_error)
-    __pyx_v_log_emission_proba = __Pyx_PyObject_to_MemoryviewSlice_dsds_nn___pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t(values[4], PyBUF_WRITABLE); if (unlikely(!__pyx_v_log_emission_proba.memview)) __PYX_ERR(0, 77, __pyx_L3_error)
-    __pyx_v_log_betas = __Pyx_PyObject_to_MemoryviewSlice_dsds_nn___pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t(values[5], PyBUF_WRITABLE); if (unlikely(!__pyx_v_log_betas.memview)) __PYX_ERR(0, 78, __pyx_L3_error)
+    __pyx_v_log_startprob = __Pyx_PyObject_to_MemoryviewSlice_ds_nn___pyx_t_5hmmpy_10hmm_cython_dtype_t(values[2], PyBUF_WRITABLE); if (unlikely(!__pyx_v_log_startprob.memview)) __PYX_ERR(0, 75, __pyx_L3_error)
+    __pyx_v_log_tpm = __Pyx_PyObject_to_MemoryviewSlice_dsds_nn___pyx_t_5hmmpy_10hmm_cython_dtype_t(values[3], PyBUF_WRITABLE); if (unlikely(!__pyx_v_log_tpm.memview)) __PYX_ERR(0, 76, __pyx_L3_error)
+    __pyx_v_log_emission_proba = __Pyx_PyObject_to_MemoryviewSlice_dsds_nn___pyx_t_5hmmpy_10hmm_cython_dtype_t(values[4], PyBUF_WRITABLE); if (unlikely(!__pyx_v_log_emission_proba.memview)) __PYX_ERR(0, 77, __pyx_L3_error)
+    __pyx_v_log_betas = __Pyx_PyObject_to_MemoryviewSlice_dsds_nn___pyx_t_5hmmpy_10hmm_cython_dtype_t(values[5], PyBUF_WRITABLE); if (unlikely(!__pyx_v_log_betas.memview)) __PYX_ERR(0, 78, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
   __Pyx_RaiseArgtupleInvalid("backward_proba", 1, 6, 6, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 74, __pyx_L3_error)
   __pyx_L3_error:;
-  __Pyx_AddTraceback("hmmpy.hidden_markov.hmm_cython.backward_proba", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("hmmpy.hmm_cython.backward_proba", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_5hmmpy_13hidden_markov_10hmm_cython_2backward_proba(__pyx_self, __pyx_v_n_samples, __pyx_v_n_states, __pyx_v_log_startprob, __pyx_v_log_tpm, __pyx_v_log_emission_proba, __pyx_v_log_betas);
+  __pyx_r = __pyx_pf_5hmmpy_10hmm_cython_2backward_proba(__pyx_self, __pyx_v_n_samples, __pyx_v_n_states, __pyx_v_log_startprob, __pyx_v_log_tpm, __pyx_v_log_emission_proba, __pyx_v_log_betas);
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_5hmmpy_13hidden_markov_10hmm_cython_2backward_proba(CYTHON_UNUSED PyObject *__pyx_self, int __pyx_v_n_samples, int __pyx_v_n_states, CYTHON_UNUSED __Pyx_memviewslice __pyx_v_log_startprob, __Pyx_memviewslice __pyx_v_log_tpm, __Pyx_memviewslice __pyx_v_log_emission_proba, __Pyx_memviewslice __pyx_v_log_betas) {
+static PyObject *__pyx_pf_5hmmpy_10hmm_cython_2backward_proba(CYTHON_UNUSED PyObject *__pyx_self, int __pyx_v_n_samples, int __pyx_v_n_states, CYTHON_UNUSED __Pyx_memviewslice __pyx_v_log_startprob, __Pyx_memviewslice __pyx_v_log_tpm, __Pyx_memviewslice __pyx_v_log_emission_proba, __Pyx_memviewslice __pyx_v_log_betas) {
   int __pyx_v_t;
   int __pyx_v_i;
   int __pyx_v_j;
@@ -3031,7 +3031,7 @@ static PyObject *__pyx_pf_5hmmpy_13hidden_markov_10hmm_cython_2backward_proba(CY
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("backward_proba", 0);
 
-  /* "hmmpy/hidden_markov/hmm_cython.pyx":81
+  /* "hmmpy/hmm_cython.pyx":81
  * 
  *     cdef int t, i, j
  *     cdef dtype_t[::view.contiguous] beta_temp = np.zeros(n_states) # vector to store each beta_t before summing it up             # <<<<<<<<<<<<<<
@@ -3061,13 +3061,13 @@ static PyObject *__pyx_pf_5hmmpy_13hidden_markov_10hmm_cython_2backward_proba(CY
   if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 81, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_5 = __Pyx_PyObject_to_MemoryviewSlice_dc_nn___pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t(__pyx_t_1, PyBUF_WRITABLE); if (unlikely(!__pyx_t_5.memview)) __PYX_ERR(0, 81, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_to_MemoryviewSlice_dc_nn___pyx_t_5hmmpy_10hmm_cython_dtype_t(__pyx_t_1, PyBUF_WRITABLE); if (unlikely(!__pyx_t_5.memview)) __PYX_ERR(0, 81, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_v_beta_temp = __pyx_t_5;
   __pyx_t_5.memview = NULL;
   __pyx_t_5.data = NULL;
 
-  /* "hmmpy/hidden_markov/hmm_cython.pyx":83
+  /* "hmmpy/hmm_cython.pyx":83
  *     cdef dtype_t[::view.contiguous] beta_temp = np.zeros(n_states) # vector to store each beta_t before summing it up
  * 
  *     with nogil:             # <<<<<<<<<<<<<<
@@ -3082,7 +3082,7 @@ static PyObject *__pyx_pf_5hmmpy_13hidden_markov_10hmm_cython_2backward_proba(CY
       #endif
       /*try:*/ {
 
-        /* "hmmpy/hidden_markov/hmm_cython.pyx":84
+        /* "hmmpy/hmm_cython.pyx":84
  * 
  *     with nogil:
  *         for i in range(n_states):             # <<<<<<<<<<<<<<
@@ -3094,7 +3094,7 @@ static PyObject *__pyx_pf_5hmmpy_13hidden_markov_10hmm_cython_2backward_proba(CY
         for (__pyx_t_8 = 0; __pyx_t_8 < __pyx_t_7; __pyx_t_8+=1) {
           __pyx_v_i = __pyx_t_8;
 
-          /* "hmmpy/hidden_markov/hmm_cython.pyx":85
+          /* "hmmpy/hmm_cython.pyx":85
  *     with nogil:
  *         for i in range(n_states):
  *             log_betas[n_samples - 1, i] = 0.0             # <<<<<<<<<<<<<<
@@ -3103,10 +3103,10 @@ static PyObject *__pyx_pf_5hmmpy_13hidden_markov_10hmm_cython_2backward_proba(CY
  */
           __pyx_t_9 = (__pyx_v_n_samples - 1);
           __pyx_t_10 = __pyx_v_i;
-          *((__pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_log_betas.data + __pyx_t_9 * __pyx_v_log_betas.strides[0]) ) + __pyx_t_10 * __pyx_v_log_betas.strides[1]) )) = 0.0;
+          *((__pyx_t_5hmmpy_10hmm_cython_dtype_t *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_log_betas.data + __pyx_t_9 * __pyx_v_log_betas.strides[0]) ) + __pyx_t_10 * __pyx_v_log_betas.strides[1]) )) = 0.0;
         }
 
-        /* "hmmpy/hidden_markov/hmm_cython.pyx":87
+        /* "hmmpy/hmm_cython.pyx":87
  *             log_betas[n_samples - 1, i] = 0.0
  * 
  *         for t in range(n_samples - 2, -1, -1):             # <<<<<<<<<<<<<<
@@ -3116,7 +3116,7 @@ static PyObject *__pyx_pf_5hmmpy_13hidden_markov_10hmm_cython_2backward_proba(CY
         for (__pyx_t_6 = (__pyx_v_n_samples - 2); __pyx_t_6 > -1; __pyx_t_6-=1) {
           __pyx_v_t = __pyx_t_6;
 
-          /* "hmmpy/hidden_markov/hmm_cython.pyx":88
+          /* "hmmpy/hmm_cython.pyx":88
  * 
  *         for t in range(n_samples - 2, -1, -1):
  *             for i in range(n_states):             # <<<<<<<<<<<<<<
@@ -3128,7 +3128,7 @@ static PyObject *__pyx_pf_5hmmpy_13hidden_markov_10hmm_cython_2backward_proba(CY
           for (__pyx_t_11 = 0; __pyx_t_11 < __pyx_t_8; __pyx_t_11+=1) {
             __pyx_v_i = __pyx_t_11;
 
-            /* "hmmpy/hidden_markov/hmm_cython.pyx":89
+            /* "hmmpy/hmm_cython.pyx":89
  *         for t in range(n_samples - 2, -1, -1):
  *             for i in range(n_states):
  *                 for j in range(n_states):             # <<<<<<<<<<<<<<
@@ -3140,7 +3140,7 @@ static PyObject *__pyx_pf_5hmmpy_13hidden_markov_10hmm_cython_2backward_proba(CY
             for (__pyx_t_14 = 0; __pyx_t_14 < __pyx_t_13; __pyx_t_14+=1) {
               __pyx_v_j = __pyx_t_14;
 
-              /* "hmmpy/hidden_markov/hmm_cython.pyx":90
+              /* "hmmpy/hmm_cython.pyx":90
  *             for i in range(n_states):
  *                 for j in range(n_states):
  *                     beta_temp[j] = (log_tpm[i, j]             # <<<<<<<<<<<<<<
@@ -3150,7 +3150,7 @@ static PyObject *__pyx_pf_5hmmpy_13hidden_markov_10hmm_cython_2backward_proba(CY
               __pyx_t_10 = __pyx_v_i;
               __pyx_t_9 = __pyx_v_j;
 
-              /* "hmmpy/hidden_markov/hmm_cython.pyx":91
+              /* "hmmpy/hmm_cython.pyx":91
  *                 for j in range(n_states):
  *                     beta_temp[j] = (log_tpm[i, j]
  *                                       + log_emission_proba[t + 1, j]             # <<<<<<<<<<<<<<
@@ -3160,7 +3160,7 @@ static PyObject *__pyx_pf_5hmmpy_13hidden_markov_10hmm_cython_2backward_proba(CY
               __pyx_t_15 = (__pyx_v_t + 1);
               __pyx_t_16 = __pyx_v_j;
 
-              /* "hmmpy/hidden_markov/hmm_cython.pyx":92
+              /* "hmmpy/hmm_cython.pyx":92
  *                     beta_temp[j] = (log_tpm[i, j]
  *                                       + log_emission_proba[t + 1, j]
  *                                       + log_betas[t + 1, j])             # <<<<<<<<<<<<<<
@@ -3170,7 +3170,7 @@ static PyObject *__pyx_pf_5hmmpy_13hidden_markov_10hmm_cython_2backward_proba(CY
               __pyx_t_17 = (__pyx_v_t + 1);
               __pyx_t_18 = __pyx_v_j;
 
-              /* "hmmpy/hidden_markov/hmm_cython.pyx":90
+              /* "hmmpy/hmm_cython.pyx":90
  *             for i in range(n_states):
  *                 for j in range(n_states):
  *                     beta_temp[j] = (log_tpm[i, j]             # <<<<<<<<<<<<<<
@@ -3178,10 +3178,10 @@ static PyObject *__pyx_pf_5hmmpy_13hidden_markov_10hmm_cython_2backward_proba(CY
  *                                       + log_betas[t + 1, j])
  */
               __pyx_t_19 = __pyx_v_j;
-              *((__pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t *) ( /* dim=0 */ ((char *) (((__pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t *) __pyx_v_beta_temp.data) + __pyx_t_19)) )) = (((*((__pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_log_tpm.data + __pyx_t_10 * __pyx_v_log_tpm.strides[0]) ) + __pyx_t_9 * __pyx_v_log_tpm.strides[1]) ))) + (*((__pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_log_emission_proba.data + __pyx_t_15 * __pyx_v_log_emission_proba.strides[0]) ) + __pyx_t_16 * __pyx_v_log_emission_proba.strides[1]) )))) + (*((__pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_log_betas.data + __pyx_t_17 * __pyx_v_log_betas.strides[0]) ) + __pyx_t_18 * __pyx_v_log_betas.strides[1]) ))));
+              *((__pyx_t_5hmmpy_10hmm_cython_dtype_t *) ( /* dim=0 */ ((char *) (((__pyx_t_5hmmpy_10hmm_cython_dtype_t *) __pyx_v_beta_temp.data) + __pyx_t_19)) )) = (((*((__pyx_t_5hmmpy_10hmm_cython_dtype_t *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_log_tpm.data + __pyx_t_10 * __pyx_v_log_tpm.strides[0]) ) + __pyx_t_9 * __pyx_v_log_tpm.strides[1]) ))) + (*((__pyx_t_5hmmpy_10hmm_cython_dtype_t *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_log_emission_proba.data + __pyx_t_15 * __pyx_v_log_emission_proba.strides[0]) ) + __pyx_t_16 * __pyx_v_log_emission_proba.strides[1]) )))) + (*((__pyx_t_5hmmpy_10hmm_cython_dtype_t *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_log_betas.data + __pyx_t_17 * __pyx_v_log_betas.strides[0]) ) + __pyx_t_18 * __pyx_v_log_betas.strides[1]) ))));
             }
 
-            /* "hmmpy/hidden_markov/hmm_cython.pyx":94
+            /* "hmmpy/hmm_cython.pyx":94
  *                                       + log_betas[t + 1, j])
  * 
  *                 log_betas[t, i] = logsumexp_cython(beta_temp, n_states)             # <<<<<<<<<<<<<<
@@ -3190,12 +3190,12 @@ static PyObject *__pyx_pf_5hmmpy_13hidden_markov_10hmm_cython_2backward_proba(CY
  */
             __pyx_t_18 = __pyx_v_t;
             __pyx_t_17 = __pyx_v_i;
-            *((__pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_log_betas.data + __pyx_t_18 * __pyx_v_log_betas.strides[0]) ) + __pyx_t_17 * __pyx_v_log_betas.strides[1]) )) = __pyx_f_5hmmpy_13hidden_markov_10hmm_cython_logsumexp_cython(__pyx_v_beta_temp, __pyx_v_n_states);
+            *((__pyx_t_5hmmpy_10hmm_cython_dtype_t *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_log_betas.data + __pyx_t_18 * __pyx_v_log_betas.strides[0]) ) + __pyx_t_17 * __pyx_v_log_betas.strides[1]) )) = __pyx_f_5hmmpy_10hmm_cython_logsumexp_cython(__pyx_v_beta_temp, __pyx_v_n_states);
           }
         }
       }
 
-      /* "hmmpy/hidden_markov/hmm_cython.pyx":83
+      /* "hmmpy/hmm_cython.pyx":83
  *     cdef dtype_t[::view.contiguous] beta_temp = np.zeros(n_states) # vector to store each beta_t before summing it up
  * 
  *     with nogil:             # <<<<<<<<<<<<<<
@@ -3214,7 +3214,7 @@ static PyObject *__pyx_pf_5hmmpy_13hidden_markov_10hmm_cython_2backward_proba(CY
       }
   }
 
-  /* "hmmpy/hidden_markov/hmm_cython.pyx":74
+  /* "hmmpy/hmm_cython.pyx":74
  * 
  * 
  * def backward_proba(int n_samples, int n_states,             # <<<<<<<<<<<<<<
@@ -3231,7 +3231,7 @@ static PyObject *__pyx_pf_5hmmpy_13hidden_markov_10hmm_cython_2backward_proba(CY
   __Pyx_XDECREF(__pyx_t_3);
   __Pyx_XDECREF(__pyx_t_4);
   __PYX_XDEC_MEMVIEW(&__pyx_t_5, 1);
-  __Pyx_AddTraceback("hmmpy.hidden_markov.hmm_cython.backward_proba", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("hmmpy.hmm_cython.backward_proba", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __PYX_XDEC_MEMVIEW(&__pyx_v_beta_temp, 1);
@@ -3244,7 +3244,7 @@ static PyObject *__pyx_pf_5hmmpy_13hidden_markov_10hmm_cython_2backward_proba(CY
   return __pyx_r;
 }
 
-/* "hmmpy/hidden_markov/hmm_cython.pyx":98
+/* "hmmpy/hmm_cython.pyx":98
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
  * def jump_state_seq(int n_samples, int n_states, int n_features,             # <<<<<<<<<<<<<<
@@ -3253,13 +3253,13 @@ static PyObject *__pyx_pf_5hmmpy_13hidden_markov_10hmm_cython_2backward_proba(CY
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_5hmmpy_13hidden_markov_10hmm_cython_5jump_state_seq(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static PyMethodDef __pyx_mdef_5hmmpy_13hidden_markov_10hmm_cython_5jump_state_seq = {"jump_state_seq", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_5hmmpy_13hidden_markov_10hmm_cython_5jump_state_seq, METH_VARARGS|METH_KEYWORDS, 0};
-static PyObject *__pyx_pw_5hmmpy_13hidden_markov_10hmm_cython_5jump_state_seq(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+static PyObject *__pyx_pw_5hmmpy_10hmm_cython_5jump_state_seq(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyMethodDef __pyx_mdef_5hmmpy_10hmm_cython_5jump_state_seq = {"jump_state_seq", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_5hmmpy_10hmm_cython_5jump_state_seq, METH_VARARGS|METH_KEYWORDS, 0};
+static PyObject *__pyx_pw_5hmmpy_10hmm_cython_5jump_state_seq(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   int __pyx_v_n_samples;
   int __pyx_v_n_states;
   CYTHON_UNUSED int __pyx_v_n_features;
-  __pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t __pyx_v_jump_penalty;
+  __pyx_t_5hmmpy_10hmm_cython_dtype_t __pyx_v_jump_penalty;
   __Pyx_memviewslice __pyx_v_l2_norms = { 0, 0, { 0 }, { 0 }, { 0 } };
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
@@ -3333,24 +3333,24 @@ static PyObject *__pyx_pw_5hmmpy_13hidden_markov_10hmm_cython_5jump_state_seq(Py
     __pyx_v_n_states = __Pyx_PyInt_As_int(values[1]); if (unlikely((__pyx_v_n_states == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 98, __pyx_L3_error)
     __pyx_v_n_features = __Pyx_PyInt_As_int(values[2]); if (unlikely((__pyx_v_n_features == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 98, __pyx_L3_error)
     __pyx_v_jump_penalty = __pyx_PyFloat_AsDouble(values[3]); if (unlikely((__pyx_v_jump_penalty == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 99, __pyx_L3_error)
-    __pyx_v_l2_norms = __Pyx_PyObject_to_MemoryviewSlice_dsds_nn___pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t(values[4], PyBUF_WRITABLE); if (unlikely(!__pyx_v_l2_norms.memview)) __PYX_ERR(0, 100, __pyx_L3_error)
+    __pyx_v_l2_norms = __Pyx_PyObject_to_MemoryviewSlice_dsds_nn___pyx_t_5hmmpy_10hmm_cython_dtype_t(values[4], PyBUF_WRITABLE); if (unlikely(!__pyx_v_l2_norms.memview)) __PYX_ERR(0, 100, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
   __Pyx_RaiseArgtupleInvalid("jump_state_seq", 1, 5, 5, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 98, __pyx_L3_error)
   __pyx_L3_error:;
-  __Pyx_AddTraceback("hmmpy.hidden_markov.hmm_cython.jump_state_seq", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("hmmpy.hmm_cython.jump_state_seq", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_5hmmpy_13hidden_markov_10hmm_cython_4jump_state_seq(__pyx_self, __pyx_v_n_samples, __pyx_v_n_states, __pyx_v_n_features, __pyx_v_jump_penalty, __pyx_v_l2_norms);
+  __pyx_r = __pyx_pf_5hmmpy_10hmm_cython_4jump_state_seq(__pyx_self, __pyx_v_n_samples, __pyx_v_n_states, __pyx_v_n_features, __pyx_v_jump_penalty, __pyx_v_l2_norms);
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_5hmmpy_13hidden_markov_10hmm_cython_4jump_state_seq(CYTHON_UNUSED PyObject *__pyx_self, int __pyx_v_n_samples, int __pyx_v_n_states, CYTHON_UNUSED int __pyx_v_n_features, __pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t __pyx_v_jump_penalty, __Pyx_memviewslice __pyx_v_l2_norms) {
+static PyObject *__pyx_pf_5hmmpy_10hmm_cython_4jump_state_seq(CYTHON_UNUSED PyObject *__pyx_self, int __pyx_v_n_samples, int __pyx_v_n_states, CYTHON_UNUSED int __pyx_v_n_features, __pyx_t_5hmmpy_10hmm_cython_dtype_t __pyx_v_jump_penalty, __Pyx_memviewslice __pyx_v_l2_norms) {
   int __pyx_v_i;
   int __pyx_v_j;
   int __pyx_v_t;
@@ -3385,7 +3385,7 @@ static PyObject *__pyx_pf_5hmmpy_13hidden_markov_10hmm_cython_4jump_state_seq(CY
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("jump_state_seq", 0);
 
-  /* "hmmpy/hidden_markov/hmm_cython.pyx":103
+  /* "hmmpy/hmm_cython.pyx":103
  * 
  *     cdef int i, j ,t, where_from
  *     cdef int[::view.contiguous] state_sequence = np.empty(n_samples, dtype=np.int32)             # <<<<<<<<<<<<<<
@@ -3424,7 +3424,7 @@ static PyObject *__pyx_pf_5hmmpy_13hidden_markov_10hmm_cython_4jump_state_seq(CY
   __pyx_t_6.memview = NULL;
   __pyx_t_6.data = NULL;
 
-  /* "hmmpy/hidden_markov/hmm_cython.pyx":104
+  /* "hmmpy/hmm_cython.pyx":104
  *     cdef int i, j ,t, where_from
  *     cdef int[::view.contiguous] state_sequence = np.empty(n_samples, dtype=np.int32)
  *     cdef dtype_t[:, ::view.contiguous] losses = np.zeros(shape=(n_samples, n_states))             # <<<<<<<<<<<<<<
@@ -3456,13 +3456,13 @@ static PyObject *__pyx_pf_5hmmpy_13hidden_markov_10hmm_cython_4jump_state_seq(CY
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_7 = __Pyx_PyObject_to_MemoryviewSlice_dsdc_nn___pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t(__pyx_t_4, PyBUF_WRITABLE); if (unlikely(!__pyx_t_7.memview)) __PYX_ERR(0, 104, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_PyObject_to_MemoryviewSlice_dsdc_nn___pyx_t_5hmmpy_10hmm_cython_dtype_t(__pyx_t_4, PyBUF_WRITABLE); if (unlikely(!__pyx_t_7.memview)) __PYX_ERR(0, 104, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __pyx_v_losses = __pyx_t_7;
   __pyx_t_7.memview = NULL;
   __pyx_t_7.data = NULL;
 
-  /* "hmmpy/hidden_markov/hmm_cython.pyx":107
+  /* "hmmpy/hmm_cython.pyx":107
  * 
  *     # Temporary variables
  *     cdef dtype_t[::view.contiguous] state_change_penalty = np.empty(n_states)             # <<<<<<<<<<<<<<
@@ -3492,13 +3492,13 @@ static PyObject *__pyx_pf_5hmmpy_13hidden_markov_10hmm_cython_4jump_state_seq(CY
   if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 107, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_8 = __Pyx_PyObject_to_MemoryviewSlice_dc_nn___pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t(__pyx_t_4, PyBUF_WRITABLE); if (unlikely(!__pyx_t_8.memview)) __PYX_ERR(0, 107, __pyx_L1_error)
+  __pyx_t_8 = __Pyx_PyObject_to_MemoryviewSlice_dc_nn___pyx_t_5hmmpy_10hmm_cython_dtype_t(__pyx_t_4, PyBUF_WRITABLE); if (unlikely(!__pyx_t_8.memview)) __PYX_ERR(0, 107, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __pyx_v_state_change_penalty = __pyx_t_8;
   __pyx_t_8.memview = NULL;
   __pyx_t_8.data = NULL;
 
-  /* "hmmpy/hidden_markov/hmm_cython.pyx":109
+  /* "hmmpy/hmm_cython.pyx":109
  *     cdef dtype_t[::view.contiguous] state_change_penalty = np.empty(n_states)
  * 
  *     with nogil:             # <<<<<<<<<<<<<<
@@ -3513,7 +3513,7 @@ static PyObject *__pyx_pf_5hmmpy_13hidden_markov_10hmm_cython_4jump_state_seq(CY
       #endif
       /*try:*/ {
 
-        /* "hmmpy/hidden_markov/hmm_cython.pyx":110
+        /* "hmmpy/hmm_cython.pyx":110
  * 
  *     with nogil:
  *         losses[n_samples - 1] = l2_norms[n_samples - 1]             # <<<<<<<<<<<<<<
@@ -3554,7 +3554,7 @@ if (unlikely(__pyx_memoryview_copy_contents(__pyx_t_9, __pyx_t_8, 1, 1, 0) < 0))
         __pyx_t_9.memview = NULL;
         __pyx_t_9.data = NULL;
 
-        /* "hmmpy/hidden_markov/hmm_cython.pyx":113
+        /* "hmmpy/hmm_cython.pyx":113
  * 
  *         # Backward recursion to compute losses
  *         for t in range(n_samples - 2, -1, -1):             # <<<<<<<<<<<<<<
@@ -3564,7 +3564,7 @@ if (unlikely(__pyx_memoryview_copy_contents(__pyx_t_9, __pyx_t_8, 1, 1, 0) < 0))
         for (__pyx_t_10 = (__pyx_v_n_samples - 2); __pyx_t_10 > -1; __pyx_t_10-=1) {
           __pyx_v_t = __pyx_t_10;
 
-          /* "hmmpy/hidden_markov/hmm_cython.pyx":114
+          /* "hmmpy/hmm_cython.pyx":114
  *         # Backward recursion to compute losses
  *         for t in range(n_samples - 2, -1, -1):
  *             for i in range(n_states):             # <<<<<<<<<<<<<<
@@ -3576,7 +3576,7 @@ if (unlikely(__pyx_memoryview_copy_contents(__pyx_t_9, __pyx_t_8, 1, 1, 0) < 0))
           for (__pyx_t_13 = 0; __pyx_t_13 < __pyx_t_12; __pyx_t_13+=1) {
             __pyx_v_i = __pyx_t_13;
 
-            /* "hmmpy/hidden_markov/hmm_cython.pyx":116
+            /* "hmmpy/hmm_cython.pyx":116
  *             for i in range(n_states):
  * 
  *                 for j in range(n_states):             # <<<<<<<<<<<<<<
@@ -3588,7 +3588,7 @@ if (unlikely(__pyx_memoryview_copy_contents(__pyx_t_9, __pyx_t_8, 1, 1, 0) < 0))
             for (__pyx_t_16 = 0; __pyx_t_16 < __pyx_t_15; __pyx_t_16+=1) {
               __pyx_v_j = __pyx_t_16;
 
-              /* "hmmpy/hidden_markov/hmm_cython.pyx":118
+              /* "hmmpy/hmm_cython.pyx":118
  *                 for j in range(n_states):
  *                     # If j==1, then no state change occurred and no jump penalty applies
  *                     if j == i:             # <<<<<<<<<<<<<<
@@ -3598,7 +3598,7 @@ if (unlikely(__pyx_memoryview_copy_contents(__pyx_t_9, __pyx_t_8, 1, 1, 0) < 0))
               __pyx_t_17 = ((__pyx_v_j == __pyx_v_i) != 0);
               if (__pyx_t_17) {
 
-                /* "hmmpy/hidden_markov/hmm_cython.pyx":119
+                /* "hmmpy/hmm_cython.pyx":119
  *                     # If j==1, then no state change occurred and no jump penalty applies
  *                     if j == i:
  *                         state_change_penalty[j] = l2_norms[t+1, j]             # <<<<<<<<<<<<<<
@@ -3608,9 +3608,9 @@ if (unlikely(__pyx_memoryview_copy_contents(__pyx_t_9, __pyx_t_8, 1, 1, 0) < 0))
                 __pyx_t_18 = (__pyx_v_t + 1);
                 __pyx_t_19 = __pyx_v_j;
                 __pyx_t_20 = __pyx_v_j;
-                *((__pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t *) ( /* dim=0 */ ((char *) (((__pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t *) __pyx_v_state_change_penalty.data) + __pyx_t_20)) )) = (*((__pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_l2_norms.data + __pyx_t_18 * __pyx_v_l2_norms.strides[0]) ) + __pyx_t_19 * __pyx_v_l2_norms.strides[1]) )));
+                *((__pyx_t_5hmmpy_10hmm_cython_dtype_t *) ( /* dim=0 */ ((char *) (((__pyx_t_5hmmpy_10hmm_cython_dtype_t *) __pyx_v_state_change_penalty.data) + __pyx_t_20)) )) = (*((__pyx_t_5hmmpy_10hmm_cython_dtype_t *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_l2_norms.data + __pyx_t_18 * __pyx_v_l2_norms.strides[0]) ) + __pyx_t_19 * __pyx_v_l2_norms.strides[1]) )));
 
-                /* "hmmpy/hidden_markov/hmm_cython.pyx":118
+                /* "hmmpy/hmm_cython.pyx":118
  *                 for j in range(n_states):
  *                     # If j==1, then no state change occurred and no jump penalty applies
  *                     if j == i:             # <<<<<<<<<<<<<<
@@ -3620,7 +3620,7 @@ if (unlikely(__pyx_memoryview_copy_contents(__pyx_t_9, __pyx_t_8, 1, 1, 0) < 0))
                 goto __pyx_L12;
               }
 
-              /* "hmmpy/hidden_markov/hmm_cython.pyx":121
+              /* "hmmpy/hmm_cython.pyx":121
  *                         state_change_penalty[j] = l2_norms[t+1, j]
  *                     else:
  *                         state_change_penalty[j] = l2_norms[t+1, j] + jump_penalty             # <<<<<<<<<<<<<<
@@ -3631,12 +3631,12 @@ if (unlikely(__pyx_memoryview_copy_contents(__pyx_t_9, __pyx_t_8, 1, 1, 0) < 0))
                 __pyx_t_19 = (__pyx_v_t + 1);
                 __pyx_t_18 = __pyx_v_j;
                 __pyx_t_20 = __pyx_v_j;
-                *((__pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t *) ( /* dim=0 */ ((char *) (((__pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t *) __pyx_v_state_change_penalty.data) + __pyx_t_20)) )) = ((*((__pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_l2_norms.data + __pyx_t_19 * __pyx_v_l2_norms.strides[0]) ) + __pyx_t_18 * __pyx_v_l2_norms.strides[1]) ))) + __pyx_v_jump_penalty);
+                *((__pyx_t_5hmmpy_10hmm_cython_dtype_t *) ( /* dim=0 */ ((char *) (((__pyx_t_5hmmpy_10hmm_cython_dtype_t *) __pyx_v_state_change_penalty.data) + __pyx_t_20)) )) = ((*((__pyx_t_5hmmpy_10hmm_cython_dtype_t *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_l2_norms.data + __pyx_t_19 * __pyx_v_l2_norms.strides[0]) ) + __pyx_t_18 * __pyx_v_l2_norms.strides[1]) ))) + __pyx_v_jump_penalty);
               }
               __pyx_L12:;
             }
 
-            /* "hmmpy/hidden_markov/hmm_cython.pyx":124
+            /* "hmmpy/hmm_cython.pyx":124
  * 
  * 
  *                 losses[t, i] = l2_norms[t, i] + _min(state_change_penalty)             # <<<<<<<<<<<<<<
@@ -3647,11 +3647,11 @@ if (unlikely(__pyx_memoryview_copy_contents(__pyx_t_9, __pyx_t_8, 1, 1, 0) < 0))
             __pyx_t_19 = __pyx_v_i;
             __pyx_t_20 = __pyx_v_t;
             __pyx_t_21 = __pyx_v_i;
-            *((__pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t *) ( /* dim=1 */ ((char *) (((__pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t *) ( /* dim=0 */ (__pyx_v_losses.data + __pyx_t_20 * __pyx_v_losses.strides[0]) )) + __pyx_t_21)) )) = ((*((__pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_l2_norms.data + __pyx_t_18 * __pyx_v_l2_norms.strides[0]) ) + __pyx_t_19 * __pyx_v_l2_norms.strides[1]) ))) + __pyx_f_5hmmpy_13hidden_markov_10hmm_cython__min(__pyx_v_state_change_penalty));
+            *((__pyx_t_5hmmpy_10hmm_cython_dtype_t *) ( /* dim=1 */ ((char *) (((__pyx_t_5hmmpy_10hmm_cython_dtype_t *) ( /* dim=0 */ (__pyx_v_losses.data + __pyx_t_20 * __pyx_v_losses.strides[0]) )) + __pyx_t_21)) )) = ((*((__pyx_t_5hmmpy_10hmm_cython_dtype_t *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_l2_norms.data + __pyx_t_18 * __pyx_v_l2_norms.strides[0]) ) + __pyx_t_19 * __pyx_v_l2_norms.strides[1]) ))) + __pyx_f_5hmmpy_10hmm_cython__min(__pyx_v_state_change_penalty));
           }
         }
 
-        /* "hmmpy/hidden_markov/hmm_cython.pyx":127
+        /* "hmmpy/hmm_cython.pyx":127
  * 
  *         # Use losses in forward recursion to compute most likeley state sequence
  *         state_sequence[0] = _argmin(losses[0])             # <<<<<<<<<<<<<<
@@ -3672,12 +3672,12 @@ __pyx_t_8.strides[0] = __pyx_v_losses.strides[1];
     __pyx_t_8.suboffsets[0] = -1;
 
 __pyx_t_19 = 0;
-        *((int *) ( /* dim=0 */ ((char *) (((int *) __pyx_v_state_sequence.data) + __pyx_t_19)) )) = __pyx_f_5hmmpy_13hidden_markov_10hmm_cython__argmin(__pyx_t_8);
+        *((int *) ( /* dim=0 */ ((char *) (((int *) __pyx_v_state_sequence.data) + __pyx_t_19)) )) = __pyx_f_5hmmpy_10hmm_cython__argmin(__pyx_t_8);
         __PYX_XDEC_MEMVIEW(&__pyx_t_8, 0);
         __pyx_t_8.memview = NULL;
         __pyx_t_8.data = NULL;
 
-        /* "hmmpy/hidden_markov/hmm_cython.pyx":129
+        /* "hmmpy/hmm_cython.pyx":129
  *         state_sequence[0] = _argmin(losses[0])
  * 
  *         for t in range(1, n_samples):             # <<<<<<<<<<<<<<
@@ -3689,7 +3689,7 @@ __pyx_t_19 = 0;
         for (__pyx_t_12 = 1; __pyx_t_12 < __pyx_t_11; __pyx_t_12+=1) {
           __pyx_v_t = __pyx_t_12;
 
-          /* "hmmpy/hidden_markov/hmm_cython.pyx":130
+          /* "hmmpy/hmm_cython.pyx":130
  * 
  *         for t in range(1, n_samples):
  *             for i in range(n_states):             # <<<<<<<<<<<<<<
@@ -3701,7 +3701,7 @@ __pyx_t_19 = 0;
           for (__pyx_t_15 = 0; __pyx_t_15 < __pyx_t_14; __pyx_t_15+=1) {
             __pyx_v_i = __pyx_t_15;
 
-            /* "hmmpy/hidden_markov/hmm_cython.pyx":132
+            /* "hmmpy/hmm_cython.pyx":132
  *             for i in range(n_states):
  * 
  *                 if i == state_sequence[t-1]:             # <<<<<<<<<<<<<<
@@ -3712,7 +3712,7 @@ __pyx_t_19 = 0;
             __pyx_t_17 = ((__pyx_v_i == (*((int *) ( /* dim=0 */ ((char *) (((int *) __pyx_v_state_sequence.data) + __pyx_t_19)) )))) != 0);
             if (__pyx_t_17) {
 
-              /* "hmmpy/hidden_markov/hmm_cython.pyx":133
+              /* "hmmpy/hmm_cython.pyx":133
  * 
  *                 if i == state_sequence[t-1]:
  *                     state_change_penalty[i] = losses[t, i]             # <<<<<<<<<<<<<<
@@ -3722,9 +3722,9 @@ __pyx_t_19 = 0;
               __pyx_t_19 = __pyx_v_t;
               __pyx_t_18 = __pyx_v_i;
               __pyx_t_21 = __pyx_v_i;
-              *((__pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t *) ( /* dim=0 */ ((char *) (((__pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t *) __pyx_v_state_change_penalty.data) + __pyx_t_21)) )) = (*((__pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t *) ( /* dim=1 */ ((char *) (((__pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t *) ( /* dim=0 */ (__pyx_v_losses.data + __pyx_t_19 * __pyx_v_losses.strides[0]) )) + __pyx_t_18)) )));
+              *((__pyx_t_5hmmpy_10hmm_cython_dtype_t *) ( /* dim=0 */ ((char *) (((__pyx_t_5hmmpy_10hmm_cython_dtype_t *) __pyx_v_state_change_penalty.data) + __pyx_t_21)) )) = (*((__pyx_t_5hmmpy_10hmm_cython_dtype_t *) ( /* dim=1 */ ((char *) (((__pyx_t_5hmmpy_10hmm_cython_dtype_t *) ( /* dim=0 */ (__pyx_v_losses.data + __pyx_t_19 * __pyx_v_losses.strides[0]) )) + __pyx_t_18)) )));
 
-              /* "hmmpy/hidden_markov/hmm_cython.pyx":132
+              /* "hmmpy/hmm_cython.pyx":132
  *             for i in range(n_states):
  * 
  *                 if i == state_sequence[t-1]:             # <<<<<<<<<<<<<<
@@ -3734,7 +3734,7 @@ __pyx_t_19 = 0;
               goto __pyx_L17;
             }
 
-            /* "hmmpy/hidden_markov/hmm_cython.pyx":135
+            /* "hmmpy/hmm_cython.pyx":135
  *                     state_change_penalty[i] = losses[t, i]
  *                 else:
  *                     state_change_penalty[i] = losses[t, i] + jump_penalty             # <<<<<<<<<<<<<<
@@ -3745,12 +3745,12 @@ __pyx_t_19 = 0;
               __pyx_t_18 = __pyx_v_t;
               __pyx_t_19 = __pyx_v_i;
               __pyx_t_21 = __pyx_v_i;
-              *((__pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t *) ( /* dim=0 */ ((char *) (((__pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t *) __pyx_v_state_change_penalty.data) + __pyx_t_21)) )) = ((*((__pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t *) ( /* dim=1 */ ((char *) (((__pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t *) ( /* dim=0 */ (__pyx_v_losses.data + __pyx_t_18 * __pyx_v_losses.strides[0]) )) + __pyx_t_19)) ))) + __pyx_v_jump_penalty);
+              *((__pyx_t_5hmmpy_10hmm_cython_dtype_t *) ( /* dim=0 */ ((char *) (((__pyx_t_5hmmpy_10hmm_cython_dtype_t *) __pyx_v_state_change_penalty.data) + __pyx_t_21)) )) = ((*((__pyx_t_5hmmpy_10hmm_cython_dtype_t *) ( /* dim=1 */ ((char *) (((__pyx_t_5hmmpy_10hmm_cython_dtype_t *) ( /* dim=0 */ (__pyx_v_losses.data + __pyx_t_18 * __pyx_v_losses.strides[0]) )) + __pyx_t_19)) ))) + __pyx_v_jump_penalty);
             }
             __pyx_L17:;
           }
 
-          /* "hmmpy/hidden_markov/hmm_cython.pyx":137
+          /* "hmmpy/hmm_cython.pyx":137
  *                     state_change_penalty[i] = losses[t, i] + jump_penalty
  * 
  *             state_sequence[t] = _argmin(state_change_penalty)             # <<<<<<<<<<<<<<
@@ -3758,11 +3758,11 @@ __pyx_t_19 = 0;
  *     return np.asarray(losses), np.asarray(state_sequence)
  */
           __pyx_t_19 = __pyx_v_t;
-          *((int *) ( /* dim=0 */ ((char *) (((int *) __pyx_v_state_sequence.data) + __pyx_t_19)) )) = __pyx_f_5hmmpy_13hidden_markov_10hmm_cython__argmin(__pyx_v_state_change_penalty);
+          *((int *) ( /* dim=0 */ ((char *) (((int *) __pyx_v_state_sequence.data) + __pyx_t_19)) )) = __pyx_f_5hmmpy_10hmm_cython__argmin(__pyx_v_state_change_penalty);
         }
       }
 
-      /* "hmmpy/hidden_markov/hmm_cython.pyx":109
+      /* "hmmpy/hmm_cython.pyx":109
  *     cdef dtype_t[::view.contiguous] state_change_penalty = np.empty(n_states)
  * 
  *     with nogil:             # <<<<<<<<<<<<<<
@@ -3788,7 +3788,7 @@ __pyx_t_19 = 0;
       }
   }
 
-  /* "hmmpy/hidden_markov/hmm_cython.pyx":139
+  /* "hmmpy/hmm_cython.pyx":139
  *             state_sequence[t] = _argmin(state_change_penalty)
  * 
  *     return np.asarray(losses), np.asarray(state_sequence)             # <<<<<<<<<<<<<<
@@ -3801,7 +3801,7 @@ __pyx_t_19 = 0;
   __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_asarray); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 139, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = __pyx_memoryview_fromslice(__pyx_v_losses, 2, (PyObject *(*)(char *)) __pyx_memview_get_nn___pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t, (int (*)(char *, PyObject *)) __pyx_memview_set_nn___pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t, 0);; if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 139, __pyx_L1_error)
+  __pyx_t_1 = __pyx_memoryview_fromslice(__pyx_v_losses, 2, (PyObject *(*)(char *)) __pyx_memview_get_nn___pyx_t_5hmmpy_10hmm_cython_dtype_t, (int (*)(char *, PyObject *)) __pyx_memview_set_nn___pyx_t_5hmmpy_10hmm_cython_dtype_t, 0);; if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 139, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_t_2 = NULL;
   if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_5))) {
@@ -3854,7 +3854,7 @@ __pyx_t_19 = 0;
   __pyx_t_2 = 0;
   goto __pyx_L0;
 
-  /* "hmmpy/hidden_markov/hmm_cython.pyx":98
+  /* "hmmpy/hmm_cython.pyx":98
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
  * def jump_state_seq(int n_samples, int n_states, int n_features,             # <<<<<<<<<<<<<<
@@ -3873,7 +3873,7 @@ __pyx_t_19 = 0;
   __PYX_XDEC_MEMVIEW(&__pyx_t_7, 1);
   __PYX_XDEC_MEMVIEW(&__pyx_t_8, 1);
   __PYX_XDEC_MEMVIEW(&__pyx_t_9, 1);
-  __Pyx_AddTraceback("hmmpy.hidden_markov.hmm_cython.jump_state_seq", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("hmmpy.hmm_cython.jump_state_seq", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __PYX_XDEC_MEMVIEW(&__pyx_v_state_sequence, 1);
@@ -3885,7 +3885,7 @@ __pyx_t_19 = 0;
   return __pyx_r;
 }
 
-/* "hmmpy/hidden_markov/hmm_cython.pyx":142
+/* "hmmpy/hmm_cython.pyx":142
  * 
  * 
  * def viterbi(int n_samples, int n_states,             # <<<<<<<<<<<<<<
@@ -3894,9 +3894,9 @@ __pyx_t_19 = 0;
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_5hmmpy_13hidden_markov_10hmm_cython_7viterbi(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static PyMethodDef __pyx_mdef_5hmmpy_13hidden_markov_10hmm_cython_7viterbi = {"viterbi", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_5hmmpy_13hidden_markov_10hmm_cython_7viterbi, METH_VARARGS|METH_KEYWORDS, 0};
-static PyObject *__pyx_pw_5hmmpy_13hidden_markov_10hmm_cython_7viterbi(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+static PyObject *__pyx_pw_5hmmpy_10hmm_cython_7viterbi(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyMethodDef __pyx_mdef_5hmmpy_10hmm_cython_7viterbi = {"viterbi", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_5hmmpy_10hmm_cython_7viterbi, METH_VARARGS|METH_KEYWORDS, 0};
+static PyObject *__pyx_pw_5hmmpy_10hmm_cython_7viterbi(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   int __pyx_v_n_samples;
   int __pyx_v_n_states;
   __Pyx_memviewslice __pyx_v_log_startprob = { 0, 0, { 0 }, { 0 }, { 0 } };
@@ -3972,26 +3972,26 @@ static PyObject *__pyx_pw_5hmmpy_13hidden_markov_10hmm_cython_7viterbi(PyObject 
     }
     __pyx_v_n_samples = __Pyx_PyInt_As_int(values[0]); if (unlikely((__pyx_v_n_samples == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 142, __pyx_L3_error)
     __pyx_v_n_states = __Pyx_PyInt_As_int(values[1]); if (unlikely((__pyx_v_n_states == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 142, __pyx_L3_error)
-    __pyx_v_log_startprob = __Pyx_PyObject_to_MemoryviewSlice_ds_nn___pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t(values[2], PyBUF_WRITABLE); if (unlikely(!__pyx_v_log_startprob.memview)) __PYX_ERR(0, 143, __pyx_L3_error)
-    __pyx_v_log_tpm = __Pyx_PyObject_to_MemoryviewSlice_dsds_nn___pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t(values[3], PyBUF_WRITABLE); if (unlikely(!__pyx_v_log_tpm.memview)) __PYX_ERR(0, 144, __pyx_L3_error)
-    __pyx_v_log_emission_proba = __Pyx_PyObject_to_MemoryviewSlice_dsds_nn___pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t(values[4], PyBUF_WRITABLE); if (unlikely(!__pyx_v_log_emission_proba.memview)) __PYX_ERR(0, 145, __pyx_L3_error)
+    __pyx_v_log_startprob = __Pyx_PyObject_to_MemoryviewSlice_ds_nn___pyx_t_5hmmpy_10hmm_cython_dtype_t(values[2], PyBUF_WRITABLE); if (unlikely(!__pyx_v_log_startprob.memview)) __PYX_ERR(0, 143, __pyx_L3_error)
+    __pyx_v_log_tpm = __Pyx_PyObject_to_MemoryviewSlice_dsds_nn___pyx_t_5hmmpy_10hmm_cython_dtype_t(values[3], PyBUF_WRITABLE); if (unlikely(!__pyx_v_log_tpm.memview)) __PYX_ERR(0, 144, __pyx_L3_error)
+    __pyx_v_log_emission_proba = __Pyx_PyObject_to_MemoryviewSlice_dsds_nn___pyx_t_5hmmpy_10hmm_cython_dtype_t(values[4], PyBUF_WRITABLE); if (unlikely(!__pyx_v_log_emission_proba.memview)) __PYX_ERR(0, 145, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
   __Pyx_RaiseArgtupleInvalid("viterbi", 1, 5, 5, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 142, __pyx_L3_error)
   __pyx_L3_error:;
-  __Pyx_AddTraceback("hmmpy.hidden_markov.hmm_cython.viterbi", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("hmmpy.hmm_cython.viterbi", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_5hmmpy_13hidden_markov_10hmm_cython_6viterbi(__pyx_self, __pyx_v_n_samples, __pyx_v_n_states, __pyx_v_log_startprob, __pyx_v_log_tpm, __pyx_v_log_emission_proba);
+  __pyx_r = __pyx_pf_5hmmpy_10hmm_cython_6viterbi(__pyx_self, __pyx_v_n_samples, __pyx_v_n_states, __pyx_v_log_startprob, __pyx_v_log_tpm, __pyx_v_log_emission_proba);
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_5hmmpy_13hidden_markov_10hmm_cython_6viterbi(CYTHON_UNUSED PyObject *__pyx_self, int __pyx_v_n_samples, int __pyx_v_n_states, __Pyx_memviewslice __pyx_v_log_startprob, __Pyx_memviewslice __pyx_v_log_tpm, __Pyx_memviewslice __pyx_v_log_emission_proba) {
+static PyObject *__pyx_pf_5hmmpy_10hmm_cython_6viterbi(CYTHON_UNUSED PyObject *__pyx_self, int __pyx_v_n_samples, int __pyx_v_n_states, __Pyx_memviewslice __pyx_v_log_startprob, __Pyx_memviewslice __pyx_v_log_tpm, __Pyx_memviewslice __pyx_v_log_emission_proba) {
   int __pyx_v_i;
   int __pyx_v_j;
   int __pyx_v_t;
@@ -4028,7 +4028,7 @@ static PyObject *__pyx_pf_5hmmpy_13hidden_markov_10hmm_cython_6viterbi(CYTHON_UN
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("viterbi", 0);
 
-  /* "hmmpy/hidden_markov/hmm_cython.pyx":149
+  /* "hmmpy/hmm_cython.pyx":149
  *     cdef int i, j, t, where_from
  * 
  *     cdef int[::view.contiguous] state_sequence = np.empty(n_samples, dtype=np.int32)             # <<<<<<<<<<<<<<
@@ -4067,7 +4067,7 @@ static PyObject *__pyx_pf_5hmmpy_13hidden_markov_10hmm_cython_6viterbi(CYTHON_UN
   __pyx_t_6.memview = NULL;
   __pyx_t_6.data = NULL;
 
-  /* "hmmpy/hidden_markov/hmm_cython.pyx":150
+  /* "hmmpy/hmm_cython.pyx":150
  * 
  *     cdef int[::view.contiguous] state_sequence = np.empty(n_samples, dtype=np.int32)
  *     cdef dtype_t[:, ::view.contiguous] log_posteriors = np.zeros((n_samples, n_states))             # <<<<<<<<<<<<<<
@@ -4107,13 +4107,13 @@ static PyObject *__pyx_pf_5hmmpy_13hidden_markov_10hmm_cython_6viterbi(CYTHON_UN
   if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 150, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_7 = __Pyx_PyObject_to_MemoryviewSlice_dsdc_nn___pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t(__pyx_t_5, PyBUF_WRITABLE); if (unlikely(!__pyx_t_7.memview)) __PYX_ERR(0, 150, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_PyObject_to_MemoryviewSlice_dsdc_nn___pyx_t_5hmmpy_10hmm_cython_dtype_t(__pyx_t_5, PyBUF_WRITABLE); if (unlikely(!__pyx_t_7.memview)) __PYX_ERR(0, 150, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __pyx_v_log_posteriors = __pyx_t_7;
   __pyx_t_7.memview = NULL;
   __pyx_t_7.data = NULL;
 
-  /* "hmmpy/hidden_markov/hmm_cython.pyx":151
+  /* "hmmpy/hmm_cython.pyx":151
  *     cdef int[::view.contiguous] state_sequence = np.empty(n_samples, dtype=np.int32)
  *     cdef dtype_t[:, ::view.contiguous] log_posteriors = np.zeros((n_samples, n_states))
  *     cdef dtype_t[::view.contiguous] work_buffer = np.empty(n_states)             # <<<<<<<<<<<<<<
@@ -4143,13 +4143,13 @@ static PyObject *__pyx_pf_5hmmpy_13hidden_markov_10hmm_cython_6viterbi(CYTHON_UN
   if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 151, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __pyx_t_8 = __Pyx_PyObject_to_MemoryviewSlice_dc_nn___pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t(__pyx_t_5, PyBUF_WRITABLE); if (unlikely(!__pyx_t_8.memview)) __PYX_ERR(0, 151, __pyx_L1_error)
+  __pyx_t_8 = __Pyx_PyObject_to_MemoryviewSlice_dc_nn___pyx_t_5hmmpy_10hmm_cython_dtype_t(__pyx_t_5, PyBUF_WRITABLE); if (unlikely(!__pyx_t_8.memview)) __PYX_ERR(0, 151, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __pyx_v_work_buffer = __pyx_t_8;
   __pyx_t_8.memview = NULL;
   __pyx_t_8.data = NULL;
 
-  /* "hmmpy/hidden_markov/hmm_cython.pyx":153
+  /* "hmmpy/hmm_cython.pyx":153
  *     cdef dtype_t[::view.contiguous] work_buffer = np.empty(n_states)
  * 
  *     with nogil:             # <<<<<<<<<<<<<<
@@ -4164,7 +4164,7 @@ static PyObject *__pyx_pf_5hmmpy_13hidden_markov_10hmm_cython_6viterbi(CYTHON_UN
       #endif
       /*try:*/ {
 
-        /* "hmmpy/hidden_markov/hmm_cython.pyx":154
+        /* "hmmpy/hmm_cython.pyx":154
  * 
  *     with nogil:
  *         for i in range(n_states):             # <<<<<<<<<<<<<<
@@ -4176,7 +4176,7 @@ static PyObject *__pyx_pf_5hmmpy_13hidden_markov_10hmm_cython_6viterbi(CYTHON_UN
         for (__pyx_t_11 = 0; __pyx_t_11 < __pyx_t_10; __pyx_t_11+=1) {
           __pyx_v_i = __pyx_t_11;
 
-          /* "hmmpy/hidden_markov/hmm_cython.pyx":155
+          /* "hmmpy/hmm_cython.pyx":155
  *     with nogil:
  *         for i in range(n_states):
  *             log_posteriors[0, i] = log_startprob[i] + log_emission_proba[0, i]             # <<<<<<<<<<<<<<
@@ -4188,10 +4188,10 @@ static PyObject *__pyx_pf_5hmmpy_13hidden_markov_10hmm_cython_6viterbi(CYTHON_UN
           __pyx_t_14 = __pyx_v_i;
           __pyx_t_15 = 0;
           __pyx_t_16 = __pyx_v_i;
-          *((__pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t *) ( /* dim=1 */ ((char *) (((__pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t *) ( /* dim=0 */ (__pyx_v_log_posteriors.data + __pyx_t_15 * __pyx_v_log_posteriors.strides[0]) )) + __pyx_t_16)) )) = ((*((__pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t *) ( /* dim=0 */ (__pyx_v_log_startprob.data + __pyx_t_12 * __pyx_v_log_startprob.strides[0]) ))) + (*((__pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_log_emission_proba.data + __pyx_t_13 * __pyx_v_log_emission_proba.strides[0]) ) + __pyx_t_14 * __pyx_v_log_emission_proba.strides[1]) ))));
+          *((__pyx_t_5hmmpy_10hmm_cython_dtype_t *) ( /* dim=1 */ ((char *) (((__pyx_t_5hmmpy_10hmm_cython_dtype_t *) ( /* dim=0 */ (__pyx_v_log_posteriors.data + __pyx_t_15 * __pyx_v_log_posteriors.strides[0]) )) + __pyx_t_16)) )) = ((*((__pyx_t_5hmmpy_10hmm_cython_dtype_t *) ( /* dim=0 */ (__pyx_v_log_startprob.data + __pyx_t_12 * __pyx_v_log_startprob.strides[0]) ))) + (*((__pyx_t_5hmmpy_10hmm_cython_dtype_t *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_log_emission_proba.data + __pyx_t_13 * __pyx_v_log_emission_proba.strides[0]) ) + __pyx_t_14 * __pyx_v_log_emission_proba.strides[1]) ))));
         }
 
-        /* "hmmpy/hidden_markov/hmm_cython.pyx":158
+        /* "hmmpy/hmm_cython.pyx":158
  * 
  *         # Induction
  *         for t in range(1, n_samples):             # <<<<<<<<<<<<<<
@@ -4203,7 +4203,7 @@ static PyObject *__pyx_pf_5hmmpy_13hidden_markov_10hmm_cython_6viterbi(CYTHON_UN
         for (__pyx_t_11 = 1; __pyx_t_11 < __pyx_t_10; __pyx_t_11+=1) {
           __pyx_v_t = __pyx_t_11;
 
-          /* "hmmpy/hidden_markov/hmm_cython.pyx":159
+          /* "hmmpy/hmm_cython.pyx":159
  *         # Induction
  *         for t in range(1, n_samples):
  *             for i in range(n_states):             # <<<<<<<<<<<<<<
@@ -4215,7 +4215,7 @@ static PyObject *__pyx_pf_5hmmpy_13hidden_markov_10hmm_cython_6viterbi(CYTHON_UN
           for (__pyx_t_19 = 0; __pyx_t_19 < __pyx_t_18; __pyx_t_19+=1) {
             __pyx_v_i = __pyx_t_19;
 
-            /* "hmmpy/hidden_markov/hmm_cython.pyx":160
+            /* "hmmpy/hmm_cython.pyx":160
  *         for t in range(1, n_samples):
  *             for i in range(n_states):
  *                 for j in range(n_states):             # <<<<<<<<<<<<<<
@@ -4227,7 +4227,7 @@ static PyObject *__pyx_pf_5hmmpy_13hidden_markov_10hmm_cython_6viterbi(CYTHON_UN
             for (__pyx_t_22 = 0; __pyx_t_22 < __pyx_t_21; __pyx_t_22+=1) {
               __pyx_v_j = __pyx_t_22;
 
-              /* "hmmpy/hidden_markov/hmm_cython.pyx":161
+              /* "hmmpy/hmm_cython.pyx":161
  *             for i in range(n_states):
  *                 for j in range(n_states):
  *                     work_buffer[j] = (log_tpm[j, i]             # <<<<<<<<<<<<<<
@@ -4237,7 +4237,7 @@ static PyObject *__pyx_pf_5hmmpy_13hidden_markov_10hmm_cython_6viterbi(CYTHON_UN
               __pyx_t_14 = __pyx_v_j;
               __pyx_t_13 = __pyx_v_i;
 
-              /* "hmmpy/hidden_markov/hmm_cython.pyx":162
+              /* "hmmpy/hmm_cython.pyx":162
  *                 for j in range(n_states):
  *                     work_buffer[j] = (log_tpm[j, i]
  *                                       + log_posteriors[t - 1, j])             # <<<<<<<<<<<<<<
@@ -4247,7 +4247,7 @@ static PyObject *__pyx_pf_5hmmpy_13hidden_markov_10hmm_cython_6viterbi(CYTHON_UN
               __pyx_t_12 = (__pyx_v_t - 1);
               __pyx_t_16 = __pyx_v_j;
 
-              /* "hmmpy/hidden_markov/hmm_cython.pyx":161
+              /* "hmmpy/hmm_cython.pyx":161
  *             for i in range(n_states):
  *                 for j in range(n_states):
  *                     work_buffer[j] = (log_tpm[j, i]             # <<<<<<<<<<<<<<
@@ -4255,10 +4255,10 @@ static PyObject *__pyx_pf_5hmmpy_13hidden_markov_10hmm_cython_6viterbi(CYTHON_UN
  * 
  */
               __pyx_t_15 = __pyx_v_j;
-              *((__pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t *) ( /* dim=0 */ ((char *) (((__pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t *) __pyx_v_work_buffer.data) + __pyx_t_15)) )) = ((*((__pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_log_tpm.data + __pyx_t_14 * __pyx_v_log_tpm.strides[0]) ) + __pyx_t_13 * __pyx_v_log_tpm.strides[1]) ))) + (*((__pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t *) ( /* dim=1 */ ((char *) (((__pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t *) ( /* dim=0 */ (__pyx_v_log_posteriors.data + __pyx_t_12 * __pyx_v_log_posteriors.strides[0]) )) + __pyx_t_16)) ))));
+              *((__pyx_t_5hmmpy_10hmm_cython_dtype_t *) ( /* dim=0 */ ((char *) (((__pyx_t_5hmmpy_10hmm_cython_dtype_t *) __pyx_v_work_buffer.data) + __pyx_t_15)) )) = ((*((__pyx_t_5hmmpy_10hmm_cython_dtype_t *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_log_tpm.data + __pyx_t_14 * __pyx_v_log_tpm.strides[0]) ) + __pyx_t_13 * __pyx_v_log_tpm.strides[1]) ))) + (*((__pyx_t_5hmmpy_10hmm_cython_dtype_t *) ( /* dim=1 */ ((char *) (((__pyx_t_5hmmpy_10hmm_cython_dtype_t *) ( /* dim=0 */ (__pyx_v_log_posteriors.data + __pyx_t_12 * __pyx_v_log_posteriors.strides[0]) )) + __pyx_t_16)) ))));
             }
 
-            /* "hmmpy/hidden_markov/hmm_cython.pyx":164
+            /* "hmmpy/hmm_cython.pyx":164
  *                                       + log_posteriors[t - 1, j])
  * 
  *                 log_posteriors[t, i] = _max(work_buffer) + log_emission_proba[t, i]             # <<<<<<<<<<<<<<
@@ -4269,11 +4269,11 @@ static PyObject *__pyx_pf_5hmmpy_13hidden_markov_10hmm_cython_6viterbi(CYTHON_UN
             __pyx_t_12 = __pyx_v_i;
             __pyx_t_13 = __pyx_v_t;
             __pyx_t_14 = __pyx_v_i;
-            *((__pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t *) ( /* dim=1 */ ((char *) (((__pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t *) ( /* dim=0 */ (__pyx_v_log_posteriors.data + __pyx_t_13 * __pyx_v_log_posteriors.strides[0]) )) + __pyx_t_14)) )) = (__pyx_f_5hmmpy_13hidden_markov_10hmm_cython__max(__pyx_v_work_buffer) + (*((__pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_log_emission_proba.data + __pyx_t_16 * __pyx_v_log_emission_proba.strides[0]) ) + __pyx_t_12 * __pyx_v_log_emission_proba.strides[1]) ))));
+            *((__pyx_t_5hmmpy_10hmm_cython_dtype_t *) ( /* dim=1 */ ((char *) (((__pyx_t_5hmmpy_10hmm_cython_dtype_t *) ( /* dim=0 */ (__pyx_v_log_posteriors.data + __pyx_t_13 * __pyx_v_log_posteriors.strides[0]) )) + __pyx_t_14)) )) = (__pyx_f_5hmmpy_10hmm_cython__max(__pyx_v_work_buffer) + (*((__pyx_t_5hmmpy_10hmm_cython_dtype_t *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_log_emission_proba.data + __pyx_t_16 * __pyx_v_log_emission_proba.strides[0]) ) + __pyx_t_12 * __pyx_v_log_emission_proba.strides[1]) ))));
           }
         }
 
-        /* "hmmpy/hidden_markov/hmm_cython.pyx":167
+        /* "hmmpy/hmm_cython.pyx":167
  * 
  *         # Observation traceback
  *         state_sequence[n_samples - 1] = where_from = _argmax(log_posteriors[n_samples - 1])             # <<<<<<<<<<<<<<
@@ -4293,7 +4293,7 @@ __pyx_t_8.shape[0] = __pyx_v_log_posteriors.shape[1];
 __pyx_t_8.strides[0] = __pyx_v_log_posteriors.strides[1];
     __pyx_t_8.suboffsets[0] = -1;
 
-__pyx_t_9 = __pyx_f_5hmmpy_13hidden_markov_10hmm_cython__argmax(__pyx_t_8);
+__pyx_t_9 = __pyx_f_5hmmpy_10hmm_cython__argmax(__pyx_t_8);
         __PYX_XDEC_MEMVIEW(&__pyx_t_8, 0);
         __pyx_t_8.memview = NULL;
         __pyx_t_8.data = NULL;
@@ -4301,7 +4301,7 @@ __pyx_t_9 = __pyx_f_5hmmpy_13hidden_markov_10hmm_cython__argmax(__pyx_t_8);
         *((int *) ( /* dim=0 */ ((char *) (((int *) __pyx_v_state_sequence.data) + __pyx_t_12)) )) = __pyx_t_9;
         __pyx_v_where_from = __pyx_t_9;
 
-        /* "hmmpy/hidden_markov/hmm_cython.pyx":169
+        /* "hmmpy/hmm_cython.pyx":169
  *         state_sequence[n_samples - 1] = where_from = _argmax(log_posteriors[n_samples - 1])
  * 
  *         for t in range(n_samples - 2, -1, -1):             # <<<<<<<<<<<<<<
@@ -4311,7 +4311,7 @@ __pyx_t_9 = __pyx_f_5hmmpy_13hidden_markov_10hmm_cython__argmax(__pyx_t_8);
         for (__pyx_t_9 = (__pyx_v_n_samples - 2); __pyx_t_9 > -1; __pyx_t_9-=1) {
           __pyx_v_t = __pyx_t_9;
 
-          /* "hmmpy/hidden_markov/hmm_cython.pyx":170
+          /* "hmmpy/hmm_cython.pyx":170
  * 
  *         for t in range(n_samples - 2, -1, -1):
  *             for i in range(n_states):             # <<<<<<<<<<<<<<
@@ -4323,7 +4323,7 @@ __pyx_t_9 = __pyx_f_5hmmpy_13hidden_markov_10hmm_cython__argmax(__pyx_t_8);
           for (__pyx_t_17 = 0; __pyx_t_17 < __pyx_t_11; __pyx_t_17+=1) {
             __pyx_v_i = __pyx_t_17;
 
-            /* "hmmpy/hidden_markov/hmm_cython.pyx":171
+            /* "hmmpy/hmm_cython.pyx":171
  *         for t in range(n_samples - 2, -1, -1):
  *             for i in range(n_states):
  *                 work_buffer[i] = (log_posteriors[t, i]             # <<<<<<<<<<<<<<
@@ -4333,7 +4333,7 @@ __pyx_t_9 = __pyx_f_5hmmpy_13hidden_markov_10hmm_cython__argmax(__pyx_t_8);
             __pyx_t_12 = __pyx_v_t;
             __pyx_t_16 = __pyx_v_i;
 
-            /* "hmmpy/hidden_markov/hmm_cython.pyx":172
+            /* "hmmpy/hmm_cython.pyx":172
  *             for i in range(n_states):
  *                 work_buffer[i] = (log_posteriors[t, i]
  *                                   + log_tpm[i, where_from])             # <<<<<<<<<<<<<<
@@ -4343,7 +4343,7 @@ __pyx_t_9 = __pyx_f_5hmmpy_13hidden_markov_10hmm_cython__argmax(__pyx_t_8);
             __pyx_t_14 = __pyx_v_i;
             __pyx_t_13 = __pyx_v_where_from;
 
-            /* "hmmpy/hidden_markov/hmm_cython.pyx":171
+            /* "hmmpy/hmm_cython.pyx":171
  *         for t in range(n_samples - 2, -1, -1):
  *             for i in range(n_states):
  *                 work_buffer[i] = (log_posteriors[t, i]             # <<<<<<<<<<<<<<
@@ -4351,24 +4351,24 @@ __pyx_t_9 = __pyx_f_5hmmpy_13hidden_markov_10hmm_cython__argmax(__pyx_t_8);
  * 
  */
             __pyx_t_15 = __pyx_v_i;
-            *((__pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t *) ( /* dim=0 */ ((char *) (((__pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t *) __pyx_v_work_buffer.data) + __pyx_t_15)) )) = ((*((__pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t *) ( /* dim=1 */ ((char *) (((__pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t *) ( /* dim=0 */ (__pyx_v_log_posteriors.data + __pyx_t_12 * __pyx_v_log_posteriors.strides[0]) )) + __pyx_t_16)) ))) + (*((__pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_log_tpm.data + __pyx_t_14 * __pyx_v_log_tpm.strides[0]) ) + __pyx_t_13 * __pyx_v_log_tpm.strides[1]) ))));
+            *((__pyx_t_5hmmpy_10hmm_cython_dtype_t *) ( /* dim=0 */ ((char *) (((__pyx_t_5hmmpy_10hmm_cython_dtype_t *) __pyx_v_work_buffer.data) + __pyx_t_15)) )) = ((*((__pyx_t_5hmmpy_10hmm_cython_dtype_t *) ( /* dim=1 */ ((char *) (((__pyx_t_5hmmpy_10hmm_cython_dtype_t *) ( /* dim=0 */ (__pyx_v_log_posteriors.data + __pyx_t_12 * __pyx_v_log_posteriors.strides[0]) )) + __pyx_t_16)) ))) + (*((__pyx_t_5hmmpy_10hmm_cython_dtype_t *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_log_tpm.data + __pyx_t_14 * __pyx_v_log_tpm.strides[0]) ) + __pyx_t_13 * __pyx_v_log_tpm.strides[1]) ))));
           }
 
-          /* "hmmpy/hidden_markov/hmm_cython.pyx":174
+          /* "hmmpy/hmm_cython.pyx":174
  *                                   + log_tpm[i, where_from])
  * 
  *             state_sequence[t] = where_from = _argmax(work_buffer)             # <<<<<<<<<<<<<<
  * 
  *     return np.asarray(state_sequence)
  */
-          __pyx_t_10 = __pyx_f_5hmmpy_13hidden_markov_10hmm_cython__argmax(__pyx_v_work_buffer);
+          __pyx_t_10 = __pyx_f_5hmmpy_10hmm_cython__argmax(__pyx_v_work_buffer);
           __pyx_t_13 = __pyx_v_t;
           *((int *) ( /* dim=0 */ ((char *) (((int *) __pyx_v_state_sequence.data) + __pyx_t_13)) )) = __pyx_t_10;
           __pyx_v_where_from = __pyx_t_10;
         }
       }
 
-      /* "hmmpy/hidden_markov/hmm_cython.pyx":153
+      /* "hmmpy/hmm_cython.pyx":153
  *     cdef dtype_t[::view.contiguous] work_buffer = np.empty(n_states)
  * 
  *     with nogil:             # <<<<<<<<<<<<<<
@@ -4387,7 +4387,7 @@ __pyx_t_9 = __pyx_f_5hmmpy_13hidden_markov_10hmm_cython__argmax(__pyx_t_8);
       }
   }
 
-  /* "hmmpy/hidden_markov/hmm_cython.pyx":176
+  /* "hmmpy/hmm_cython.pyx":176
  *             state_sequence[t] = where_from = _argmax(work_buffer)
  * 
  *     return np.asarray(state_sequence)             # <<<<<<<<<<<<<<
@@ -4420,7 +4420,7 @@ __pyx_t_9 = __pyx_f_5hmmpy_13hidden_markov_10hmm_cython__argmax(__pyx_t_8);
   __pyx_t_5 = 0;
   goto __pyx_L0;
 
-  /* "hmmpy/hidden_markov/hmm_cython.pyx":142
+  /* "hmmpy/hmm_cython.pyx":142
  * 
  * 
  * def viterbi(int n_samples, int n_states,             # <<<<<<<<<<<<<<
@@ -4438,7 +4438,7 @@ __pyx_t_9 = __pyx_f_5hmmpy_13hidden_markov_10hmm_cython__argmax(__pyx_t_8);
   __PYX_XDEC_MEMVIEW(&__pyx_t_6, 1);
   __PYX_XDEC_MEMVIEW(&__pyx_t_7, 1);
   __PYX_XDEC_MEMVIEW(&__pyx_t_8, 1);
-  __Pyx_AddTraceback("hmmpy.hidden_markov.hmm_cython.viterbi", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("hmmpy.hmm_cython.viterbi", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __PYX_XDEC_MEMVIEW(&__pyx_v_state_sequence, 1);
@@ -17592,7 +17592,7 @@ static PyBufferProcs __pyx_tp_as_buffer_array = {
 
 static PyTypeObject __pyx_type___pyx_array = {
   PyVarObject_HEAD_INIT(0, 0)
-  "hmmpy.hidden_markov.hmm_cython.array", /*tp_name*/
+  "hmmpy.hmm_cython.array", /*tp_name*/
   sizeof(struct __pyx_array_obj), /*tp_basicsize*/
   0, /*tp_itemsize*/
   __pyx_tp_dealloc_array, /*tp_dealloc*/
@@ -17711,7 +17711,7 @@ static PyMethodDef __pyx_methods_Enum[] = {
 
 static PyTypeObject __pyx_type___pyx_MemviewEnum = {
   PyVarObject_HEAD_INIT(0, 0)
-  "hmmpy.hidden_markov.hmm_cython.Enum", /*tp_name*/
+  "hmmpy.hmm_cython.Enum", /*tp_name*/
   sizeof(struct __pyx_MemviewEnum_obj), /*tp_basicsize*/
   0, /*tp_itemsize*/
   __pyx_tp_dealloc_Enum, /*tp_dealloc*/
@@ -17972,7 +17972,7 @@ static PyBufferProcs __pyx_tp_as_buffer_memoryview = {
 
 static PyTypeObject __pyx_type___pyx_memoryview = {
   PyVarObject_HEAD_INIT(0, 0)
-  "hmmpy.hidden_markov.hmm_cython.memoryview", /*tp_name*/
+  "hmmpy.hmm_cython.memoryview", /*tp_name*/
   sizeof(struct __pyx_memoryview_obj), /*tp_basicsize*/
   0, /*tp_itemsize*/
   __pyx_tp_dealloc_memoryview, /*tp_dealloc*/
@@ -18110,7 +18110,7 @@ static struct PyGetSetDef __pyx_getsets__memoryviewslice[] = {
 
 static PyTypeObject __pyx_type___pyx_memoryviewslice = {
   PyVarObject_HEAD_INIT(0, 0)
-  "hmmpy.hidden_markov.hmm_cython._memoryviewslice", /*tp_name*/
+  "hmmpy.hmm_cython._memoryviewslice", /*tp_name*/
   sizeof(struct __pyx_memoryviewslice_obj), /*tp_basicsize*/
   0, /*tp_itemsize*/
   __pyx_tp_dealloc__memoryviewslice, /*tp_dealloc*/
@@ -18280,8 +18280,8 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_forward_proba, __pyx_k_forward_proba, sizeof(__pyx_k_forward_proba), 0, 0, 1, 1},
   {&__pyx_n_s_getstate, __pyx_k_getstate, sizeof(__pyx_k_getstate), 0, 0, 1, 1},
   {&__pyx_kp_s_got_differing_extents_in_dimensi, __pyx_k_got_differing_extents_in_dimensi, sizeof(__pyx_k_got_differing_extents_in_dimensi), 0, 0, 1, 0},
-  {&__pyx_n_s_hmmpy_hidden_markov_hmm_cython, __pyx_k_hmmpy_hidden_markov_hmm_cython, sizeof(__pyx_k_hmmpy_hidden_markov_hmm_cython), 0, 0, 1, 1},
-  {&__pyx_kp_s_hmmpy_hidden_markov_hmm_cython_p, __pyx_k_hmmpy_hidden_markov_hmm_cython_p, sizeof(__pyx_k_hmmpy_hidden_markov_hmm_cython_p), 0, 0, 1, 0},
+  {&__pyx_n_s_hmmpy_hmm_cython, __pyx_k_hmmpy_hmm_cython, sizeof(__pyx_k_hmmpy_hmm_cython), 0, 0, 1, 1},
+  {&__pyx_kp_s_hmmpy_hmm_cython_pyx, __pyx_k_hmmpy_hmm_cython_pyx, sizeof(__pyx_k_hmmpy_hmm_cython_pyx), 0, 0, 1, 0},
   {&__pyx_n_s_i, __pyx_k_i, sizeof(__pyx_k_i), 0, 0, 1, 1},
   {&__pyx_n_s_id, __pyx_k_id, sizeof(__pyx_k_id), 0, 0, 1, 1},
   {&__pyx_n_s_import, __pyx_k_import, sizeof(__pyx_k_import), 0, 0, 1, 1},
@@ -18563,7 +18563,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __Pyx_GOTREF(__pyx_tuple__18);
   __Pyx_GIVEREF(__pyx_tuple__18);
 
-  /* "hmmpy/hidden_markov/hmm_cython.pyx":52
+  /* "hmmpy/hmm_cython.pyx":52
  * 
  * 
  * def forward_proba(int n_samples, int n_states,             # <<<<<<<<<<<<<<
@@ -18573,9 +18573,9 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __pyx_tuple__19 = PyTuple_Pack(10, __pyx_n_s_n_samples, __pyx_n_s_n_states, __pyx_n_s_log_startprob, __pyx_n_s_log_tpm, __pyx_n_s_log_emission_proba, __pyx_n_s_log_alphas, __pyx_n_s_t, __pyx_n_s_i, __pyx_n_s_j, __pyx_n_s_alpha_temp); if (unlikely(!__pyx_tuple__19)) __PYX_ERR(0, 52, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__19);
   __Pyx_GIVEREF(__pyx_tuple__19);
-  __pyx_codeobj__20 = (PyObject*)__Pyx_PyCode_New(6, 0, 10, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__19, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_hmmpy_hidden_markov_hmm_cython_p, __pyx_n_s_forward_proba, 52, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__20)) __PYX_ERR(0, 52, __pyx_L1_error)
+  __pyx_codeobj__20 = (PyObject*)__Pyx_PyCode_New(6, 0, 10, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__19, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_hmmpy_hmm_cython_pyx, __pyx_n_s_forward_proba, 52, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__20)) __PYX_ERR(0, 52, __pyx_L1_error)
 
-  /* "hmmpy/hidden_markov/hmm_cython.pyx":74
+  /* "hmmpy/hmm_cython.pyx":74
  * 
  * 
  * def backward_proba(int n_samples, int n_states,             # <<<<<<<<<<<<<<
@@ -18585,9 +18585,9 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __pyx_tuple__21 = PyTuple_Pack(10, __pyx_n_s_n_samples, __pyx_n_s_n_states, __pyx_n_s_log_startprob, __pyx_n_s_log_tpm, __pyx_n_s_log_emission_proba, __pyx_n_s_log_betas, __pyx_n_s_t, __pyx_n_s_i, __pyx_n_s_j, __pyx_n_s_beta_temp); if (unlikely(!__pyx_tuple__21)) __PYX_ERR(0, 74, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__21);
   __Pyx_GIVEREF(__pyx_tuple__21);
-  __pyx_codeobj__22 = (PyObject*)__Pyx_PyCode_New(6, 0, 10, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__21, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_hmmpy_hidden_markov_hmm_cython_p, __pyx_n_s_backward_proba, 74, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__22)) __PYX_ERR(0, 74, __pyx_L1_error)
+  __pyx_codeobj__22 = (PyObject*)__Pyx_PyCode_New(6, 0, 10, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__21, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_hmmpy_hmm_cython_pyx, __pyx_n_s_backward_proba, 74, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__22)) __PYX_ERR(0, 74, __pyx_L1_error)
 
-  /* "hmmpy/hidden_markov/hmm_cython.pyx":98
+  /* "hmmpy/hmm_cython.pyx":98
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
  * def jump_state_seq(int n_samples, int n_states, int n_features,             # <<<<<<<<<<<<<<
@@ -18597,9 +18597,9 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __pyx_tuple__23 = PyTuple_Pack(12, __pyx_n_s_n_samples, __pyx_n_s_n_states, __pyx_n_s_n_features, __pyx_n_s_jump_penalty, __pyx_n_s_l2_norms, __pyx_n_s_i, __pyx_n_s_j, __pyx_n_s_t, __pyx_n_s_where_from, __pyx_n_s_state_sequence, __pyx_n_s_losses, __pyx_n_s_state_change_penalty); if (unlikely(!__pyx_tuple__23)) __PYX_ERR(0, 98, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__23);
   __Pyx_GIVEREF(__pyx_tuple__23);
-  __pyx_codeobj__24 = (PyObject*)__Pyx_PyCode_New(5, 0, 12, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__23, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_hmmpy_hidden_markov_hmm_cython_p, __pyx_n_s_jump_state_seq, 98, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__24)) __PYX_ERR(0, 98, __pyx_L1_error)
+  __pyx_codeobj__24 = (PyObject*)__Pyx_PyCode_New(5, 0, 12, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__23, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_hmmpy_hmm_cython_pyx, __pyx_n_s_jump_state_seq, 98, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__24)) __PYX_ERR(0, 98, __pyx_L1_error)
 
-  /* "hmmpy/hidden_markov/hmm_cython.pyx":142
+  /* "hmmpy/hmm_cython.pyx":142
  * 
  * 
  * def viterbi(int n_samples, int n_states,             # <<<<<<<<<<<<<<
@@ -18609,7 +18609,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __pyx_tuple__25 = PyTuple_Pack(12, __pyx_n_s_n_samples, __pyx_n_s_n_states, __pyx_n_s_log_startprob, __pyx_n_s_log_tpm, __pyx_n_s_log_emission_proba, __pyx_n_s_i, __pyx_n_s_j, __pyx_n_s_t, __pyx_n_s_where_from, __pyx_n_s_state_sequence, __pyx_n_s_log_posteriors, __pyx_n_s_work_buffer); if (unlikely(!__pyx_tuple__25)) __PYX_ERR(0, 142, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__25);
   __Pyx_GIVEREF(__pyx_tuple__25);
-  __pyx_codeobj__26 = (PyObject*)__Pyx_PyCode_New(5, 0, 12, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__25, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_hmmpy_hidden_markov_hmm_cython_p, __pyx_n_s_viterbi, 142, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__26)) __PYX_ERR(0, 142, __pyx_L1_error)
+  __pyx_codeobj__26 = (PyObject*)__Pyx_PyCode_New(5, 0, 12, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__25, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_hmmpy_hmm_cython_pyx, __pyx_n_s_viterbi, 142, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__26)) __PYX_ERR(0, 142, __pyx_L1_error)
 
   /* "View.MemoryView":286
  *         return self.name
@@ -18994,14 +18994,14 @@ if (!__Pyx_RefNanny) {
   #if PY_MAJOR_VERSION < 3 && (__PYX_DEFAULT_STRING_ENCODING_IS_ASCII || __PYX_DEFAULT_STRING_ENCODING_IS_DEFAULT)
   if (__Pyx_init_sys_getdefaultencoding_params() < 0) __PYX_ERR(0, 1, __pyx_L1_error)
   #endif
-  if (__pyx_module_is_main_hmmpy__hidden_markov__hmm_cython) {
+  if (__pyx_module_is_main_hmmpy__hmm_cython) {
     if (PyObject_SetAttr(__pyx_m, __pyx_n_s_name_2, __pyx_n_s_main) < 0) __PYX_ERR(0, 1, __pyx_L1_error)
   }
   #if PY_MAJOR_VERSION >= 3
   {
     PyObject *modules = PyImport_GetModuleDict(); if (unlikely(!modules)) __PYX_ERR(0, 1, __pyx_L1_error)
-    if (!PyDict_GetItemString(modules, "hmmpy.hidden_markov.hmm_cython")) {
-      if (unlikely(PyDict_SetItemString(modules, "hmmpy.hidden_markov.hmm_cython", __pyx_m) < 0)) __PYX_ERR(0, 1, __pyx_L1_error)
+    if (!PyDict_GetItemString(modules, "hmmpy.hmm_cython")) {
+      if (unlikely(PyDict_SetItemString(modules, "hmmpy.hmm_cython", __pyx_m) < 0)) __PYX_ERR(0, 1, __pyx_L1_error)
     }
   }
   #endif
@@ -19022,7 +19022,7 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_patch_abc() < 0) __PYX_ERR(0, 1, __pyx_L1_error)
   #endif
 
-  /* "hmmpy/hidden_markov/hmm_cython.pyx":7
+  /* "hmmpy/hmm_cython.pyx":7
  * from libc.math cimport exp, log, INFINITY, isinf
  * 
  * import numpy as np             # <<<<<<<<<<<<<<
@@ -19034,55 +19034,55 @@ if (!__Pyx_RefNanny) {
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_np, __pyx_t_1) < 0) __PYX_ERR(0, 7, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "hmmpy/hidden_markov/hmm_cython.pyx":52
+  /* "hmmpy/hmm_cython.pyx":52
  * 
  * 
  * def forward_proba(int n_samples, int n_states,             # <<<<<<<<<<<<<<
  *              dtype_t[:] log_startprob,
  *              dtype_t[:, :] log_tpm,
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_5hmmpy_13hidden_markov_10hmm_cython_1forward_proba, NULL, __pyx_n_s_hmmpy_hidden_markov_hmm_cython); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 52, __pyx_L1_error)
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_5hmmpy_10hmm_cython_1forward_proba, NULL, __pyx_n_s_hmmpy_hmm_cython); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 52, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_forward_proba, __pyx_t_1) < 0) __PYX_ERR(0, 52, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "hmmpy/hidden_markov/hmm_cython.pyx":74
+  /* "hmmpy/hmm_cython.pyx":74
  * 
  * 
  * def backward_proba(int n_samples, int n_states,             # <<<<<<<<<<<<<<
  *               dtype_t[:] log_startprob,
  *               dtype_t[:, :] log_tpm,
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_5hmmpy_13hidden_markov_10hmm_cython_3backward_proba, NULL, __pyx_n_s_hmmpy_hidden_markov_hmm_cython); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 74, __pyx_L1_error)
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_5hmmpy_10hmm_cython_3backward_proba, NULL, __pyx_n_s_hmmpy_hmm_cython); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 74, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_backward_proba, __pyx_t_1) < 0) __PYX_ERR(0, 74, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "hmmpy/hidden_markov/hmm_cython.pyx":98
+  /* "hmmpy/hmm_cython.pyx":98
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
  * def jump_state_seq(int n_samples, int n_states, int n_features,             # <<<<<<<<<<<<<<
  *                    dtype_t jump_penalty,
  *                    dtype_t[:, :] l2_norms):
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_5hmmpy_13hidden_markov_10hmm_cython_5jump_state_seq, NULL, __pyx_n_s_hmmpy_hidden_markov_hmm_cython); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 98, __pyx_L1_error)
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_5hmmpy_10hmm_cython_5jump_state_seq, NULL, __pyx_n_s_hmmpy_hmm_cython); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 98, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_jump_state_seq, __pyx_t_1) < 0) __PYX_ERR(0, 98, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "hmmpy/hidden_markov/hmm_cython.pyx":142
+  /* "hmmpy/hmm_cython.pyx":142
  * 
  * 
  * def viterbi(int n_samples, int n_states,             # <<<<<<<<<<<<<<
  *              dtype_t[:] log_startprob,
  *              dtype_t[:, :] log_tpm,
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_5hmmpy_13hidden_markov_10hmm_cython_7viterbi, NULL, __pyx_n_s_hmmpy_hidden_markov_hmm_cython); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 142, __pyx_L1_error)
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_5hmmpy_10hmm_cython_7viterbi, NULL, __pyx_n_s_hmmpy_hmm_cython); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 142, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_viterbi, __pyx_t_1) < 0) __PYX_ERR(0, 142, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "hmmpy/hidden_markov/hmm_cython.pyx":1
+  /* "hmmpy/hmm_cython.pyx":1
  * #cython: boundscheck=False, wraparound=False             # <<<<<<<<<<<<<<
  * 
  * cimport cython
@@ -19252,11 +19252,11 @@ if (!__Pyx_RefNanny) {
   __Pyx_XDECREF(__pyx_t_1);
   if (__pyx_m) {
     if (__pyx_d) {
-      __Pyx_AddTraceback("init hmmpy.hidden_markov.hmm_cython", __pyx_clineno, __pyx_lineno, __pyx_filename);
+      __Pyx_AddTraceback("init hmmpy.hmm_cython", __pyx_clineno, __pyx_lineno, __pyx_filename);
     }
     Py_CLEAR(__pyx_m);
   } else if (!PyErr_Occurred()) {
-    PyErr_SetString(PyExc_ImportError, "init hmmpy.hidden_markov.hmm_cython");
+    PyErr_SetString(PyExc_ImportError, "init hmmpy.hmm_cython");
   }
   __pyx_L0:;
   __Pyx_RefNannyFinishContext();
@@ -22226,7 +22226,7 @@ no_fail:
 }
 
 /* ObjectToMemviewSlice */
-  static CYTHON_INLINE __Pyx_memviewslice __Pyx_PyObject_to_MemoryviewSlice_ds_nn___pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t(PyObject *obj, int writable_flag) {
+  static CYTHON_INLINE __Pyx_memviewslice __Pyx_PyObject_to_MemoryviewSlice_ds_nn___pyx_t_5hmmpy_10hmm_cython_dtype_t(PyObject *obj, int writable_flag) {
     __Pyx_memviewslice result = { 0, 0, { 0 }, { 0 }, { 0 } };
     __Pyx_BufFmt_StackElem stack[1];
     int axes_specs[] = { (__Pyx_MEMVIEW_DIRECT | __Pyx_MEMVIEW_STRIDED) };
@@ -22237,7 +22237,7 @@ no_fail:
     }
     retcode = __Pyx_ValidateAndInit_memviewslice(axes_specs, 0,
                                                  PyBUF_RECORDS_RO | writable_flag, 1,
-                                                 &__Pyx_TypeInfo_nn___pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t, stack,
+                                                 &__Pyx_TypeInfo_nn___pyx_t_5hmmpy_10hmm_cython_dtype_t, stack,
                                                  &result, obj);
     if (unlikely(retcode == -1))
         goto __pyx_fail;
@@ -22249,7 +22249,7 @@ __pyx_fail:
 }
 
 /* ObjectToMemviewSlice */
-  static CYTHON_INLINE __Pyx_memviewslice __Pyx_PyObject_to_MemoryviewSlice_dsds_nn___pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t(PyObject *obj, int writable_flag) {
+  static CYTHON_INLINE __Pyx_memviewslice __Pyx_PyObject_to_MemoryviewSlice_dsds_nn___pyx_t_5hmmpy_10hmm_cython_dtype_t(PyObject *obj, int writable_flag) {
     __Pyx_memviewslice result = { 0, 0, { 0 }, { 0 }, { 0 } };
     __Pyx_BufFmt_StackElem stack[1];
     int axes_specs[] = { (__Pyx_MEMVIEW_DIRECT | __Pyx_MEMVIEW_STRIDED), (__Pyx_MEMVIEW_DIRECT | __Pyx_MEMVIEW_STRIDED) };
@@ -22260,7 +22260,7 @@ __pyx_fail:
     }
     retcode = __Pyx_ValidateAndInit_memviewslice(axes_specs, 0,
                                                  PyBUF_RECORDS_RO | writable_flag, 2,
-                                                 &__Pyx_TypeInfo_nn___pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t, stack,
+                                                 &__Pyx_TypeInfo_nn___pyx_t_5hmmpy_10hmm_cython_dtype_t, stack,
                                                  &result, obj);
     if (unlikely(retcode == -1))
         goto __pyx_fail;
@@ -22334,14 +22334,14 @@ __pyx_fail:
 }
 
 /* MemviewDtypeToObject */
-  static CYTHON_INLINE PyObject *__pyx_memview_get_nn___pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t(const char *itemp) {
-    return (PyObject *) PyFloat_FromDouble(*(__pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t *) itemp);
+  static CYTHON_INLINE PyObject *__pyx_memview_get_nn___pyx_t_5hmmpy_10hmm_cython_dtype_t(const char *itemp) {
+    return (PyObject *) PyFloat_FromDouble(*(__pyx_t_5hmmpy_10hmm_cython_dtype_t *) itemp);
 }
-static CYTHON_INLINE int __pyx_memview_set_nn___pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t(const char *itemp, PyObject *obj) {
-    __pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t value = __pyx_PyFloat_AsDouble(obj);
+static CYTHON_INLINE int __pyx_memview_set_nn___pyx_t_5hmmpy_10hmm_cython_dtype_t(const char *itemp, PyObject *obj) {
+    __pyx_t_5hmmpy_10hmm_cython_dtype_t value = __pyx_PyFloat_AsDouble(obj);
     if ((value == (double)-1) && PyErr_Occurred())
         return 0;
-    *(__pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t *) itemp = value;
+    *(__pyx_t_5hmmpy_10hmm_cython_dtype_t *) itemp = value;
     return 1;
 }
 
@@ -22992,7 +22992,7 @@ raise_neg_overflow:
 }
 
 /* ObjectToMemviewSlice */
-  static CYTHON_INLINE __Pyx_memviewslice __Pyx_PyObject_to_MemoryviewSlice_dc_nn___pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t(PyObject *obj, int writable_flag) {
+  static CYTHON_INLINE __Pyx_memviewslice __Pyx_PyObject_to_MemoryviewSlice_dc_nn___pyx_t_5hmmpy_10hmm_cython_dtype_t(PyObject *obj, int writable_flag) {
     __Pyx_memviewslice result = { 0, 0, { 0 }, { 0 }, { 0 } };
     __Pyx_BufFmt_StackElem stack[1];
     int axes_specs[] = { (__Pyx_MEMVIEW_DIRECT | __Pyx_MEMVIEW_CONTIG) };
@@ -23003,7 +23003,7 @@ raise_neg_overflow:
     }
     retcode = __Pyx_ValidateAndInit_memviewslice(axes_specs, __Pyx_IS_C_CONTIG,
                                                  (PyBUF_C_CONTIGUOUS | PyBUF_FORMAT) | writable_flag, 1,
-                                                 &__Pyx_TypeInfo_nn___pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t, stack,
+                                                 &__Pyx_TypeInfo_nn___pyx_t_5hmmpy_10hmm_cython_dtype_t, stack,
                                                  &result, obj);
     if (unlikely(retcode == -1))
         goto __pyx_fail;
@@ -23038,7 +23038,7 @@ __pyx_fail:
 }
 
 /* ObjectToMemviewSlice */
-  static CYTHON_INLINE __Pyx_memviewslice __Pyx_PyObject_to_MemoryviewSlice_dsdc_nn___pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t(PyObject *obj, int writable_flag) {
+  static CYTHON_INLINE __Pyx_memviewslice __Pyx_PyObject_to_MemoryviewSlice_dsdc_nn___pyx_t_5hmmpy_10hmm_cython_dtype_t(PyObject *obj, int writable_flag) {
     __Pyx_memviewslice result = { 0, 0, { 0 }, { 0 }, { 0 } };
     __Pyx_BufFmt_StackElem stack[1];
     int axes_specs[] = { (__Pyx_MEMVIEW_DIRECT | __Pyx_MEMVIEW_STRIDED), (__Pyx_MEMVIEW_DIRECT | __Pyx_MEMVIEW_CONTIG) };
@@ -23049,7 +23049,7 @@ __pyx_fail:
     }
     retcode = __Pyx_ValidateAndInit_memviewslice(axes_specs, 0,
                                                  PyBUF_RECORDS_RO | writable_flag, 2,
-                                                 &__Pyx_TypeInfo_nn___pyx_t_5hmmpy_13hidden_markov_10hmm_cython_dtype_t, stack,
+                                                 &__Pyx_TypeInfo_nn___pyx_t_5hmmpy_10hmm_cython_dtype_t, stack,
                                                  &result, obj);
     if (unlikely(retcode == -1))
         goto __pyx_fail;
