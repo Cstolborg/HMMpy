@@ -1,34 +1,24 @@
-language: python
+name: Build
+
+on: [push, pull_request]
 
 jobs:
-  include:
-    # perform a linux build
-    - services: docker
-    # perform a linux ARMv8 build
-    - services: docker
-      arch: arm64
-    # perform a linux PPC64LE build
-    - services: docker
-      arch: ppc64le
-    # perform a linux S390X build
-    - services: docker
-      arch: s390x
-    # and a mac build
-    - os: osx
-      language: shell
-    # and a windows build
-    - os: windows
-      language: shell
-      before_install:
-        - choco upgrade python -y --version 3.8.6
-        - export PATH="/c/Python38:/c/Python38/Scripts:$PATH"
-        # make sure it's on PATH as 'python3'
-        - ln -s /c/Python38/python.exe /c/Python38/python3.exe
+  build_wheels:
+    name: Build wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-20.04, windows-2019, macos-10.15]
 
-install:
-  - python3 -m pip install cibuildwheel==1.11.0
+    steps:
+      - uses: actions/checkout@v2
 
-script:
-  # build the wheels, put them into './wheelhouse'
-  - python3 -m cibuildwheel --output-dir wheelhouse
+      - name: Build wheels
+        uses: joerick/cibuildwheel@v1.11.0
+        # to supply options, put them in 'env', like:
+        # env:
+        #   CIBW_SOME_OPTION: value
 
+      - uses: actions/upload-artifact@v2
+        with:
+          path: ./wheelhouse/*.whl
