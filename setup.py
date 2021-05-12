@@ -31,7 +31,7 @@ class build_ext(build_ext):
 
 setup(
     name='hmm-py',
-    version='0.0.0',
+    version='0.0.01',
     url='https://github.com/Cstolborg/hmmpy',
     author='Cstolborg',
     author_email='christianstolborg@gmail.com',
