@@ -1,9 +1,6 @@
 # Folders
 .idea/
 .idea
-/analysis/model_convergence/input_data/
-/analysis/stylized_facts/output_data/
-/docs/
 
 
 # Byte-compiled / optimized / DLL files

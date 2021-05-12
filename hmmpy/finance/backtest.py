@@ -20,7 +20,7 @@ import pandas as pd
 import tqdm
 from matplotlib import pyplot as plt
 
-from hmmpy.hidden_markov.hmm_gaussian_em import EMHiddenMarkov
+from hmmpy.hmm_gaussian_em import EMHiddenMarkov
 from hmmpy.finance.mpc_model import MPC
 from hmmpy.utils.data_prep import DataPrep
 

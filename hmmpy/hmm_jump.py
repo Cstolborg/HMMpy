@@ -6,9 +6,9 @@ from sklearn.cluster._kmeans import kmeans_plusplus
 from sklearn.metrics import confusion_matrix
 from sklearn.preprocessing import StandardScaler
 
-from hmmpy.hidden_markov.hmm_sampler import SampleHMM
-from hmmpy.hidden_markov.hmm_base import BaseHiddenMarkov
-from hmmpy.hidden_markov import hmm_cython
+from hmmpy.hmm_sampler import SampleHMM
+from hmmpy.hmm_base import BaseHiddenMarkov
+from hmmpy import hmm_cython
 
 
 #pyximport.install()  # TODO can only be active during development -- must be done through setup.py

@@ -3,9 +3,9 @@ from scipy import stats
 from scipy.special import logsumexp
 import matplotlib.pyplot as plt
 
-from hmmpy.hidden_markov.hmm_sampler import SampleHMM
-from hmmpy.hidden_markov.hmm_base import BaseHiddenMarkov
-from hmmpy.hidden_markov.hmm_gaussian_em import EMHiddenMarkov
+from hmmpy.hmm_sampler import SampleHMM
+from hmmpy.hmm_base import BaseHiddenMarkov
+from hmmpy.hmm_gaussian_em import EMHiddenMarkov
 
 
 class OnlineHMM(EMHiddenMarkov, BaseHiddenMarkov):

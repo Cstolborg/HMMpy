@@ -2,7 +2,7 @@ import numpy as np
 import tqdm
 from scipy import stats
 
-from hmmpy.hidden_markov.hmm_base import BaseHiddenMarkov
+from hmmpy.hmm_base import BaseHiddenMarkov
 
 class SampleHMM(BaseHiddenMarkov):
     """

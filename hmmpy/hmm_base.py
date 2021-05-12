@@ -1,13 +1,13 @@
 import sys
 
 import numpy as np
-import pandas as pd
 from scipy import stats
 from scipy.special import logsumexp
 from sklearn.base import BaseEstimator
 from sklearn.metrics import confusion_matrix
 
-from hmmpy.hidden_markov import hmm_cython
+from hmmpy import hmm_cython
+
 
 class BaseHiddenMarkov(BaseEstimator):
     """
