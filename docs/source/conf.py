@@ -38,18 +38,31 @@ exclude_patterns = []
 
 # -- Options for HTML output -------------------------------------------------
 
-html_theme = 'alabaster'
-#html_theme = 'sphinx_rtd_theme'
+#html_theme = 'alabaster'
+html_theme = 'sphinx_rtd_theme'
 
-html_theme_options = {
-    'description':
-        'Hidden Markov Models for unsupervised learning',
-    'github_user': 'Cstolborg',
-    'github_repo': 'HMMpy',
-    'github_banner': True,
-    'github_button': False,
-    'code_font_size': '80%',
-}
+if html_theme == 'alabaster':
+    html_theme_options = {
+        'description':
+            'Hidden Markov Models for unsupervised learning',
+        'github_user': 'Cstolborg',
+        'github_repo': 'HMMpy',
+        'github_banner': True,
+        'github_button': False,
+        'code_font_size': '80%',
+    }
+elif html_theme == 'sphinx_rtd_theme':
+    html_theme_options = {
+        'display_version': True,
+        'collapse_navigation': False,
+        'sticky_navigation': False,
+    }
+
+#html_context = {
+#    'display_github': True,
+#    'github_user': 'Cstolborg',
+#    'github_repo': 'hmmpy'
+#}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

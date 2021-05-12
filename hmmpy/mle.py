@@ -3,14 +3,10 @@ from numpy import ndarray
 from scipy.special import logsumexp
 
 from hmmpy.base import BaseHiddenMarkov
-from hmmpy.sampler import SampleHMM
-
 
 class MLEHMM(BaseHiddenMarkov):
-    """"
-    Class for computing HMM's using the EM algorithm.
-
-    Can be used to fit HMM parameters or to decode hidden states.
+    """
+    Class for training HMM's using the EM (Baum-Welch) algorithm.
 
     Parameters
     ----------
@@ -21,15 +17,19 @@ class MLEHMM(BaseHiddenMarkov):
     tol : float, default=1e-6
         Criterion for early stopping
     epochs : int, default=1
-        Number of complete passes through the data to improve fit
+        Number of independent runs through fit method. Uses new initial parameters each time and choose the
+        epoch with the highest likelihood.
     random_state : int, default = 42
-        Parameter set to recreate output
-    init: str
-        Set to 'random' for random initialization.
-        Set to None for deterministic init.
+        Set seed. Used to create reproducible results.
+    init : str
+        - Set to 'kmeans++' to use that init method - only supported for JumpHMM \\
+        - Set to 'random' for random initialization.
+        - Set to "deterministic" for deterministic init.
 
     Attributes
     ----------
+    is_fitted : bool
+        Whether the model has been successfully fitted or not.
     mu : ndarray of shape (n_states,)
         Fitted means for each state
     std : ndarray of shape (n_states,)
@@ -38,9 +38,8 @@ class MLEHMM(BaseHiddenMarkov):
         Matrix of transition probabilities between states
     start_proba : ndarray of shape (n_states,)
         Initial state occupation distribution
-    gamma : ndarray of shape (n_states,)
-        Entails the probability of being in a state at time t knowing
-        all the observations that has come and all the observations to come.
+    stationary_dist : ndarray of shape (n_states,)
+        Stationary distribution - requires model to be fitted.
     """
 
     def __init__(self, n_states: int = 2, init: str = 'random', max_iter: int = 100, tol: float = 1e-6,
@@ -49,18 +48,20 @@ class MLEHMM(BaseHiddenMarkov):
         self.type = 'mle'
 
     def compute_log_posteriors(self, log_alphas, log_betas):
-        """
-        Expectation of being in state j at time t given observations, P(S_t = j | x^T).
+        r"""
+        Expectation of being in state j at time t given observations, $P(s_t = j | x_1,...,x_T)$.
 
         Parameters
         ----------
-        log_alphas
-        log_betas
+        log_alphas : ndarray of shape (n_samples, n_states)
+            Array containing the log of forward probabilities $\log\alpha_t$ at each time step.
+        log_betas: ndarray of shape (n_samples, n_states)
+            Array containing the log of forward probabilities $\log\beta_t$ at each time step.
 
         Returns
         -------
-        gamma : ndarray of shape (n_samples, n_states)
-            Expectation of being in state j at time t given observations, P(S_t = j | x^T)
+        log_gamma : ndarray of shape (n_samples, n_states)
+            Expectation of being in state j at time t given observations, $P(s_t = j | x_1,...,x_T)$
         """
         log_gamma = log_alphas + log_betas
         normalizer = logsumexp(log_gamma, axis=1, keepdims=True)
@@ -68,7 +69,21 @@ class MLEHMM(BaseHiddenMarkov):
         return log_gamma
 
     def compute_log_xi(self, log_alphas, log_betas):
-        """Expected number of transitions from state i to j, (P(S_t-1 = j, S_t = i | x^T)"""
+        r"""
+        Expected number of transitions from state i to j, $P(s_{t-1} = j, s_t = i | x_1,...,x_t)$
+
+        Parameters
+        ----------
+        log_alphas : ndarray of shape (n_samples, n_states)
+            Array containing the log of forward probabilities $\log\alpha_t$ at each time step.
+        log_betas: ndarray of shape (n_samples, n_states)
+            Array containing the log of forward probabilities $\log\beta_t$ at each time step.
+
+        Returns
+        -------
+        log_xi : ndarray of shape (n_samples, n_states)
+           Expected number of transitions from state i to j, $P(s_{t-1} = j, s_t = i | x_1,...,x_t)$
+        """
         # Initialize matrix of shape j X j
         # Number of expected transitions from state i to j
         log_xi = np.zeros(shape=(len(log_alphas)-1, self.n_states, self.n_states))
@@ -109,8 +124,9 @@ class MLEHMM(BaseHiddenMarkov):
         return log_gamma, log_xi, llk
 
     def _m_step(self, X: ndarray, log_gamma, log_xi):
-        '''
-        Given u and f do an m-step.
+        r'''
+        Given $\log\gamma$ and $\log\xi$ do m-step.
+
         Updates the model parameters delta, Transition matrix and state dependent distributions.
          '''
         # Update transition matrix and initial probs
@@ -149,7 +165,7 @@ class MLEHMM(BaseHiddenMarkov):
                     self.is_fitted = True
                     if llk > self.best_epoch:
                         self.best_epoch = llk
-                        self.stationary_dist = self.get_stationary_dist(tpm=self.tpm)
+                        self.stationary_dist = self._get_stationary_dist(tpm=self.tpm)
 
                         self.best_tpm = self.tpm
                         self.best_start_proba = self.start_proba
@@ -165,12 +181,16 @@ class MLEHMM(BaseHiddenMarkov):
 
     def fit(self, X: ndarray, sort_state_seq=True, verbose=False):
         """
-        Function iterates through the e-step and the m-step recursively to find the optimal model parameters.
+        Perform the full EM-algorithm.
+
+        Iterates through the e-step and the m-step recursively to find the optimal model parameters.
 
         Parameters
         ----------
         X : ndarray of shape (n_samples,)
             Time series of data
+        sort_state_seq : bool, default=True
+            Sort predicted states according to their variance with the low-variance state at first index position.
         verbose : boolean
             False / True for extra information regarding the function.
 
@@ -199,6 +219,9 @@ class MLEHMM(BaseHiddenMarkov):
         self.std = self.best_std
 
     def _check_state_sort(self):
+        r"""
+        Enforces states are sorted according to variances with the low-variance state having the first index position.
+        """
         # Sort array ascending and check if order is changed
         # If the order is changed then states are reversed
         if np.sort(self.best_std)[0] != self.best_std[0]:
@@ -207,16 +230,3 @@ class MLEHMM(BaseHiddenMarkov):
             self.best_std = self.best_std[::-1]
             self.best_tpm = np.flip(self.best_tpm)
             self.best_start_proba = self.start_proba[::-1]
-
-
-if __name__ == '__main__':
-    sampler = SampleHMM(n_states=2, random_state=42)
-    X, viterbi_states, true_states = sampler.sample_with_viterbi(1000, 1)
-    model = MLEHMM(n_states=2, init="random", random_state=42, epochs=20, max_iter=100)
-
-    model.fit(X, verbose=True)
-    print(model.tpm.sum(axis=1))
-
-    #pool = Pool()
-    #mapfunc = partial(model.fit, verbose=False)
-    #result = pool.map(mapfunc, [X]*20)

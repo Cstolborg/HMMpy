@@ -12,11 +12,12 @@ from hmmpy import hmm_cython
 class BaseHiddenMarkov(BaseEstimator):
     """
     Parent class for Hidden Markov methods with gaussian distributions.
-    Contain methods related to:
-    1. Initializing HMM parameters
-    2. Methods that assumes an HMM is fitted and are used for sampling, prediction etc.
 
-    To fit HMMs refer to the respective child classes
+    Contain methods related to:
+    1. Initializing HMM parameters using uniform distributions
+    2. Methods requiring an HMM to be fitted, e.g. prediction, decoding, sampling etc.
+
+    To fit an HMM refer to the respective child classes MLEHMM and JumpHMM.
 
     Parameters
     ----------
@@ -27,16 +28,19 @@ class BaseHiddenMarkov(BaseEstimator):
     tol : float, default=1e-6
         Criterion for early stopping
     epochs : int, default=1
-        Number of complete passes through the data to improve fit
+        Number of independent runs through fit method. Uses new initial parameters each time and choose the
+        epoch with the highest likelihood.
     random_state : int, default = 42
-        Parameter set to recreate output
+        Set seed. Used to create reproducible results.
     init : str
-        Set to 'kmeans++' to use that init method - only supported for jump hidden_markov.
-        Set to 'random' for random initialization.
-        Set to "deterministic" for deterministic init.
+        - Set to 'kmeans++' to use that init method - only supported for JumpHMM \\
+        - Set to 'random' for random initialization.
+        - Set to "deterministic" for deterministic init.
 
     Attributes
     ----------
+    is_fitted : bool
+        Whether the model has been successfully fitted or not.
     mu : ndarray of shape (n_states,)
         Fitted means for each state
     std : ndarray of shape (n_states,)
@@ -44,7 +48,9 @@ class BaseHiddenMarkov(BaseEstimator):
     tpm : ndarray of shape (n_states, n_states)
         Transition probability matrix between states
     start_proba : ndarray of shape (n_states,)
-        Initial state occupation distribution
+        Initial state distribution
+    stationary_dist : ndarray of shape (n_states,)
+        Stationary distribution - requires model to be fitted.
     """
 
     def __init__(self, n_states: int = 2, init: str = 'random', max_iter: int = 100, tol: float = 1e-6,
@@ -67,21 +73,14 @@ class BaseHiddenMarkov(BaseEstimator):
 
     def _init_params(self, X=None, diag_uniform_dist = (.95, .99), output_hmm_params=True):
         """
-        Function to initialize HMM parameters. Can do so using kmeans++, randomly or deterministic.
+        Initializes HMM parameters randomly using uniform distributions.
 
         Parameters
         ----------
         diag_uniform_dist: 1D-array
             The lower and upper bounds of uniform distribution to sample init from.
 
-        Attributes
-        -------
-        self.T: N X N matrix of transition probabilities
-        self.delta: 1 X N vector of initial probabilities
-        self.mu: 1 X N vector of state dependent means
-        self.std: 1 X N vector of state dependent STDs
-
-        """
+       """
         if self.init == 'random':
             # Transition probabilities
             trans_prob = np.diag(np.random.uniform(low=diag_uniform_dist[0], high=diag_uniform_dist[1],
@@ -162,6 +161,7 @@ class BaseHiddenMarkov(BaseEstimator):
     def fit_predict(self, X, n_preds=15, verbose=False):
         """
         Fit model, then decode states and make n predictions.
+
         Wraps .fit(), .decode() and .predict_proba() into one method.
 
         Parameters
@@ -173,7 +173,10 @@ class BaseHiddenMarkov(BaseEstimator):
 
         Returns
         -------
-
+        state_preds : ndarray of shape (n_samples,)
+            Predicted sequence of states with length of the inputted time series.
+        posteriors : ndarray of shape (n_preds, n_samples)
+            posterior distribution between states at terminal time step T.
         """
         self.fit(X, sort_state_seq=True, verbose=False,)
         if self.is_fitted == False:  # Check if model is fitted
@@ -199,6 +202,8 @@ class BaseHiddenMarkov(BaseEstimator):
         '''
         Sample states from a fitted Hidden Markov Model.
 
+        See also hmmpy.sampler.SampleHMM for full class supporting more sampling methods.
+
         Parameters
         ----------
         n_samples : int
@@ -214,7 +219,7 @@ class BaseHiddenMarkov(BaseEstimator):
         Returns
         -------
         samples : ndarray of shape (n_samples,)
-            Outputs the generated samples of size n_samples
+            Outputs the generated samples
         sample_states : ndarray of shape (n_samples, n_sequences)
             Outputs sampled states
         '''
@@ -255,7 +260,7 @@ class BaseHiddenMarkov(BaseEstimator):
 
     def decode(self, X):
         """
-        Function to output the most likely sequence of states given an observation sequence.
+        Output the most likely sequence of states given an observation sequence using Viterbi algorithm.
 
         Parameters
         ----------
@@ -298,7 +303,7 @@ class BaseHiddenMarkov(BaseEstimator):
 
         return state_preds
 
-    def get_stationary_dist(self, tpm):
+    def _get_stationary_dist(self, tpm):
         """
         Outputs the stationary distribution of the fitted model.
 
@@ -307,6 +312,11 @@ class BaseHiddenMarkov(BaseEstimator):
         we know that the largest eigenvalue is 1, and that the eigenvectors will all be defined by real numbers.
 
         Computed by taking the eigenvector corresponding to the largest eigenvalue and scaling it to sum to 1.
+
+        Parameters
+        ----------
+        tpm : ndarray of shape (n_states, n_states)
+            Transition probability matrix
 
         Returns
         -------
@@ -324,18 +334,16 @@ class BaseHiddenMarkov(BaseEstimator):
 
     def _log_forward_proba(self):
         r"""
-        Compute log forward probabilities in scaled form.
+        Compute log forward probabilities $\log\alpha_t$.
 
-        Forward probability is essentially the joint probability of observing
-        a state = i and observation sequences x^t=x_1...x_t, i.e. $P(S_t=i , X^t=x^t)$.
-        Follows the method by Zucchini A.1.8 p 334.
+        Forward probabilities are the joint probability $P(s_t=i , x_1,...x_t)$.
 
         Returns
         -------
-        log-likelihood : float
+        llk : float
             log-likehood of given HMM parameters
-        log of forward probabilities : ndarray of shape (n_samples, n_states)
-            Array of the scaled log of forward probabilities at each time step.
+        log_alphas : ndarray of shape (n_samples, n_states)
+            Array containing the log of forward probabilities $\log\alpha_t$ at each time step.
         """
         n_obs, n_states = self.log_emission_probs_.shape
         log_alphas = np.zeros((n_obs, n_states))
@@ -348,17 +356,21 @@ class BaseHiddenMarkov(BaseEstimator):
                                      np.log(self.start_proba),
                                      np.log(self.tpm),
                                      self.log_emission_probs_, log_alphas)
-            return logsumexp(log_alphas[-1]), log_alphas  # log-likelihood and forward probabilities
+            llk = logsumexp(log_alphas[-1])
+            return llk, log_alphas  # log-likelihood and forward probabilities
 
     def _log_backward_proba(self):
-        """
-        Compute the log of backward probabilities in scaled form.
+        r"""
+        Compute the log of backward probabilities $\log\beta_t$.
+
         Backward probabilities are the conditional probability of
-        some observation at t+1 given the current state = i. Equivalent to P(X_t+1 = x_t+1 | S_t = i)
+        observating the future observations $x_{t+1},...x_{T}$ given the current state,
+        i.e $P(x_{t+1},...x_{T} | s_t = i)$
 
         Returns
         -------
-        log of backward probabilities: ndarray of shape (n_samples, n_states)
+        log_betas: ndarray of shape (n_samples, n_states)
+            Array containing the log of forward probabilities $\log\beta_t$ at each time step.
         """
         n_obs, n_states = self.log_emission_probs_.shape
         log_betas = np.zeros((n_obs, n_states))
@@ -402,10 +414,21 @@ class BaseHiddenMarkov(BaseEstimator):
         pass
 
     def rolling_posteriors(self, X):
-        """ Compute the posterior probability of being in state i at time T.
+        """
+        Compute the posterior probability of being in state i at time T.
 
         Function should be used as part of rolling estimation when one is
         interested only in the final smoothing probability of the current window sample.
+
+        Parameters
+        ----------
+        X : ndarray of shape (n_samples,)
+            Times series of data
+
+        Returns
+        ----------
+        posterior : ndarray of shape (n_states,)
+            posterior distribution between states at terminal time step T.
         """
         if not self.is_fitted is True:
             print('Warning. Trying to predict using an unfitted model.')
@@ -420,7 +443,23 @@ class BaseHiddenMarkov(BaseEstimator):
         return posterior
 
     def bac_score(self, X, y_true, verbose=False):
-        """ Computes balanced accuracy score when true state sequence is known """
+        """
+         Computes balanced accuracy score when true state sequence is known
+
+        Parameters
+        ----------
+        X : ndarray of shape (n_samples,)
+            Times series of data
+        y_true : ndarray of shape (n_samples,)
+            True states.
+        verbose : bool
+            Verbose output.
+
+        Returns
+        -------
+        bac : float
+            Balanced accuracy score
+        """
         if not self.is_fitted is True:
             bac = 0.
             return bac

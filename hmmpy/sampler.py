@@ -6,33 +6,33 @@ from hmmpy.base import BaseHiddenMarkov
 
 class SampleHMM(BaseHiddenMarkov):
     """
-    Class to handle sampling from HMM hidden_markov with predefined parameters.
+    Class to handle sampling from HMM hidden_markov with user parameters.
     
 
     Parameters
     ----------
     n_states : int, default=2
         Number of hidden states
-    hmm_params: dict
+    hmm_params: dict, default=None
         hmm model parameters to sample from.
-        To set params, create a dict with 'mu', 'std' and 'tpm' as kwds
-        and their values in lists or ndarrays.
+        To set params, create a dict with 'mu', 'std' and 'tpm' as keys
+        and their values in lists or numpy arrays.
     random_state : int, default = 42
         Parameter set to recreate output
  
     Attributes
     ----------
     mu : ndarray of shape (n_states,)
-        Fitted means for each state
+        means to sample from
     std : ndarray of shape (n_states,)
-        Fitted std for each state
+        STDs to sample from
     tpm : ndarray of shape (n_states, n_states)
         Transition probability matrix between states
     """
     
     def __init__(self, n_states=2, frequency='daily', hmm_params=None, random_state=42):
 
-        if hmm_params == None and frequency == "daily":  # hmm params following Hardy (2001)
+        if hmm_params == None or (hmm_params == None and frequency == "daily"):  # hmm params following Hardy (2001)
             # Convert from monthly time scale t=20 to daily t=1
             hmm_params = {'mu': np.array([0.0123, -0.0157]) / 20,
                           'std': np.array([0.0347, 0.0778]) /np.sqrt(20),
@@ -52,7 +52,7 @@ class SampleHMM(BaseHiddenMarkov):
         self.mu = np.array(hmm_params['mu'])
         self.std = np.array(hmm_params['std'])
         self.tpm = np.array(hmm_params['tpm'])
-        self.stationary_dist = super().get_stationary_dist(self.tpm)
+        self.stationary_dist = super()._get_stationary_dist(self.tpm)
         self.start_proba = self.stationary_dist
 
         self.random_state = random_state
@@ -113,6 +113,8 @@ class SampleHMM(BaseHiddenMarkov):
         n_sequences : int, default=1
             Number of independent sequences to sample from, e.g. if n_samples=100 and n_sequences=3
             then 3 different sequences of length 100 are sampled
+        dof : int, default=5
+            degrees of freedom in the conditional t-distributions.
 
         Returns
         -------

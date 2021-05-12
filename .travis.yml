@@ -35,8 +35,8 @@ script:
 
 deploy:
   provider: releases
-  user: "GITHUB USERNAME"
-  password: "GITHUB PASSWORD"
+  user: USERNAME
+  password: PAWORD
   file_glob: true
   file: wheelhouse/*
   skip_cleanup: true

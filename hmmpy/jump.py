@@ -6,14 +6,46 @@ from sklearn.cluster._kmeans import kmeans_plusplus
 from sklearn.metrics import confusion_matrix
 from sklearn.preprocessing import StandardScaler
 
-from hmmpy.sampler import SampleHMM
 from hmmpy.base import BaseHiddenMarkov
 from hmmpy import hmm_cython
 
-
-#pyximport.install()  # TODO can only be active during development -- must be done through setup.py
-
 class JumpHMM(BaseHiddenMarkov):
+    """
+    Class for training HMM's using the jump estimation.
+
+    Parameters
+    ----------
+    n_states : int, default=2
+        Number of hidden states
+    max_iter : int, default=100
+        Maximum number of iterations to perform during expectation-maximization
+    tol : float, default=1e-6
+        Criterion for early stopping
+    epochs : int, default=1
+        Number of independent runs through fit method. Uses new initial parameters each time and choose the
+        epoch with the highest likelihood.
+    random_state : int, default = 42
+        Set seed. Used to create reproducible results.
+    init : str
+        - Set to 'kmeans++' to use that init method - only supported for JumpHMM \\
+        - Set to 'random' for random initialization.
+        - Set to "deterministic" for deterministic init.
+
+    Attributes
+    ----------
+    is_fitted : bool
+        Whether the model has been successfully fitted or not.
+    mu : ndarray of shape (n_states,)
+        Fitted means for each state
+    std : ndarray of shape (n_states,)
+        Fitted std for each state
+    tpm : ndarray of shape (n_states, n_states)
+        Matrix of transition probabilities between states
+    start_proba : ndarray of shape (n_states,)
+        Initial state occupation distribution
+    stationary_dist : ndarray of shape (n_states,)
+        Stationary distribution - requires model to be fitted.
+    """
 
     def __init__(self, n_states: int = 2, jump_penalty: float = 16, window_len: tuple = (6, 14),
                  init: str = 'kmeans++', max_iter: int = 30, tol: int = 1e-6,
@@ -29,6 +61,17 @@ class JumpHMM(BaseHiddenMarkov):
         self.n_features = None
 
     def _init_params(self, Z, X=None, diag_uniform_dist=(.95, .99), output_hmm_params=False):
+        """
+        Initializes HMM parameters randomly using uniform distributions or kmeans++.
+
+        Set when instantiating the class.
+
+        Parameters
+        ----------
+        diag_uniform_dist: 1D-array
+            The lower and upper bounds of uniform distribution to sample init from.
+
+       """
         super()._init_params()
 
         if self.init == "kmeans++":
@@ -54,6 +97,26 @@ class JumpHMM(BaseHiddenMarkov):
             return state_seq, theta
 
     def construct_features(self, X: ndarray, window_len: tuple, feature_set='feature_set_3'):
+        """
+        Construct a number of standardized times series features from data X.
+
+        Parameters
+        ----------
+        X : ndarray of shape (n_samples,)
+            Time series of data
+        window_len : tuple, default=(6,14)
+            Number and size of rolling window lengths used when constructing features.
+        feature_set: str
+            - 'feature_set_1' - basic features such as mean, std, min/max etc.
+            - 'feature_set_2' - technical features such as bollinger bands
+            - 'feature_set_1' - feature set 1 and feature 2 combined
+
+        Returns
+        -------
+        Z : ndarray of shape (n_samples-window_len, n_features)
+            Standardized times series features in a 2-D array.
+        """
+
         if not feature_set in ['feature_set_1', 'feature_set_2', 'feature_set_3']:
             raise Exception('Invalid feature set. Valid options are [feature_set_1, feature_set_2, feature_set_3]')
 
@@ -129,10 +192,10 @@ class JumpHMM(BaseHiddenMarkov):
         return Z
 
     def _l2_norm_squared(self, z, theta):
-        """
-        Compute the squared l2 norm at each time step.
+        r"""
+        Compute the squared $\ell_2$ norm at each time step.
 
-        Squared l2 norm is computed as ||z_t - theta ||_2^2.
+        Squared $\ell_2$ norm is computed as $||z_t - \theta_{s_t} ||_2^2$.
 
         Parameters
         ----------
@@ -143,7 +206,7 @@ class JumpHMM(BaseHiddenMarkov):
         Returns
         -------
         norms: ndarray of shape (n_samples, n_states)
-            Squared l2 norms conditional on latent states
+            Squared $\ell_2$ norms for all conditional states.
         """
         norms = np.zeros(shape=(len(z), self.n_states))
 
@@ -154,21 +217,22 @@ class JumpHMM(BaseHiddenMarkov):
         return norms  # squared l2 norm.
 
     def _fit_theta(self, Z, state_seq):
-        """
-        Fit theta, i.e minimize the squared L2 norm in each latent state.
-        Computed analytically. See notebooks/math_overviews_algos for proof of solution.
+        r"""
+        Fit theta, i.e minimize the squared $\ell_2$ norm in each latent state.
+
+        Analytical solution in state $j$ is: $\theta_j = \frac{1}{N_j} \sum_{t\forall s_t=j} z_t$
 
         Parameters
         ----------
         Z : ndarray of shape (n_samples, n_features)
             Set of standardized times series features
         state_seq : ndarray of shape (n_samples,)
-            State sequence
+            Current estimate of hidden state sequence
 
         Returns
         -------
         theta : ndarray of shape (n_features, n_states)
-            jump model parameters. Distances from state (cluster) centers.
+            Distances from state (cluster) centers.
         """
         theta = np.zeros(shape=(self.n_features, self.n_states))
         for j in range(self.n_states):
@@ -183,27 +247,28 @@ class JumpHMM(BaseHiddenMarkov):
 
         return theta
 
-    def _fit_state_seq(self, X, theta):
+    def _fit_state_seq(self, Z, theta):
         """
         Fit a state sequence based on current theta estimates.
+
         Used in jump model fitting. Uses a dynamic programming technique very
         similar to the viterbi algorithm.
 
         Parameters
         ----------
-        X : ndarray of shape (n_samples)
-            Standardized returns.
+        Z : ndarray of shape (n_samples, n_features)
+            Set of standardized times series features
         theta : ndarray of shape (n_features, n_states)
             jump model parameters. Distances from state (cluster) centers.
 
         Returns
         -------
         state_seq : ndarray of shape (n_samples,)
-            State sequence
+            Current estimate of state sequence
         objective_score : float
             Objective score under the model
         """
-        l2_norms = self._l2_norm_squared(X, theta)  # Compute array of all squared l2 norms
+        l2_norms = self._l2_norm_squared(Z, theta)  # Compute array of all squared l2 norms
         n_samples, _ = l2_norms.shape
 
         losses, state_preds = hmm_cython.jump_state_seq(n_samples, self.n_states,
@@ -257,6 +322,27 @@ class JumpHMM(BaseHiddenMarkov):
                     old_objective_score = objective_score
 
     def fit(self, X, get_hmm_params=True, sort_state_seq=True, verbose=False, feature_set='feature_set_3'):
+        """
+        Fit jump model
+
+        Iterates through fitting cluster centers ($\theta_s_t)$ and fitting state sequences
+        until convergence criterion is met.
+
+        Parameters
+        ----------
+        X : ndarray of shape (n_samples,)
+            Time series of data
+        get_hmm_params : bool, default=True
+            If True, outputs hmm parameters if when converged, i.e. mu, std, tpm and stationary_dist
+        sort_state_seq : bool, default=True
+            Sort predicted states according to their variance with the low-variance state at first index position.
+        verbose : boolean
+            False / True for extra information regarding the function.
+
+        Returns
+        ----------
+        Derives the optimal model parameters
+        """
         self.is_fitted = False
         Z = self.construct_features(X, window_len=self.window_len, feature_set=feature_set)
 
@@ -330,7 +416,7 @@ class JumpHMM(BaseHiddenMarkov):
         # init dist and stationary dist
         self.start_proba = np.zeros(self.n_states)
         self.start_proba[state_sequence[0]] = 1.
-        self.stationary_dist = self.get_stationary_dist(tpm=self.tpm)
+        self.stationary_dist = self._get_stationary_dist(tpm=self.tpm)
 
     def _check_state_sort(self, X, state_sequence):  # TODO give this same structure as in EM_HMM
         """
@@ -405,24 +491,3 @@ class JumpHMM(BaseHiddenMarkov):
             bac.append(bac_temp)
 
         return bac
-
-
-if __name__ == '__main__':
-    model = JumpHMM(n_states=2, jump_penalty=0.0025, window_len=(6, 14), random_state=2)
-    sampler = SampleHMM(n_states=2, random_state=2)
-
-    n_samples = 1000
-    n_sequences = 1
-    X, viterbi_states, true_states = sampler.sample_with_viterbi(n_samples, n_sequences)
-
-
-    #plotting.plot_samples_states_viterbi(X[:,0], viterbi_states[:,0], true_states[:,0])
-
-    #for i in range(50):
-       # bac = model.bac_score_1d(X[:,i], viterbi_states[:, i] , 30)
-
-    model.fit(X, verbose=True)
-
-
-
-

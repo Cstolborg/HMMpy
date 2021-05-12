@@ -71,7 +71,7 @@ model using the JumpHMM class:
 
 
 Available models
--------------------
+------------------
 
 .. autosummary::
    :nosignatures:
