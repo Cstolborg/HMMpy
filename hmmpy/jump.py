@@ -6,8 +6,8 @@ from sklearn.cluster._kmeans import kmeans_plusplus
 from sklearn.metrics import confusion_matrix
 from sklearn.preprocessing import StandardScaler
 
-from hmmpy.hmm_sampler import SampleHMM
-from hmmpy.hmm_base import BaseHiddenMarkov
+from hmmpy.sampler import SampleHMM
+from hmmpy.base import BaseHiddenMarkov
 from hmmpy import hmm_cython
 
 

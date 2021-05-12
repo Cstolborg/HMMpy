@@ -2,7 +2,7 @@ import numpy as np
 import tqdm
 from scipy import stats
 
-from hmmpy.hmm_base import BaseHiddenMarkov
+from hmmpy.base import BaseHiddenMarkov
 
 class SampleHMM(BaseHiddenMarkov):
     """
@@ -49,9 +49,9 @@ class SampleHMM(BaseHiddenMarkov):
         self.type = 'sampler'
         self.is_fitted = True
         self.n_states = n_states
-        self.mu = hmm_params['mu']
-        self.std = hmm_params['std']
-        self.tpm = hmm_params['tpm']
+        self.mu = np.array(hmm_params['mu'])
+        self.std = np.array(hmm_params['std'])
+        self.tpm = np.array(hmm_params['tpm'])
         self.stationary_dist = super().get_stationary_dist(self.tpm)
         self.start_proba = self.stationary_dist
 
@@ -86,6 +86,7 @@ class SampleHMM(BaseHiddenMarkov):
         sample_states = np.zeros(shape=(n_samples, n_sequences), dtype=np.int32) # Init sample vector
         samples = np.zeros(shape=(n_samples, n_sequences))  # Init sample vector
 
+        print(f'Simulating {n_sequences} of lengths {n_samples}')
         for seq in tqdm.tqdm(range(n_sequences)):
             sample_states[0, seq] = np.random.choice(a=state_index, size=1, p=stationary_dist)
 

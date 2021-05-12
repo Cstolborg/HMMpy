@@ -33,28 +33,28 @@ HMMpy has the following dependencies:
 The following code samples some data, and then trains an hidden markov model using the JumpHMM class:
 
 ```python3
-from hidden_markov.jump_hmm import JumpHMM
-from hidden_markov.utils.sample_hmm import SampleHMM
+from hmmpy.jump import JumpHMM
+from hmmpy.sampler import SampleHMM
 
 # Instantiate the HMM model
 hmm = JumpHMM(random_state=42)
 
-# Instantiate the sampler using predefined HMM model parameters
-hmm_params = {'mu': np.array([0.0123, -0.0157]) / 20,
-                          'std': np.array([0.0347, 0.0778]) /np.sqrt(20),
-                          'tpm': np.array([[1-0.0021, 0.0021],
-                                           [0.0120, 1-0.0120]])
+# Instantiate the sampler with user defined HMM model parameters
+hmm_params = {'mu': [0.1, -0.05],
+                          'std': [0.1, 0.2],
+                          'tpm': [[1-0.0021, 0.0021],
+                                  [0.0120, 1-0.0120]]
              }
 sampler = SampleHMM(hmm_params=hmm_params, random_state=42)
 
 # Simulate data
-observations, state_sequence = sampler.sample(n_samples=1000, n_sequences=1)  # Outputs 1000 observations and the underlying states
+observations, state_sequence = sampler.sample(n_samples=2000, n_sequences=1)  # Outputs 2000 observations and the underlying states
 
 # Fit the model
-model.fit(observation)
+hmm.fit(observations)
 
 # Inspect model parameters
-print(model.mu)
-print(model.std)
-print(model.tpm)
+print(hmm.mu)
+print(hmm.std)
+print(hmm.tpm)
 ```

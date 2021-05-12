@@ -3,12 +3,12 @@ from scipy import stats
 from scipy.special import logsumexp
 import matplotlib.pyplot as plt
 
-from hmmpy.hmm_sampler import SampleHMM
-from hmmpy.hmm_base import BaseHiddenMarkov
-from hmmpy.hmm_gaussian_em import EMHiddenMarkov
+from hmmpy.sampler import SampleHMM
+from hmmpy.base import BaseHiddenMarkov
+from hmmpy.gaussian import GaussianHMM
 
 
-class OnlineHMM(EMHiddenMarkov, BaseHiddenMarkov):
+class OnlineHMM(GaussianHMM, BaseHiddenMarkov):
 
     def __init__(self, n_states: int = 2, init: str = 'random', max_iter: int = 100, tol: float = 1e-6,
                  epochs: int = 10, random_state: int = 42):

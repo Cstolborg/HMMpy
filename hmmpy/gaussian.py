@@ -2,11 +2,11 @@ import numpy as np
 from numpy import ndarray
 from scipy.special import logsumexp
 
-from hmmpy.hmm_base import BaseHiddenMarkov
-from hmmpy.hmm_sampler import SampleHMM
+from hmmpy.base import BaseHiddenMarkov
+from hmmpy.sampler import SampleHMM
 
 
-class EMHiddenMarkov(BaseHiddenMarkov):
+class GaussianHMM(BaseHiddenMarkov):
     """"
     Class for computing HMM's using the EM algorithm.
     Can be used to fit HMM parameters or to decode hidden states.
@@ -211,7 +211,7 @@ class EMHiddenMarkov(BaseHiddenMarkov):
 if __name__ == '__main__':
     sampler = SampleHMM(n_states=2, random_state=42)
     X, viterbi_states, true_states = sampler.sample_with_viterbi(1000, 1)
-    model = EMHiddenMarkov(n_states=2, init="random", random_state=42, epochs=20, max_iter=100)
+    model = GaussianHMM(n_states=2, init="random", random_state=42, epochs=20, max_iter=100)
 
     model.fit(X, verbose=True)
     print(model.tpm.sum(axis=1))
