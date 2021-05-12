@@ -1,12 +1,6 @@
 from setuptools import Extension, setup, find_packages
 from setuptools.command.build_ext import build_ext
 
-
-#from distutils.extension import Extension
-#from Cython.Distutils import build_ext
-
-#ext_modules = [Extension("hmm_cython", ["hidden_markov/hmm_cython.pyx"])]
-
 class build_ext(build_ext):
     def finalize_options(self):
         from Cython.Build import cythonize
@@ -56,7 +50,6 @@ setup(
         "scikit-learn>=0.24.0",
         "scipy>=1.5.4",
         "pandas>=1.2.0",
-        "cvxpy==1.1.10",
         "tqdm",
         'cython',
     ],
