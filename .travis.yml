@@ -32,3 +32,11 @@ script:
   # build the wheels, put them into './wheelhouse'
   - python3 -m cibuildwheel --output-dir wheelhouse
 
+
+deploy:
+  provider: releases
+  user: "GITHUB USERNAME"
+  password: "GITHUB PASSWORD"
+  file_glob: true
+  file: wheelhouse/*
+  skip_cleanup: true

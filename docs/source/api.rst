@@ -21,14 +21,14 @@ hmmpy.gaussian
    :no-inherited-members:
 
 hmmpy.jump
------------
+---------------
 .. autoclass:: hmmpy.jump.JumpHMM
    :exclude-members: set_params, get_params, _get_param_names
    :no-inherited-members:
 
 
 hmmpy.sampler
------------
+----------------
 .. autoclass:: hmmpy.sampler.SampleHMM
    :exclude-members: set_params, get_params, _get_param_names
    :no-inherited-members:

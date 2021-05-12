@@ -21,12 +21,11 @@ Table of contents
 Installation
 ------------
 
-HMMpy is available on TestPyPI, and can be installed with (only for
-windows)
+HMMpy is available on PyPI, and can be installed with
 
 ::
 
-    pip install -i https://test.pypi.org/pypi/ --extra-index-url https://pypi.org/simple cstolborg==0.0.5
+    pip install hmm-py
 
 HMMpy has the following dependencies:
 
@@ -72,7 +71,7 @@ model using the JumpHMM class:
 
 
 Available models
-----------------
+-------------------
 
 .. autosummary::
    :nosignatures:
