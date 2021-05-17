@@ -33,10 +33,3 @@ hmmpy.sampler
 .. autoclass:: hmmpy.sampler.SampleHMM
    :exclude-members: set_params, get_params, _get_param_names
    :no-inherited-members:
-
-hmmpy.finance.mpc_model
-=================
-.. autoclass:: hmmpy.finance.mpc_model.MPC
-   :private-members:
-   :exclude-members: set_params, get_params, _get_param_names
-   :no-inherited-members:
