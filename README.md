@@ -14,7 +14,7 @@ HMMpy began as a University project at Copenhagen Business School, where it was 
 
 
 ## Installation
-HMMpy is available on PyPI, and can be installed with (only for windows)
+HMMpy is available on PyPI, and can be installed with (Only for Windows and Linux)
 ```
 pip install hmm-py
 ```

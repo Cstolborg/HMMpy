@@ -9,6 +9,7 @@ class MPC:
     """
     Solve the model predictive control problem using convex optimization.
 
+    Class for solving multi-period optimization problems.
     This class is strictly made for use with the CVXPY library. All methods are created to be
     compatible with this library and as such use of Numpy or Pandas is limited.
 

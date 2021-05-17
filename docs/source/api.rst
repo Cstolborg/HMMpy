@@ -8,7 +8,7 @@ This is the documentation of ``hmmpy``. It consists of 3 general classes for est
 * hmmpy.jump.JumpHMM: Methods related to jump estimation.
 
 hmmpy.base
-=================
+
 .. autoclass:: hmmpy.base.BaseHiddenMarkov
    :private-members:
    :exclude-members: set_params, get_params, _get_param_names
@@ -31,5 +31,12 @@ hmmpy.jump
 hmmpy.sampler
 =================
 .. autoclass:: hmmpy.sampler.SampleHMM
+   :exclude-members: set_params, get_params, _get_param_names
+   :no-inherited-members:
+
+hmmpy.finance.mpc_model
+=================
+.. autoclass:: hmmpy.finance.mpc_model.MPC
+   :private-members:
    :exclude-members: set_params, get_params, _get_param_names
    :no-inherited-members:
