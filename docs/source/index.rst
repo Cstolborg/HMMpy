@@ -21,7 +21,7 @@ Table of contents
 Installation
 ------------
 
-HMMpy is available on PyPI, and can be installed with
+HMMpy is available on PyPI, and can be installed with (only available on Windows and Linux)
 
 ::
 
